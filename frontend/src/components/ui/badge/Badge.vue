@@ -5,13 +5,13 @@ import { computed } from 'vue'
 import { cn } from '@/lib/utils'
 
 const badgeVariants = cva(
-  'inline-flex items-center border-2 border-[#1a1c1a] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em]',
+  'inline-flex items-center border-2 border-[var(--on-surface)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em]',
   {
     variants: {
       variant: {
-        default: 'bg-[#ff5c35] text-[#1a1c1a]',
-        outline: 'bg-[#f9f9f6] text-[#1a1c1a]',
-        dark: 'bg-[#1a1c1a] text-[#f9f9f6]',
+        default: 'bg-[var(--primary-container)] text-[var(--on-surface)]',
+        outline: 'bg-[var(--surface)] text-[var(--on-surface)]',
+        dark: 'bg-[var(--on-surface)] text-[var(--surface)]',
       },
     },
     defaultVariants: {

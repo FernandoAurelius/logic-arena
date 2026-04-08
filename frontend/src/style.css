@@ -11,7 +11,13 @@
   --outline-variant: #e3beb6;
   --primary: #b52701;
   --primary-container: #ff5c35;
+  --on-primary: #ffffff;
   --bg-code: #141513;
+  --surface-overlay: rgba(249, 249, 246, 0.96);
+  --grid-line: rgba(143, 112, 105, 0.12);
+  --grid-line-strong: rgba(143, 112, 105, 0.15);
+  --modal-overlay: rgba(26, 28, 26, 0.46);
+  --drawer-overlay: rgba(249, 249, 246, 0.98);
   font-family: Inter, system-ui, sans-serif;
   color: var(--on-surface);
   background: var(--surface);
@@ -19,6 +25,26 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme='dark'] {
+  --surface: #101311;
+  --surface-low: #171b18;
+  --surface-container: #1d2420;
+  --surface-container-high: #232b27;
+  --on-surface: #f3efe8;
+  --on-surface-variant: #d2b8ac;
+  --outline: #c49787;
+  --outline-variant: #6a4f48;
+  --primary: #ff6a3d;
+  --primary-container: #ff9775;
+  --on-primary: #1f0d08;
+  --bg-code: #0a0d0b;
+  --surface-overlay: rgba(16, 19, 17, 0.94);
+  --grid-line: rgba(196, 151, 135, 0.12);
+  --grid-line-strong: rgba(196, 151, 135, 0.14);
+  --modal-overlay: rgba(0, 0, 0, 0.58);
+  --drawer-overlay: rgba(16, 19, 17, 0.98);
 }
 
 * {
@@ -35,6 +61,7 @@ body,
 
 body {
   background: var(--surface);
+  color: var(--on-surface);
 }
 
 a {
@@ -111,7 +138,7 @@ textarea {
   display: grid;
   place-items: center;
   padding: 1.5rem;
-  background: rgba(26, 28, 26, 0.46);
+  background: var(--modal-overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -127,8 +154,8 @@ textarea {
 .landing-page {
   min-height: 100vh;
   background:
-    linear-gradient(rgba(143, 112, 105, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(143, 112, 105, 0.12) 1px, transparent 1px),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
     var(--surface);
   background-size: 28px 28px, 28px 28px, auto;
 }
@@ -140,7 +167,7 @@ textarea {
   gap: 1rem;
   padding: 1.25rem 1.5rem;
   border-bottom: 2px solid var(--on-surface);
-  background: rgba(249, 249, 246, 0.96);
+  background: var(--surface-overlay);
 }
 
 .landing-brand {
@@ -275,7 +302,7 @@ textarea {
   gap: 1rem;
   padding: 1rem 1.5rem;
   border-bottom: 2px solid var(--on-surface);
-  background: rgba(249, 249, 246, 0.96);
+  background: var(--surface-overlay);
   backdrop-filter: blur(6px);
 }
 
@@ -394,8 +421,8 @@ textarea {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(143, 112, 105, 0.15) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(143, 112, 105, 0.15) 1px, transparent 1px);
+    linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px);
   background-size: 28px 28px;
   opacity: 0.42;
   pointer-events: none;
@@ -448,6 +475,10 @@ textarea {
 .module-link.active {
   background: var(--on-surface);
   color: var(--surface);
+}
+
+.module-link.active small {
+  color: var(--surface-low);
 }
 
 .history-list {
@@ -675,7 +706,7 @@ textarea {
 }
 
 .console-content {
-  background: #111311;
+  background: var(--bg-code);
 }
 
 .console-body {
@@ -683,7 +714,7 @@ textarea {
   gap: 0.55rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.82rem;
-  color: #f1f1ee;
+  color: var(--surface);
 }
 
 .console-line {
@@ -753,12 +784,12 @@ textarea {
 }
 
 .review-chat-message.user {
-  background: #fff6d8;
-  border-color: #d3a977;
+  background: color-mix(in srgb, var(--primary-container) 18%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--outline));
 }
 
 .review-chat-message.assistant {
-  background: #f2f0eb;
+  background: var(--surface-low);
 }
 
 .review-chat-message p {
@@ -786,15 +817,15 @@ textarea {
 .markdown-body code {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.85em;
-  background: rgba(17, 19, 17, 0.06);
+  background: color-mix(in srgb, var(--on-surface) 8%, transparent);
   padding: 0.1rem 0.28rem;
 }
 
 .markdown-body pre {
   overflow: auto;
   padding: 0.8rem 0.9rem;
-  background: #111311;
-  color: #f1f1ee;
+  background: var(--bg-code);
+  color: var(--surface);
   border: 1px solid var(--outline);
 }
 
@@ -899,7 +930,7 @@ textarea {
   gap: 0.2rem;
   padding: 0.9rem 1.2rem;
   border: 2px solid var(--on-surface);
-  background: #fff2cc;
+  background: color-mix(in srgb, var(--primary-container) 22%, var(--surface));
   box-shadow: 6px 6px 0 var(--primary);
   text-align: center;
   animation: level-pop 2.6s ease forwards;
@@ -925,7 +956,7 @@ textarea {
   gap: 1rem;
   padding: 1.25rem;
   border-left: 2px solid var(--on-surface);
-  background: rgba(249, 249, 246, 0.98);
+  background: var(--drawer-overlay);
   backdrop-filter: blur(8px);
   box-shadow: -8px 0 24px rgba(17, 19, 17, 0.08);
   transform: translateX(100%);

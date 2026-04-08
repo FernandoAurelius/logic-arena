@@ -5,7 +5,7 @@ defineProps<{ class?: string }>()
 </script>
 
 <template>
-  <div :class="cn('border-2 border-[#1a1c1a] bg-[#f9f9f6] shadow-[4px_4px_0_#1a1c1a]', $props.class)">
+  <div :class="cn('border-2 border-[var(--on-surface)] bg-[var(--surface)] shadow-[4px_4px_0_var(--on-surface)]', $props.class)">
     <slot />
   </div>
 </template>

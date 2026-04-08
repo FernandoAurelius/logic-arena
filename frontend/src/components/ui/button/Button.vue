@@ -9,9 +9,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-2 border-[#1a1c1a] bg-[#b52701] text-white shadow-[4px_4px_0_#1a1c1a]',
-        outline: 'border-2 border-[#1a1c1a] bg-[#f9f9f6] text-[#1a1c1a]',
-        ghost: 'border-2 border-[#1a1c1a] bg-transparent text-[#1a1c1a]',
+        default: 'border-2 border-[var(--on-surface)] bg-[var(--primary)] text-[var(--on-primary)] shadow-[4px_4px_0_var(--on-surface)]',
+        outline: 'border-2 border-[var(--on-surface)] bg-[var(--surface)] text-[var(--on-surface)]',
+        ghost: 'border-2 border-[var(--on-surface)] bg-transparent text-[var(--on-surface)]',
       },
       size: {
         default: 'px-4 py-3',

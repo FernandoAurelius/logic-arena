@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowRight, Cpu, History, Play, Sparkles } from 'lucide-vue-next'
+import { ArrowRight, Cpu, History, Moon, Play, Sparkles, Sun } from 'lucide-vue-next'
 
 import LoginModal from '@/components/auth/LoginModal.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSession } from '@/lib/session'
+import { useTheme } from '@/lib/theme'
 
 const router = useRouter()
 const session = useSession()
+const theme = useTheme()
 const showLogin = ref(false)
 
 const highlights = [
@@ -53,6 +55,11 @@ async function handlePrimaryAction() {
         <span class="landing-subtitle">Logic Arena</span>
       </div>
       <div class="landing-actions">
+        <Button variant="outline" @click="theme.toggleTheme">
+          <Sun v-if="theme.isDark.value" :size="16" />
+          <Moon v-else :size="16" />
+          {{ theme.isDark.value ? 'Tema Claro' : 'Tema Escuro' }}
+        </Button>
         <Button variant="outline" @click="handlePrimaryAction">
           {{ session.isAuthenticated.value ? 'Ir Para A Arena' : 'Entrar' }}
         </Button>

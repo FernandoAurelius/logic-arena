@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import MarkdownIt from 'markdown-it'
-import { BookOpenText, ChevronRight, ChevronDown, ChevronLeft, Cpu, Flame, LoaderCircle, LogOut, MessageSquare, Play, Send, Terminal, Trophy, X } from 'lucide-vue-next'
+import { BookOpenText, ChevronRight, ChevronDown, ChevronLeft, Cpu, Flame, LoaderCircle, LogOut, MessageSquare, Moon, Play, Send, Sun, Terminal, Trophy, X } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
 import { schemas } from '@/lib/api/generated'
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useSession } from '@/lib/session'
+import { useTheme } from '@/lib/theme'
 
 type ExerciseSummary = ZodInfer<typeof schemas.ExerciseSummarySchema>
 type ExerciseDetail = ZodInfer<typeof schemas.ExerciseDetailSchema>
@@ -22,6 +23,7 @@ type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>
 
 const router = useRouter()
 const session = useSession()
+const theme = useTheme()
 
 const exercises = ref<ExerciseSummary[]>([])
 const activeExercise = ref<ExerciseDetail | null>(null)
@@ -357,6 +359,11 @@ onBeforeUnmount(() => {
         <span class="brand-wordmark">LOGIC ARENA</span>
       </div>
       <div class="topbar-right">
+        <Button variant="outline" size="sm" @click="theme.toggleTheme">
+          <Sun v-if="theme.isDark.value" :size="14" />
+          <Moon v-else :size="14" />
+          {{ theme.isDark.value ? 'Claro' : 'Escuro' }}
+        </Button>
         <Button variant="outline" size="sm" @click="logout">
           <LogOut :size="14" />
           Sair

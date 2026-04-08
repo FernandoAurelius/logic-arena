@@ -12,7 +12,7 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
     :spellcheck="spellcheck"
     :class="
       cn(
-        'flex min-h-[160px] w-full border-2 border-[#1a1c1a] bg-[#f4f4f1] px-3 py-2 text-sm text-[#1a1c1a] outline-none',
+        'flex min-h-[160px] w-full border-2 border-[var(--on-surface)] bg-[var(--surface-low)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none placeholder:text-[var(--on-surface-variant)]',
         $props.class,
       )
     "
