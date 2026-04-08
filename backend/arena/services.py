@@ -1,12 +1,13 @@
 import os
 import re
 import secrets
-import tempfile
+import json
 from dataclasses import dataclass
-from pathlib import Path
-from subprocess import run
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 from django.contrib.auth.hashers import check_password, make_password
+from django.conf import settings
 
 from .models import ArenaUser, AuthSession, Exercise, ExerciseTestCase, Submission
 
@@ -92,25 +93,33 @@ class ExecutionResult:
 
 
 def run_python(source_code: str, stdin: str) -> ExecutionResult:
-    with tempfile.NamedTemporaryFile('w', suffix='.py', delete=False) as handle:
-        handle.write(source_code)
-        temp_path = Path(handle.name)
+    payload = json.dumps(
+        {
+            'language': 'python',
+            'source_code': source_code,
+            'stdin': stdin,
+            'timeout_seconds': 5,
+        }
+    ).encode()
+    request = Request(
+        f'{settings.RUNNER_URL}/execute/python',
+        data=payload,
+        headers={'Content-Type': 'application/json'},
+        method='POST',
+    )
 
     try:
-        completed = run(
-            ['python3', str(temp_path)],
-            input=stdin,
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=False,
-        )
-        return ExecutionResult(ok=completed.returncode == 0, stdout=completed.stdout, stderr=completed.stderr)
+        with urlopen(request, timeout=8) as response:
+            parsed = json.loads(response.read().decode())
+            return ExecutionResult(
+                ok=bool(parsed.get('ok')),
+                stdout=str(parsed.get('stdout', '')),
+                stderr=str(parsed.get('stderr', '')),
+            )
+    except URLError as error:
+        return ExecutionResult(ok=False, stdout='', stderr=f'Runner indisponível: {error}')
     except Exception as error:  # pragma: no cover
         return ExecutionResult(ok=False, stdout='', stderr=str(error))
-    finally:
-        if temp_path.exists():
-            os.unlink(temp_path)
 
 
 def build_submission_feedback(exercise: Exercise, passed: bool, passed_tests: int, total_tests: int) -> str:

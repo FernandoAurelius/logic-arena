@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: logic-arena-postgres
+    environment:
+      POSTGRES_DB: logic_arena
+      POSTGRES_USER: logic_arena
+      POSTGRES_PASSWORD: logic_arena
+    ports:
+      - "5432:5432"
+    volumes:
+      - logic_arena_postgres:/var/lib/postgresql/data
+
+  runner:
+    build:
+      context: .
+      dockerfile: runner_service/Dockerfile
+    container_name: logic-arena-runner
+    ports:
+      - "8010:8010"
+
+volumes:
+  logic_arena_postgres:

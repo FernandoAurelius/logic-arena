@@ -28,6 +28,22 @@ const errorMessage = ref('')
 const loginMessage = ref('')
 
 const isAuthenticated = computed(() => Boolean(token.value && currentUser.value))
+const activeProgress = computed(() => {
+  if (!latestSubmission.value || latestSubmission.value.total_tests === 0) return 0
+  return Math.round((latestSubmission.value.passed_tests / latestSubmission.value.total_tests) * 100)
+})
+const activeIndex = computed(() => {
+  if (!activeExercise.value) return 0
+  return exercises.value.findIndex((exercise) => exercise.slug === activeExercise.value?.slug) + 1
+})
+const codeLines = computed(() => {
+  const total = Math.max(code.value.split('\n').length, 12)
+  return Array.from({ length: total }, (_, index) => String(index + 1).padStart(2, '0'))
+})
+const consoleLines = computed(() => {
+  if (!latestSubmission.value?.console_output) return ['[INIT] Aguardando execução do módulo atual...']
+  return latestSubmission.value.console_output.split('\n').filter(Boolean)
+})
 
 function authHeader() {
   return token.value ? `Bearer ${token.value}` : null
@@ -179,175 +195,227 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand-block">
-        <p class="eyebrow">Logic Arena MVP</p>
-        <h1>Treino interno com persistência real</h1>
-        <p class="muted">
-          Base em Vue 3 + TypeScript consumindo a API do Django Ninja com contrato OpenAPI tipado.
-        </p>
+  <div class="terminal-shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="brand-wordmark">IGNITION_OS</span>
+        <nav class="topnav">
+          <a class="active" href="#">COMPILER</a>
+          <a href="#">REPOSITORY</a>
+          <a href="#">DEBUGGER</a>
+        </nav>
       </div>
+      <div class="topbar-right">
+        <div class="level-box">
+          <strong>LEVEL 42</strong>
+          <span>{{ currentUser?.nickname ?? 'guest_operator' }}</span>
+        </div>
+        <div class="icon-row">
+          <span class="material-symbols-outlined">terminal</span>
+          <span class="material-symbols-outlined">settings</span>
+          <span class="material-symbols-outlined">account_circle</span>
+        </div>
+      </div>
+    </header>
 
-      <section class="panel">
-        <div class="panel-head">
-          <p class="eyebrow">Autenticação mínima</p>
-          <h2>Nickname + senha</h2>
+    <div class="terminal-body">
+      <aside class="sidenav">
+        <div class="operator-card">
+          <div class="operator-icon">
+            <span class="material-symbols-outlined">memory</span>
+          </div>
+          <div>
+            <p class="eyebrow">Operator</p>
+            <strong>{{ currentUser?.nickname ?? 'OPERATOR_01' }}</strong>
+            <small>STATUS: {{ isAuthenticated ? 'ROOT_ACCESS' : 'LOCKED' }}</small>
+          </div>
         </div>
 
-        <div class="field-stack">
+        <section class="auth-panel">
+          <p class="eyebrow">Access Node</p>
           <label>
             <span>Nickname</span>
-            <input v-model="nickname" placeholder="ex.: miguel" />
+            <input v-model="nickname" placeholder="miguel" />
           </label>
           <label>
             <span>Senha</span>
-            <input v-model="password" type="password" placeholder="senha simples" />
+            <input v-model="password" type="password" placeholder="••••••••" />
           </label>
-        </div>
+          <div class="auth-actions">
+            <button class="primary-btn" :disabled="loginBusy || !nickname || !password" @click="login">
+              {{ loginBusy ? 'SYNCING...' : 'LOGIN' }}
+            </button>
+            <button class="ghost-btn" :disabled="!isAuthenticated" @click="clearSession">LOGOUT</button>
+          </div>
+          <p v-if="loginMessage" class="notice success">{{ loginMessage }}</p>
+        </section>
 
-        <div class="button-row">
-          <button class="primary" :disabled="loginBusy || !nickname || !password" @click="login">
-            {{ loginBusy ? 'Entrando...' : 'Entrar' }}
-          </button>
-          <button class="ghost" :disabled="!isAuthenticated" @click="clearSession">
-            Sair
-          </button>
-        </div>
-
-        <p v-if="currentUser" class="status-line">
-          Sessão ativa como <strong>{{ currentUser.nickname }}</strong>
-        </p>
-        <p v-if="loginMessage" class="success-line">{{ loginMessage }}</p>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <p class="eyebrow">Exercícios</p>
-          <h2>Banco persistido</h2>
-        </div>
-
-        <div class="exercise-list">
+        <nav class="module-nav">
+          <p class="eyebrow">Core Modules</p>
           <button
             v-for="exercise in exercises"
             :key="exercise.slug"
-            class="exercise-item"
+            class="module-link"
             :class="{ active: activeExercise?.slug === exercise.slug }"
             @click="selectExercise(exercise.slug)"
           >
-            <strong>{{ exercise.title }}</strong>
-            <span>{{ exercise.difficulty }} · {{ exercise.language }}</span>
+            <span class="material-symbols-outlined">account_tree</span>
+            <div>
+              <strong>{{ exercise.title }}</strong>
+              <small>{{ exercise.difficulty }} · {{ exercise.language }}</small>
+            </div>
           </button>
-        </div>
-      </section>
+        </nav>
 
-      <section class="panel">
-        <div class="panel-head">
-          <p class="eyebrow">Histórico</p>
-          <h2>Submissões recentes</h2>
-        </div>
+        <section class="history-panel">
+          <p class="eyebrow">History</p>
+          <ul>
+            <li v-for="submission in submissions.slice(0, 5)" :key="submission.id">
+              <strong>{{ submission.exercise_title }}</strong>
+              <span>{{ submission.passed_tests }}/{{ submission.total_tests }} · {{ submission.status }}</span>
+            </li>
+            <li v-if="submissions.length === 0" class="dimmed">Nenhuma execução persistida.</li>
+          </ul>
+        </section>
+      </aside>
 
-        <ul class="submission-list">
-          <li v-for="submission in submissions.slice(0, 6)" :key="submission.id">
-            <strong>{{ submission.exercise_title }}</strong>
-            <span>{{ submission.passed_tests }}/{{ submission.total_tests }} · {{ submission.status }}</span>
-          </li>
-          <li v-if="submissions.length === 0" class="muted">Nenhuma submissão salva ainda.</li>
-        </ul>
-      </section>
-    </aside>
+      <main class="workspace">
+        <div class="blueprint-grid"></div>
 
-    <main class="content">
-      <div class="hero">
-        <div>
-          <p class="eyebrow">Contrato tipado</p>
-          <h2>{{ activeExercise?.title ?? 'Selecione um exercício' }}</h2>
-          <p class="muted">
-            {{ activeExercise?.statement ?? 'O exercício selecionado aparecerá aqui com starter code e casos visíveis.' }}
-          </p>
-        </div>
-        <div class="hero-chip">
-          <span>API</span>
-          <strong>Django Ninja + OpenAPI</strong>
-        </div>
-      </div>
-
-      <p v-if="errorMessage" class="error-banner">{{ errorMessage }}</p>
-
-      <section v-if="activeExercise" class="workspace-grid">
-        <article class="panel">
-          <div class="panel-head">
-            <p class="eyebrow">Leitura da banca</p>
-            <h2>{{ activeExercise.professor_note || 'Sem nota do professor cadastrada.' }}</h2>
-          </div>
-
-          <div class="io-grid">
-            <div class="io-card">
-              <h3>Exemplo de entrada</h3>
-              <pre>{{ activeExercise.sample_input }}</pre>
+        <section class="workspace-header">
+          <div>
+            <div class="breadcrumb">
+              <span>Programming Logic</span>
+              <span class="material-symbols-outlined tiny">chevron_right</span>
+              <span class="active">{{ activeExercise?.difficulty ?? 'Challenge' }}</span>
             </div>
-            <div class="io-card">
-              <h3>Saída esperada</h3>
-              <pre>{{ activeExercise.sample_output }}</pre>
+            <h1>Challenge: {{ activeExercise?.title ?? 'Awaiting Exercise' }}</h1>
+            <p class="workspace-copy">
+              {{ activeExercise?.statement ?? 'Selecione um exercício no rail lateral para começar a estação prática.' }}
+            </p>
+          </div>
+          <div class="status-box">
+            <span class="status-dot"></span>
+            <span>Terminal Status: {{ isBusy ? 'Running' : 'Active' }}</span>
+          </div>
+        </section>
+
+        <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
+
+        <section v-if="activeExercise" class="two-column">
+          <div class="left-column">
+            <article class="spec-card">
+              <h3>Technical Specification</h3>
+              <p>{{ activeExercise.statement }}</p>
+              <div class="formula-box">
+                <p>// BANKA NOTE</p>
+                <strong>{{ activeExercise.professor_note || 'Sem anotação adicional.' }}</strong>
+              </div>
+              <div class="io-card">
+                <p class="section-label">Input Examples</p>
+                <ul class="input-list">
+                  <li><code>{{ activeExercise.sample_input }}</code></li>
+                  <li><code>{{ activeExercise.sample_output }}</code></li>
+                </ul>
+              </div>
+            </article>
+
+            <article class="metrics-card">
+              <h4>Efficiency Metrics</h4>
+              <div class="metric-line">
+                <div>
+                  <strong>{{ activeProgress }}%</strong>
+                  <span>Current mastery for this module</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" :style="{ width: `${activeProgress}%` }"></div>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="right-column">
+            <div class="editor-header">
+              <div class="window-dots">
+                <span class="dot red"></span>
+                <span class="dot amber"></span>
+                <span class="dot gray"></span>
+              </div>
+              <span class="file-name">{{ activeExercise.slug }}.py</span>
+              <span class="material-symbols-outlined">more_horiz</span>
+            </div>
+
+            <div class="editor-canvas">
+              <div class="line-gutter">
+                <span v-for="line in codeLines" :key="line">{{ line }}</span>
+              </div>
+              <textarea v-model="code" class="code-editor" spellcheck="false" />
+            </div>
+
+            <div class="console-card">
+              <div class="console-header">
+                <span class="material-symbols-outlined">terminal</span>
+                <strong>Console Output</strong>
+              </div>
+              <div class="console-body">
+                <div v-for="(line, index) in consoleLines" :key="`${index}-${line}`" class="console-line">
+                  <span class="console-time">{{ String(index).padStart(2, '0') }}:42</span>
+                  <span :class="line.includes('PASSOU') ? 'tag pass' : line.includes('FALHOU') ? 'tag fail' : 'tag exec'">
+                    {{ line.includes('PASSOU') ? '[PASS]' : line.includes('FALHOU') ? '[FAIL]' : '[EXEC]' }}
+                  </span>
+                  <span>{{ line }}</span>
+                </div>
+              </div>
+              <button class="execute-btn" :disabled="isBusy || !isAuthenticated" @click="submitSolution">
+                <span class="material-symbols-outlined">play_arrow</span>
+                <span>{{ isBusy ? 'Executing...' : 'Execute Module' }}</span>
+              </button>
             </div>
           </div>
+        </section>
 
-          <div class="io-card">
-            <h3>Casos visíveis</h3>
-            <ul class="visible-tests">
-              <li v-for="testCase in activeExercise.test_cases" :key="testCase.id">
-                <strong>Entrada:</strong> {{ JSON.stringify(testCase.input_data) }}
-                <br />
-                <strong>Esperado:</strong> {{ testCase.expected_output }}
-              </li>
-            </ul>
+        <section class="mastery-strip">
+          <div class="mastery-copy">
+            <h5>Mastery Progression</h5>
+            <div class="mastery-meter">
+              <div class="mastery-meter-fill" :style="{ width: `${activeProgress}%` }"></div>
+            </div>
           </div>
-        </article>
-
-        <article class="panel editor-panel">
-          <div class="panel-head">
-            <p class="eyebrow">Submissão</p>
-            <h2>Editor da solução</h2>
+          <div class="badge-grid">
+            <div class="badge-card active">
+              <span class="material-symbols-outlined">psychology</span>
+              <span>Logic Sage</span>
+            </div>
+            <div class="badge-card muted">
+              <span class="material-symbols-outlined">memory</span>
+              <span>Bit Master</span>
+            </div>
+            <div class="badge-card active">
+              <span class="material-symbols-outlined">hub</span>
+              <span>Tree Walker</span>
+            </div>
           </div>
+        </section>
 
-          <textarea v-model="code" spellcheck="false" />
-
-          <div class="button-row">
-            <button class="ghost" @click="code = activeExercise.starter_code">Resetar código</button>
-            <button class="primary" :disabled="isBusy || !isAuthenticated" @click="submitSolution">
-              {{ isBusy ? 'Executando...' : 'Submeter solução' }}
-            </button>
-          </div>
-        </article>
-      </section>
-
-      <section v-if="latestSubmission" class="panel results-panel">
-        <div class="panel-head">
-          <p class="eyebrow">Resultado</p>
-          <h2>{{ latestSubmission.status === 'passed' ? 'Passou' : 'Ainda não passou' }}</h2>
-        </div>
-
-        <div class="result-summary">
-          <div class="metric-card">
-            <span>Testes</span>
+        <section v-if="latestSubmission" class="feedback-band">
+          <div class="feedback-metric">
+            <span class="eyebrow">Submission</span>
             <strong>{{ latestSubmission.passed_tests }}/{{ latestSubmission.total_tests }}</strong>
           </div>
-          <div class="metric-card">
-            <span>Status</span>
+          <div class="feedback-metric">
+            <span class="eyebrow">Status</span>
             <strong>{{ latestSubmission.status }}</strong>
           </div>
-        </div>
-
-        <div class="feedback-box">
-          <h3>Feedback básico</h3>
-          <p>{{ latestSubmission.feedback }}</p>
-        </div>
-
-        <div class="io-card">
-          <h3>Console da avaliação</h3>
-          <pre>{{ latestSubmission.console_output }}</pre>
-        </div>
-      </section>
-    </main>
+          <div class="feedback-text">
+            <span class="eyebrow">System Feedback</span>
+            <p>{{ latestSubmission.feedback }}</p>
+          </div>
+          <div class="feedback-metric">
+            <span class="eyebrow">Quest</span>
+            <strong>{{ activeIndex }}/{{ exercises.length || 1 }}</strong>
+          </div>
+        </section>
+      </main>
+    </div>
   </div>
 </template>
