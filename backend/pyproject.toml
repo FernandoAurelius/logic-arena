@@ -1,11 +1,22 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "logic-arena-backend"
 version = "0.1.0"
 description = "Backend Django Ninja do Logic Arena"
 requires-python = ">=3.12"
 dependencies = [
+  "agno==2.5.14",
   "django==5.2.1",
   "django-cors-headers==4.7.0",
   "django-ninja==1.6.2",
+  "google-genai==1.70.0",
+  "openai==2.30.0",
   "psycopg[binary]==3.2.9",
+  "python-dotenv==1.2.2",
 ]
+
+[tool.setuptools.packages.find]
+include = ["arena*", "config*"]

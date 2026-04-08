@@ -71,6 +71,28 @@ class SubmissionInputSchema(Schema):
     source_code: str
 
 
+class FeedbackPayloadSchema(Schema):
+    summary: str
+    strengths: list[str]
+    issues: list[str]
+    next_steps: list[str]
+    source: str
+
+
+class ReviewChatMessageSchema(Schema):
+    role: str
+    content: str
+
+
+class ReviewChatInputSchema(Schema):
+    message: str
+    history: list[ReviewChatMessageSchema] = []
+
+
+class ReviewChatResponseSchema(Schema):
+    answer: str
+
+
 class TestResultSchema(Schema):
     index: int
     input_data: str
@@ -87,6 +109,9 @@ class SubmissionSchema(Schema):
     total_tests: int
     console_output: str
     feedback: str
+    feedback_status: str
+    feedback_source: str
+    feedback_payload: FeedbackPayloadSchema
     created_at: datetime
     results: list[TestResultSchema]
 
@@ -98,4 +123,6 @@ class SubmissionSummarySchema(Schema):
     status: str
     passed_tests: int
     total_tests: int
+    feedback_status: str
+    feedback_source: str
     created_at: datetime

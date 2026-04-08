@@ -101,7 +101,24 @@
       "get": {
         "operationId": "arena_api_list_exercises",
         "summary": "Lista exercícios ativos.",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -116,6 +133,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -125,7 +152,24 @@
       "post": {
         "operationId": "arena_api_post_exercise",
         "summary": "Cadastra um exercício novo via API.",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
         "responses": {
           "201": {
             "description": "Created",
@@ -139,6 +183,16 @@
           },
           "400": {
             "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "application/json": {
                 "schema": {
@@ -176,6 +230,22 @@
               "type": "string"
             },
             "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -185,6 +255,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExerciseDetailSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
                 }
               }
             }
@@ -314,6 +394,152 @@
         "tags": [
           "submissions"
         ]
+      }
+    },
+    "/api/submissions/{submission_id}": {
+      "get": {
+        "operationId": "arena_api_get_submission",
+        "summary": "Retorna a submissão atualizada para polling do feedback.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "submission_id",
+            "schema": {
+              "title": "Submission Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
+    "/api/submissions/{submission_id}/review-chat": {
+      "post": {
+        "operationId": "arena_api_review_chat",
+        "summary": "Continua a revisão com IA sobre uma submissão específica.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "submission_id",
+            "schema": {
+              "title": "Submission Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewChatResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "submissions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewChatInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
       }
     }
   },
@@ -612,6 +838,48 @@
         "title": "TestCaseInputSchema",
         "type": "object"
       },
+      "FeedbackPayloadSchema": {
+        "properties": {
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "strengths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Strengths",
+            "type": "array"
+          },
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "next_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Next Steps",
+            "type": "array"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "strengths",
+          "issues",
+          "next_steps",
+          "source"
+        ],
+        "title": "FeedbackPayloadSchema",
+        "type": "object"
+      },
       "SubmissionSchema": {
         "properties": {
           "id": {
@@ -638,6 +906,17 @@
             "title": "Feedback",
             "type": "string"
           },
+          "feedback_status": {
+            "title": "Feedback Status",
+            "type": "string"
+          },
+          "feedback_source": {
+            "title": "Feedback Source",
+            "type": "string"
+          },
+          "feedback_payload": {
+            "$ref": "#/components/schemas/FeedbackPayloadSchema"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -658,6 +937,9 @@
           "total_tests",
           "console_output",
           "feedback",
+          "feedback_status",
+          "feedback_source",
+          "feedback_payload",
           "created_at",
           "results"
         ],
@@ -741,6 +1023,14 @@
             "title": "Total Tests",
             "type": "integer"
           },
+          "feedback_status": {
+            "title": "Feedback Status",
+            "type": "string"
+          },
+          "feedback_source": {
+            "title": "Feedback Source",
+            "type": "string"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -754,9 +1044,63 @@
           "status",
           "passed_tests",
           "total_tests",
+          "feedback_status",
+          "feedback_source",
           "created_at"
         ],
         "title": "SubmissionSummarySchema",
+        "type": "object"
+      },
+      "ReviewChatResponseSchema": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "answer"
+        ],
+        "title": "ReviewChatResponseSchema",
+        "type": "object"
+      },
+      "ReviewChatInputSchema": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "history": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReviewChatMessageSchema"
+            },
+            "title": "History",
+            "type": "array"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ReviewChatInputSchema",
+        "type": "object"
+      },
+      "ReviewChatMessageSchema": {
+        "properties": {
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ReviewChatMessageSchema",
         "type": "object"
       }
     }

@@ -66,6 +66,14 @@ class Submission(TimestampedModel):
         (STATUS_FAILED, 'Failed'),
         (STATUS_ERROR, 'Error'),
     ]
+    FEEDBACK_PENDING = 'pending'
+    FEEDBACK_READY = 'ready'
+    FEEDBACK_ERROR = 'error'
+    FEEDBACK_STATUS_CHOICES = [
+        (FEEDBACK_PENDING, 'Pending'),
+        (FEEDBACK_READY, 'Ready'),
+        (FEEDBACK_ERROR, 'Error'),
+    ]
 
     user = models.ForeignKey(ArenaUser, on_delete=models.CASCADE, related_name='submissions')
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='submissions')
@@ -75,6 +83,9 @@ class Submission(TimestampedModel):
     total_tests = models.PositiveIntegerField(default=0)
     console_output = models.TextField(blank=True)
     feedback = models.TextField(blank=True)
+    feedback_status = models.CharField(max_length=20, choices=FEEDBACK_STATUS_CHOICES, default=FEEDBACK_PENDING)
+    feedback_source = models.CharField(max_length=30, default='rule-based')
+    feedback_payload = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ['-created_at']

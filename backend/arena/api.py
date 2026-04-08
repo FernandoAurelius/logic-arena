@@ -1,12 +1,14 @@
 from django.shortcuts import get_object_or_404
 from ninja import Header, NinjaAPI, Router
 
-from .models import AuthSession, Exercise
+from .models import AuthSession, Exercise, Submission
 from .schemas import (
     ErrorSchema,
     ExerciseCreateSchema,
     ExerciseDetailSchema,
     ExerciseSummarySchema,
+    ReviewChatInputSchema,
+    ReviewChatResponseSchema,
     LoginInputSchema,
     LoginResponseSchema,
     SubmissionInputSchema,
@@ -14,6 +16,7 @@ from .schemas import (
     SubmissionSummarySchema,
     UserSchema,
 )
+from .feedback import review_submission_chat
 from .services import create_exercise, evaluate_submission, get_or_create_session
 
 
@@ -66,15 +69,23 @@ def me(request, authorization: str | None = Header(default=None)):
     return 200, session.user
 
 
-@exercise_router.get('/', response=list[ExerciseSummarySchema], summary='Lista exercícios ativos.')
-def list_exercises(request):
-    return Exercise.objects.filter(is_active=True)
+@exercise_router.get('/', response={200: list[ExerciseSummarySchema], 401: ErrorSchema}, summary='Lista exercícios ativos.')
+def list_exercises(request, authorization: str | None = Header(default=None)):
+    try:
+        require_session(authorization)
+    except PermissionError as error:
+        return 401, {'message': str(error)}
+    return 200, Exercise.objects.filter(is_active=True)
 
 
-@exercise_router.get('/{slug}', response=ExerciseDetailSchema, summary='Detalha um exercício específico.')
-def get_exercise(request, slug: str):
+@exercise_router.get('/{slug}', response={200: ExerciseDetailSchema, 401: ErrorSchema}, summary='Detalha um exercício específico.')
+def get_exercise(request, slug: str, authorization: str | None = Header(default=None)):
+    try:
+        require_session(authorization)
+    except PermissionError as error:
+        return 401, {'message': str(error)}
     exercise = get_object_or_404(Exercise.objects.prefetch_related('test_cases'), slug=slug, is_active=True)
-    return {
+    return 200, {
         'id': exercise.id,
         'slug': exercise.slug,
         'title': exercise.title,
@@ -89,8 +100,12 @@ def get_exercise(request, slug: str):
     }
 
 
-@exercise_router.post('/', response={201: ExerciseDetailSchema, 400: ErrorSchema}, summary='Cadastra um exercício novo via API.')
-def post_exercise(request, payload: ExerciseCreateSchema):
+@exercise_router.post('/', response={201: ExerciseDetailSchema, 400: ErrorSchema, 401: ErrorSchema}, summary='Cadastra um exercício novo via API.')
+def post_exercise(request, payload: ExerciseCreateSchema, authorization: str | None = Header(default=None)):
+    try:
+        require_session(authorization)
+    except PermissionError as error:
+        return 401, {'message': str(error)}
     if Exercise.objects.filter(slug=payload.slug).exists():
         return 400, {'message': 'Já existe um exercício com esse slug.'}
 
@@ -126,6 +141,9 @@ def submit_exercise(request, slug: str, payload: SubmissionInputSchema, authoriz
         'total_tests': submission.total_tests,
         'console_output': submission.console_output,
         'feedback': submission.feedback,
+        'feedback_status': submission.feedback_status,
+        'feedback_source': submission.feedback_source,
+        'feedback_payload': submission.feedback_payload,
         'created_at': submission.created_at,
         'results': results,
     }
@@ -146,10 +164,61 @@ def list_my_submissions(request, authorization: str | None = Header(default=None
             'status': submission.status,
             'passed_tests': submission.passed_tests,
             'total_tests': submission.total_tests,
+            'feedback_status': submission.feedback_status,
+            'feedback_source': submission.feedback_source,
             'created_at': submission.created_at,
         }
         for submission in session.user.submissions.select_related('exercise').all()
     ]
+
+
+@submission_router.get('/{submission_id}', response={200: SubmissionSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Retorna a submissão atualizada para polling do feedback.')
+def get_submission(request, submission_id: int, authorization: str | None = Header(default=None)):
+    try:
+        session = require_session(authorization)
+    except PermissionError as error:
+        return 401, {'message': str(error)}
+
+    submission = Submission.objects.select_related('exercise').filter(id=submission_id, user=session.user).first()
+    if submission is None:
+        return 404, {'message': 'Submissão não encontrada.'}
+
+    return 200, {
+        'id': submission.id,
+        'status': submission.status,
+        'passed_tests': submission.passed_tests,
+        'total_tests': submission.total_tests,
+        'console_output': submission.console_output,
+        'feedback': submission.feedback,
+        'feedback_status': submission.feedback_status,
+        'feedback_source': submission.feedback_source,
+        'feedback_payload': submission.feedback_payload,
+        'created_at': submission.created_at,
+        'results': [],
+    }
+
+
+@submission_router.post('/{submission_id}/review-chat', response={200: ReviewChatResponseSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Continua a revisão com IA sobre uma submissão específica.')
+def review_chat(request, submission_id: int, payload: ReviewChatInputSchema, authorization: str | None = Header(default=None)):
+    try:
+        session = require_session(authorization)
+    except PermissionError as error:
+        return 401, {'message': str(error)}
+
+    submission = Submission.objects.select_related('exercise').filter(id=submission_id, user=session.user).first()
+    if submission is None:
+        return 404, {'message': 'Submissão não encontrada.'}
+
+    answer = review_submission_chat(
+        exercise_title=submission.exercise.title,
+        statement=submission.exercise.statement,
+        source_code=submission.source_code,
+        console_output=submission.console_output,
+        feedback_summary=submission.feedback,
+        user_message=payload.message,
+        history=[item.model_dump() for item in payload.history],
+    )
+    return 200, {'answer': answer}
 
 
 api.add_router('/auth', auth_router)

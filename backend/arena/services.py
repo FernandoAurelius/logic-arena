@@ -1,18 +1,35 @@
-import os
 import re
 import secrets
 import json
+import threading
 from dataclasses import dataclass
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.conf import settings
+from django.db import close_old_connections
 
 from .models import ArenaUser, AuthSession, Exercise, ExerciseTestCase, Submission
+from .feedback import build_feedback_error_payload, generate_feedback
 
 
 NUMERIC_TOLERANCE = 1e-9
+
+APPROVAL_PATTERNS = {
+    'approved': [
+        'aluno aprovado',
+        'aprovado',
+        'aluno passou',
+        'passou',
+    ],
+    'failed': [
+        'aluno reprovado',
+        'reprovado',
+        'aluno reprovou',
+        'reprovou',
+    ],
+}
 
 
 def normalize_text(text: str) -> str:
@@ -21,6 +38,14 @@ def normalize_text(text: str) -> str:
 
 def canonical_text(text: str) -> str:
     return re.sub(r'\s+', ' ', normalize_text(text).lower())
+
+
+def detect_status_intent(text: str) -> str | None:
+    canonical = canonical_text(text)
+    for status, patterns in APPROVAL_PATTERNS.items():
+        if any(pattern in canonical for pattern in patterns):
+            return status
+    return None
 
 
 def extract_numeric_tokens(text: str) -> list[float]:
@@ -32,6 +57,10 @@ def line_matches(expected_line: str, actual_output: str) -> bool:
         expected_number = float(expected_line)
         return any(abs(number - expected_number) < NUMERIC_TOLERANCE for number in extract_numeric_tokens(actual_output))
     except ValueError:
+        expected_status = detect_status_intent(expected_line)
+        actual_status = detect_status_intent(actual_output)
+        if expected_status is not None and actual_status is not None:
+            return expected_status == actual_status
         return canonical_text(expected_line) in canonical_text(actual_output)
 
 
@@ -122,19 +151,6 @@ def run_python(source_code: str, stdin: str) -> ExecutionResult:
         return ExecutionResult(ok=False, stdout='', stderr=str(error))
 
 
-def build_submission_feedback(exercise: Exercise, passed: bool, passed_tests: int, total_tests: int) -> str:
-    if passed:
-        return (
-            f'Você passou em todos os testes de "{exercise.title}". '
-            'Na próxima iteração, vale revisar legibilidade, nomes e aderência ao estilo da prova.'
-        )
-
-    return (
-        f'Você passou em {passed_tests} de {total_tests} testes em "{exercise.title}". '
-        'Releia o enunciado, compare sua saída com o esperado e cheque entrada, formatação e casos-limite.'
-    )
-
-
 def evaluate_submission(user: ArenaUser, exercise: Exercise, source_code: str) -> tuple[Submission, list[dict]]:
     results: list[dict] = []
 
@@ -181,6 +197,56 @@ def evaluate_submission(user: ArenaUser, exercise: Exercise, source_code: str) -
         passed_tests=passed_tests,
         total_tests=total_tests,
         console_output=console_output,
-        feedback=build_submission_feedback(exercise, passed, passed_tests, total_tests),
+        feedback='Revisão com IA em processamento...',
+        feedback_status=Submission.FEEDBACK_PENDING,
+        feedback_source='agno-gemini',
+        feedback_payload={
+            'summary': 'Revisão com IA em processamento...',
+            'strengths': [],
+            'issues': [],
+            'next_steps': [],
+            'source': 'agno-gemini',
+        },
     )
+    _start_feedback_job(submission.id, exercise.title, exercise.statement, source_code, passed_tests, total_tests, results)
     return submission, results
+
+
+def _start_feedback_job(
+    submission_id: int,
+    exercise_title: str,
+    statement: str,
+    source_code: str,
+    passed_tests: int,
+    total_tests: int,
+    results: list[dict],
+) -> None:
+    def job() -> None:
+        close_old_connections()
+        try:
+            feedback_payload = generate_feedback(
+                exercise_title=exercise_title,
+                statement=statement,
+                source_code=source_code,
+                passed_tests=passed_tests,
+                total_tests=total_tests,
+                results=results,
+            )
+            Submission.objects.filter(id=submission_id).update(
+                feedback=feedback_payload.summary,
+                feedback_status=Submission.FEEDBACK_READY,
+                feedback_source=feedback_payload.source,
+                feedback_payload=feedback_payload.model_dump(),
+            )
+        except Exception as error:
+            payload = build_feedback_error_payload(error)
+            Submission.objects.filter(id=submission_id).update(
+                feedback=payload.summary,
+                feedback_status=Submission.FEEDBACK_ERROR,
+                feedback_source=payload.source,
+                feedback_payload=payload.model_dump(),
+            )
+        finally:
+            close_old_connections()
+
+    threading.Thread(target=job, daemon=True).start()

@@ -74,6 +74,15 @@ const ExerciseDetailSchema = z
 const SubmissionInputSchema = z
   .object({ source_code: z.string() })
   .passthrough();
+const FeedbackPayloadSchema = z
+  .object({
+    summary: z.string(),
+    strengths: z.array(z.string()),
+    issues: z.array(z.string()),
+    next_steps: z.array(z.string()),
+    source: z.string(),
+  })
+  .passthrough();
 const TestResultSchema = z
   .object({
     index: z.number().int(),
@@ -92,6 +101,9 @@ const SubmissionSchema = z
     total_tests: z.number().int(),
     console_output: z.string(),
     feedback: z.string(),
+    feedback_status: z.string(),
+    feedback_source: z.string(),
+    feedback_payload: FeedbackPayloadSchema,
     created_at: z.string().datetime({ offset: true }),
     results: z.array(TestResultSchema),
   })
@@ -104,9 +116,21 @@ const SubmissionSummarySchema = z
     status: z.string(),
     passed_tests: z.number().int(),
     total_tests: z.number().int(),
+    feedback_status: z.string(),
+    feedback_source: z.string(),
     created_at: z.string().datetime({ offset: true }),
   })
   .passthrough();
+const ReviewChatMessageSchema = z
+  .object({ role: z.string(), content: z.string() })
+  .passthrough();
+const ReviewChatInputSchema = z
+  .object({
+    message: z.string(),
+    history: z.array(ReviewChatMessageSchema).optional().default([]),
+  })
+  .passthrough();
+const ReviewChatResponseSchema = z.object({ answer: z.string() }).passthrough();
 
 export const schemas = {
   LoginInputSchema,
@@ -120,9 +144,13 @@ export const schemas = {
   ExerciseTestCaseSchema,
   ExerciseDetailSchema,
   SubmissionInputSchema,
+  FeedbackPayloadSchema,
   TestResultSchema,
   SubmissionSchema,
   SubmissionSummarySchema,
+  ReviewChatMessageSchema,
+  ReviewChatInputSchema,
+  ReviewChatResponseSchema,
 };
 
 export const authEndpoints = makeApi([
@@ -178,7 +206,21 @@ export const exercisesEndpoints = makeApi([
     path: "/api/exercises/",
     alias: "arena_api_list_exercises",
     requestFormat: "json",
+    parameters: [
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
     response: z.array(ExerciseSummarySchema),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: "post",
@@ -191,12 +233,22 @@ export const exercisesEndpoints = makeApi([
         type: "Body",
         schema: ExerciseCreateSchema,
       },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
     ],
     response: ExerciseDetailSchema,
     errors: [
       {
         status: 400,
         description: `Bad Request`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
         schema: z.object({ message: z.string() }).passthrough(),
       },
     ],
@@ -212,8 +264,20 @@ export const exercisesEndpoints = makeApi([
         type: "Path",
         schema: z.string(),
       },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
     ],
     response: ExerciseDetailSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
   },
 ]);
 
@@ -268,6 +332,73 @@ export const submissionsEndpoints = makeApi([
       {
         status: 401,
         description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/submissions/:submission_id",
+    alias: "arena_api_get_submission",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "submission_id",
+        type: "Path",
+        schema: z.number().int(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: SubmissionSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/submissions/:submission_id/review-chat",
+    alias: "arena_api_review_chat",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: ReviewChatInputSchema,
+      },
+      {
+        name: "submission_id",
+        type: "Path",
+        schema: z.number().int(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: z.object({ answer: z.string() }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
         schema: z.object({ message: z.string() }).passthrough(),
       },
     ],
