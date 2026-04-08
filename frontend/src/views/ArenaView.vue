@@ -34,6 +34,7 @@ const isChatBusy = ref(false)
 const errorMessage = ref('')
 const chatOpen = ref(false)
 const historyOpen = ref(false)
+const hintsOpen = ref(false)
 const chatInput = ref('')
 const chatMessages = ref<ReviewChatMessage[]>([])
 const typingHeat = ref(0)
@@ -174,6 +175,7 @@ async function selectExercise(slug: string) {
   errorMessage.value = ''
   stopFeedbackPolling()
   chatOpen.value = false
+  hintsOpen.value = false
   chatMessages.value = []
 
   try {
@@ -182,7 +184,7 @@ async function selectExercise(slug: string) {
       headers: { authorization: session.authHeader() ?? undefined },
     })
     activeExercise.value = exercise
-    code.value = exercise.starter_code
+    code.value = ''
     latestSubmission.value = null
   } catch (error) {
     console.error(error)
@@ -314,6 +316,10 @@ function openReviewChat() {
       },
     ]
   }
+}
+
+function toggleHints() {
+  hintsOpen.value = !hintsOpen.value
 }
 
 async function logout() {
@@ -480,8 +486,8 @@ onBeforeUnmount(() => {
                   </CardHeader>
                   <CardContent class="spec-content">
                     <div class="formula-box">
-                      <p class="section-label">Bank Note</p>
-                      <strong>{{ activeExercise.professor_note || 'Sem anotação adicional.' }}</strong>
+                      <p class="section-label">Modo de prova</p>
+                      <strong>Resolva sem código inicial. Abra <em>Hints</em> apenas se quiser uma pista opcional.</strong>
                     </div>
 
                     <div class="example-grid">
@@ -535,10 +541,16 @@ onBeforeUnmount(() => {
                     />
                   </CardContent>
                   <CardFooter class="editor-footer">
-                    <Button :disabled="isSubmitting || isBooting" @click="submitSolution">
-                      <Play :size="16" />
-                      {{ isSubmitting ? 'Executando...' : 'Executar módulo' }}
-                    </Button>
+                    <div class="editor-actions">
+                      <Button variant="outline" @click="toggleHints">
+                        <BookOpenText :size="16" />
+                        {{ hintsOpen ? 'Ocultar hints' : 'Hints' }}
+                      </Button>
+                      <Button :disabled="isSubmitting || isBooting" @click="submitSolution">
+                        <Play :size="16" />
+                        {{ isSubmitting ? 'Executando...' : 'Executar módulo' }}
+                      </Button>
+                    </div>
                     <Button variant="outline" :disabled="!canReviewWithAi || isChatBusy" @click="openReviewChat">
                       <MessageSquare :size="16" />
                       Revisar com IA
@@ -551,6 +563,27 @@ onBeforeUnmount(() => {
                       <span>{{ heatLabel }}</span>
                     </div>
                   </CardFooter>
+                </Card>
+
+                <Card v-if="hintsOpen" class="hint-card">
+                  <CardHeader>
+                    <CardTitle>Hints</CardTitle>
+                    <CardDescription>Pistas opcionais para destravar o raciocínio sem entregar a solução.</CardDescription>
+                  </CardHeader>
+                  <CardContent class="hint-content">
+                    <div class="hint-block">
+                      <p class="section-label">Pista do professor</p>
+                      <p>{{ activeExercise.professor_note || 'Sem hint adicional para este exercício.' }}</p>
+                    </div>
+                    <div class="hint-block">
+                      <p class="section-label">Estratégia</p>
+                      <ul>
+                        <li>Separe o problema em entrada, processamento e saída antes de codar.</li>
+                        <li>Use o exemplo visível para validar o fluxo mínimo.</li>
+                        <li>Pense em um caso limite simples antes de submeter.</li>
+                      </ul>
+                    </div>
+                  </CardContent>
                 </Card>
 
                 <section class="results-grid">

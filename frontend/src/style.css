@@ -608,6 +608,37 @@ textarea {
   align-items: center;
 }
 
+.editor-actions {
+  display: inline-flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.hint-card {
+  overflow: hidden;
+}
+
+.hint-content {
+  display: grid;
+  gap: 1rem;
+}
+
+.hint-block {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-high);
+}
+
+.hint-block ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
 .typing-heat {
   display: inline-flex;
   align-items: center;
