@@ -42,6 +42,24 @@ def require_session(authorization: str | None) -> AuthSession:
     return session
 
 
+def serialize_submission(submission: Submission) -> dict:
+    return {
+        'id': submission.id,
+        'status': submission.status,
+        'passed_tests': submission.passed_tests,
+        'total_tests': submission.total_tests,
+        'source_code': submission.source_code,
+        'console_output': submission.console_output,
+        'feedback': submission.feedback,
+        'feedback_status': submission.feedback_status,
+        'feedback_source': submission.feedback_source,
+        'feedback_payload': submission.feedback_payload,
+        'review_chat_history': submission.review_chat_history,
+        'created_at': submission.created_at,
+        'results': submission.execution_results,
+    }
+
+
 @auth_router.post('/login', response={200: LoginResponseSchema, 401: ErrorSchema}, summary='Faz login ou cria o usuário automaticamente.')
 def login(request, payload: LoginInputSchema):
     try:
@@ -134,19 +152,9 @@ def submit_exercise(request, slug: str, payload: SubmissionInputSchema, authoriz
 
     exercise = get_object_or_404(Exercise.objects.prefetch_related('test_cases'), slug=slug, is_active=True)
     submission, results = evaluate_submission(session.user, exercise, payload.source_code)
-    return 200, {
-        'id': submission.id,
-        'status': submission.status,
-        'passed_tests': submission.passed_tests,
-        'total_tests': submission.total_tests,
-        'console_output': submission.console_output,
-        'feedback': submission.feedback,
-        'feedback_status': submission.feedback_status,
-        'feedback_source': submission.feedback_source,
-        'feedback_payload': submission.feedback_payload,
-        'created_at': submission.created_at,
-        'results': results,
-    }
+    serialized = serialize_submission(submission)
+    serialized['results'] = results
+    return 200, serialized
 
 
 @submission_router.get('/me', response={200: list[SubmissionSummarySchema], 401: ErrorSchema}, summary='Lista as submissões do usuário autenticado.')
@@ -183,19 +191,7 @@ def get_submission(request, submission_id: int, authorization: str | None = Head
     if submission is None:
         return 404, {'message': 'Submissão não encontrada.'}
 
-    return 200, {
-        'id': submission.id,
-        'status': submission.status,
-        'passed_tests': submission.passed_tests,
-        'total_tests': submission.total_tests,
-        'console_output': submission.console_output,
-        'feedback': submission.feedback,
-        'feedback_status': submission.feedback_status,
-        'feedback_source': submission.feedback_source,
-        'feedback_payload': submission.feedback_payload,
-        'created_at': submission.created_at,
-        'results': [],
-    }
+    return 200, serialize_submission(submission)
 
 
 @submission_router.post('/{submission_id}/review-chat', response={200: ReviewChatResponseSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Continua a revisão com IA sobre uma submissão específica.')
@@ -209,6 +205,7 @@ def review_chat(request, submission_id: int, payload: ReviewChatInputSchema, aut
     if submission is None:
         return 404, {'message': 'Submissão não encontrada.'}
 
+    persisted_history = submission.review_chat_history or []
     answer = review_submission_chat(
         exercise_title=submission.exercise.title,
         statement=submission.exercise.statement,
@@ -216,8 +213,15 @@ def review_chat(request, submission_id: int, payload: ReviewChatInputSchema, aut
         console_output=submission.console_output,
         feedback_summary=submission.feedback,
         user_message=payload.message,
-        history=[item.model_dump() for item in payload.history],
+        history=persisted_history,
     )
+    updated_history = [
+        *persisted_history,
+        {'role': 'user', 'content': payload.message},
+        {'role': 'assistant', 'content': answer},
+    ]
+    submission.review_chat_history = updated_history
+    submission.save(update_fields=['review_chat_history', 'updated_at'])
     return 200, {'answer': answer}
 
 

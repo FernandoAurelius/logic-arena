@@ -166,6 +166,13 @@ async function loadExercises() {
   }
 }
 
+async function fetchExercise(slug: string) {
+  return exercisesApi.get('/api/exercises/:slug', {
+    params: { slug },
+    headers: { authorization: session.authHeader() ?? undefined },
+  })
+}
+
 async function loadSubmissions() {
   submissions.value = await submissionsApi.get('/api/submissions/me', {
     headers: { authorization: session.authHeader() ?? undefined },
@@ -196,16 +203,43 @@ async function selectExercise(slug: string) {
   chatMessages.value = []
 
   try {
-    const exercise = await exercisesApi.get('/api/exercises/:slug', {
-      params: { slug },
-      headers: { authorization: session.authHeader() ?? undefined },
-    })
+    const exercise = await fetchExercise(slug)
     activeExercise.value = exercise
     code.value = ''
     latestSubmission.value = null
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Falha ao carregar os detalhes do exercício.'
+  } finally {
+    isBooting.value = false
+  }
+}
+
+async function openSubmissionSession(submissionSummary: SubmissionSummary) {
+  isBooting.value = true
+  errorMessage.value = ''
+  stopFeedbackPolling()
+  chatOpen.value = false
+  hintsOpen.value = false
+
+  try {
+    const [exercise, submission] = await Promise.all([
+      fetchExercise(submissionSummary.exercise_slug),
+      submissionsApi.get('/api/submissions/:submission_id', {
+        params: { submission_id: submissionSummary.id },
+        headers: { authorization: session.authHeader() ?? undefined },
+      }),
+    ])
+    activeExercise.value = exercise
+    latestSubmission.value = submission
+    code.value = submission.source_code
+    chatMessages.value = submission.review_chat_history ?? []
+    if (submission.feedback_status === 'pending') {
+      startFeedbackPolling(submission.id)
+    }
+  } catch (error) {
+    console.error(error)
+    errorMessage.value = 'Não foi possível reabrir essa sessão do histórico.'
   } finally {
     isBooting.value = false
   }
@@ -219,6 +253,9 @@ async function refreshSubmission(submissionId: number) {
   latestSubmission.value = {
     ...refreshed,
     results: refreshed.results.length ? refreshed.results : latestSubmission.value?.results ?? [],
+  }
+  if ((refreshed.review_chat_history?.length ?? 0) > 0) {
+    chatMessages.value = refreshed.review_chat_history
   }
   if (refreshed.feedback_status !== 'pending') {
     stopFeedbackPolling()
@@ -257,6 +294,7 @@ async function submitSolution() {
       { params: { slug: activeExercise.value.slug }, headers: { authorization: session.authHeader() ?? undefined } },
     )
     latestSubmission.value = submission
+    chatMessages.value = submission.review_chat_history ?? []
     await loadSubmissions()
     awardXp(submission.status === 'passed' ? 35 : 10)
     if (submission.feedback_status === 'pending') {
@@ -289,6 +327,9 @@ async function sendReviewChat() {
       { params: { submission_id: submission.id }, headers: { authorization: session.authHeader() ?? undefined } },
     )
     chatMessages.value.push({ role: 'assistant', content: response.answer })
+    if (latestSubmission.value) {
+      latestSubmission.value.review_chat_history = [...chatMessages.value]
+    }
   } catch (error) {
     console.error(error)
     chatMessages.value.push({
@@ -458,13 +499,19 @@ onBeforeUnmount(() => {
               <CardContent v-if="historyOpen">
                 <ul class="history-list">
                   <li v-for="submission in sidebarHistory" :key="submission.id">
-                    <div class="history-line">
-                      <strong>{{ submission.exercise_title }}</strong>
-                      <Badge :variant="submission.status === 'passed' ? 'default' : 'outline'">
-                        {{ submission.status }}
-                      </Badge>
-                    </div>
-                    <span>{{ submission.passed_tests }}/{{ submission.total_tests }} · {{ submission.feedback_status }}</span>
+                    <button
+                      class="history-entry"
+                      :class="{ active: latestSubmission?.id === submission.id }"
+                      @click="openSubmissionSession(submission)"
+                    >
+                      <div class="history-line">
+                        <strong>{{ submission.exercise_title }}</strong>
+                        <Badge :variant="submission.status === 'passed' ? 'default' : 'outline'">
+                          {{ submission.status }}
+                        </Badge>
+                      </div>
+                      <span>{{ submission.passed_tests }}/{{ submission.total_tests }} · {{ submission.feedback_status }}</span>
+                    </button>
                   </li>
                   <li v-if="sidebarHistory.length === 0" class="dimmed">Nenhuma execução persistida.</li>
                 </ul>

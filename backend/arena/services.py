@@ -207,6 +207,8 @@ def evaluate_submission(user: ArenaUser, exercise: Exercise, source_code: str) -
             'next_steps': [],
             'source': 'agno-gemini',
         },
+        execution_results=results,
+        review_chat_history=[],
     )
     _start_feedback_job(submission.id, exercise.title, exercise.statement, source_code, passed_tests, total_tests, results)
     return submission, results
@@ -237,6 +239,26 @@ def _start_feedback_job(
                 feedback_status=Submission.FEEDBACK_READY,
                 feedback_source=feedback_payload.source,
                 feedback_payload=feedback_payload.model_dump(),
+                review_chat_history=[
+                    {
+                        'role': 'assistant',
+                        'content': '\n'.join(
+                            [
+                                f"### Revisão automática",
+                                feedback_payload.summary,
+                                '',
+                                '**Pontos fortes**',
+                                *[f"- {item}" for item in feedback_payload.strengths],
+                                '',
+                                '**Ajustes**',
+                                *[f"- {item}" for item in feedback_payload.issues],
+                                '',
+                                '**Próximos passos**',
+                                *[f"- {item}" for item in feedback_payload.next_steps],
+                            ]
+                        ).strip(),
+                    }
+                ],
             )
         except Exception as error:
             payload = build_feedback_error_payload(error)
@@ -245,6 +267,12 @@ def _start_feedback_job(
                 feedback_status=Submission.FEEDBACK_ERROR,
                 feedback_source=payload.source,
                 feedback_payload=payload.model_dump(),
+                review_chat_history=[
+                    {
+                        'role': 'assistant',
+                        'content': payload.summary,
+                    }
+                ],
             )
         finally:
             close_old_connections()

@@ -86,6 +86,8 @@ class Submission(TimestampedModel):
     feedback_status = models.CharField(max_length=20, choices=FEEDBACK_STATUS_CHOICES, default=FEEDBACK_PENDING)
     feedback_source = models.CharField(max_length=30, default='rule-based')
     feedback_payload = models.JSONField(default=dict, blank=True)
+    execution_results = models.JSONField(default=list, blank=True)
+    review_chat_history = models.JSONField(default=list, blank=True)
 
     class Meta:
         ordering = ['-created_at']

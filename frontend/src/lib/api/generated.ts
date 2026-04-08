@@ -83,6 +83,9 @@ const FeedbackPayloadSchema = z
     source: z.string(),
   })
   .passthrough();
+const ReviewChatMessageSchema = z
+  .object({ role: z.string(), content: z.string() })
+  .passthrough();
 const TestResultSchema = z
   .object({
     index: z.number().int(),
@@ -99,11 +102,13 @@ const SubmissionSchema = z
     status: z.string(),
     passed_tests: z.number().int(),
     total_tests: z.number().int(),
+    source_code: z.string(),
     console_output: z.string(),
     feedback: z.string(),
     feedback_status: z.string(),
     feedback_source: z.string(),
     feedback_payload: FeedbackPayloadSchema,
+    review_chat_history: z.array(ReviewChatMessageSchema),
     created_at: z.string().datetime({ offset: true }),
     results: z.array(TestResultSchema),
   })
@@ -120,9 +125,6 @@ const SubmissionSummarySchema = z
     feedback_source: z.string(),
     created_at: z.string().datetime({ offset: true }),
   })
-  .passthrough();
-const ReviewChatMessageSchema = z
-  .object({ role: z.string(), content: z.string() })
   .passthrough();
 const ReviewChatInputSchema = z
   .object({
@@ -145,10 +147,10 @@ export const schemas = {
   ExerciseDetailSchema,
   SubmissionInputSchema,
   FeedbackPayloadSchema,
+  ReviewChatMessageSchema,
   TestResultSchema,
   SubmissionSchema,
   SubmissionSummarySchema,
-  ReviewChatMessageSchema,
   ReviewChatInputSchema,
   ReviewChatResponseSchema,
 };
@@ -407,7 +409,7 @@ export const submissionsEndpoints = makeApi([
 
 export const submissionsApi = new Zodios(submissionsEndpoints);
 
-export const endpoints = [...authEndpoints, ...exercisesEndpoints, ...submissionsEndpoints];
+const endpoints = [...authEndpoints, ...exercisesEndpoints, ...submissionsEndpoints];
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options);

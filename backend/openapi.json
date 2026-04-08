@@ -880,6 +880,24 @@
         "title": "FeedbackPayloadSchema",
         "type": "object"
       },
+      "ReviewChatMessageSchema": {
+        "properties": {
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ReviewChatMessageSchema",
+        "type": "object"
+      },
       "SubmissionSchema": {
         "properties": {
           "id": {
@@ -897,6 +915,10 @@
           "total_tests": {
             "title": "Total Tests",
             "type": "integer"
+          },
+          "source_code": {
+            "title": "Source Code",
+            "type": "string"
           },
           "console_output": {
             "title": "Console Output",
@@ -917,6 +939,13 @@
           "feedback_payload": {
             "$ref": "#/components/schemas/FeedbackPayloadSchema"
           },
+          "review_chat_history": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewChatMessageSchema"
+            },
+            "title": "Review Chat History",
+            "type": "array"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -935,11 +964,13 @@
           "status",
           "passed_tests",
           "total_tests",
+          "source_code",
           "console_output",
           "feedback",
           "feedback_status",
           "feedback_source",
           "feedback_payload",
+          "review_chat_history",
           "created_at",
           "results"
         ],
@@ -1083,24 +1114,6 @@
           "message"
         ],
         "title": "ReviewChatInputSchema",
-        "type": "object"
-      },
-      "ReviewChatMessageSchema": {
-        "properties": {
-          "role": {
-            "title": "Role",
-            "type": "string"
-          },
-          "content": {
-            "title": "Content",
-            "type": "string"
-          }
-        },
-        "required": [
-          "role",
-          "content"
-        ],
-        "title": "ReviewChatMessageSchema",
         "type": "object"
       }
     }

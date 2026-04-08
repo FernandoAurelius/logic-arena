@@ -107,11 +107,13 @@ class SubmissionSchema(Schema):
     status: str
     passed_tests: int
     total_tests: int
+    source_code: str
     console_output: str
     feedback: str
     feedback_status: str
     feedback_source: str
     feedback_payload: FeedbackPayloadSchema
+    review_chat_history: list[ReviewChatMessageSchema]
     created_at: datetime
     results: list[TestResultSchema]
 
