@@ -114,6 +114,8 @@ python3 -m venv .venv
 - o corretor ficou semanticamente mais tolerante para saídas equivalentes em português, aceitando variações como `aprovado/passou` e `reprovado/reprovou` quando a intenção da resposta está correta
 - a faixa inferior de gamificação antiga foi removida para simplificar a leitura, substituída por microinterações mais orgânicas: confete ao concluir com sucesso e um indicador de `forge heat` enquanto o usuário está digitando
 - o bloco de `Submission` agora divide espaço com o chat de revisão em um grid de duas colunas, reduzindo ruído vertical na arena
+- a revisão com IA saiu do fluxo central e virou um drawer lateral direito colapsável, deixando a leitura do exercício e do resultado principal mais limpa
+- a arena agora mantém um sistema mínimo de XP por operador, com persistência local por usuário, barra de progresso no topo e destaque visual quando acontece subida de nível
 
 ## Próximos passos naturais
 

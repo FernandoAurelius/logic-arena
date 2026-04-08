@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { BookOpenText, ChevronRight, Cpu, Flame, LoaderCircle, LogOut, MessageSquare, Play, Send, Terminal, Trophy } from 'lucide-vue-next'
+import { BookOpenText, ChevronRight, Cpu, Flame, LoaderCircle, LogOut, MessageSquare, Play, Send, Terminal, Trophy, X } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
 import { schemas } from '@/lib/api/generated'
@@ -36,9 +36,13 @@ const chatInput = ref('')
 const chatMessages = ref<ReviewChatMessage[]>([])
 const typingHeat = ref(0)
 const confettiBurst = ref(false)
+const xp = ref(0)
+const level = ref(1)
+const levelUpBurst = ref(false)
 
 let feedbackPollTimer: number | null = null
 let typingCooldownTimer: number | null = null
+let levelUpTimer: number | null = null
 
 const activeIndex = computed(() => {
   if (!activeExercise.value) return 0
@@ -53,12 +57,62 @@ const visibleTestCases = computed(() => activeExercise.value?.test_cases ?? [])
 const sidebarHistory = computed(() => submissions.value.slice(0, 6))
 const isFeedbackPending = computed(() => latestSubmission.value?.feedback_status === 'pending')
 const canReviewWithAi = computed(() => Boolean(latestSubmission.value) && !isFeedbackPending.value)
+const xpIntoLevel = computed(() => xp.value - (level.value - 1) * 100)
+const xpProgress = computed(() => Math.min(100, Math.max(0, xpIntoLevel.value)))
 const heatLabel = computed(() => {
   if (typingHeat.value >= 3) return 'Forge em chamas'
   if (typingHeat.value === 2) return 'Ritmo alto'
   if (typingHeat.value === 1) return 'Aquecendo'
   return 'Idle'
 })
+
+function progressStorageKey() {
+  return `logic-arena-progress:${session.currentUser.value?.nickname ?? 'guest'}`
+}
+
+function hydrateProgress() {
+  const raw = localStorage.getItem(progressStorageKey())
+  if (!raw) {
+    xp.value = 0
+    level.value = 1
+    return
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { xp: number; level: number }
+    xp.value = parsed.xp ?? 0
+    level.value = parsed.level ?? 1
+  } catch {
+    xp.value = 0
+    level.value = 1
+  }
+}
+
+function persistProgress() {
+  localStorage.setItem(progressStorageKey(), JSON.stringify({ xp: xp.value, level: level.value }))
+}
+
+function triggerLevelUp() {
+  levelUpBurst.value = true
+  if (levelUpTimer !== null) {
+    window.clearTimeout(levelUpTimer)
+  }
+  levelUpTimer = window.setTimeout(() => {
+    levelUpBurst.value = false
+  }, 2600)
+}
+
+function awardXp(amount: number) {
+  if (!session.currentUser.value) return
+  const previousLevel = level.value
+  xp.value += amount
+  level.value = Math.max(1, Math.floor(xp.value / 100) + 1)
+  persistProgress()
+  if (level.value > previousLevel) {
+    triggerLevelUp()
+    triggerConfetti()
+  }
+}
 
 function stopFeedbackPolling() {
   if (feedbackPollTimer !== null) {
@@ -94,6 +148,7 @@ async function bootstrapArena() {
 
   try {
     await Promise.all([loadExercises(), loadSubmissions()])
+    hydrateProgress()
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Não foi possível carregar a arena autenticada.'
@@ -172,6 +227,7 @@ async function submitSolution() {
     )
     latestSubmission.value = submission
     await loadSubmissions()
+    awardXp(submission.status === 'passed' ? 35 : 10)
     if (submission.feedback_status === 'pending') {
       startFeedbackPolling(submission.id)
     }
@@ -263,6 +319,9 @@ onBeforeUnmount(() => {
   if (typingCooldownTimer !== null) {
     window.clearTimeout(typingCooldownTimer)
   }
+  if (levelUpTimer !== null) {
+    window.clearTimeout(levelUpTimer)
+  }
 })
 </script>
 
@@ -270,6 +329,10 @@ onBeforeUnmount(() => {
   <div class="terminal-shell">
     <div v-if="confettiBurst" class="confetti-layer" aria-hidden="true">
       <span v-for="index in 18" :key="index" class="confetti-piece"></span>
+    </div>
+    <div v-if="levelUpBurst" class="levelup-banner" aria-hidden="true">
+      <span class="levelup-eyebrow">LEVEL UP</span>
+      <strong>Operator ascendeu para o nível {{ level }}</strong>
     </div>
     <header class="topbar">
       <div class="topbar-left">
@@ -285,9 +348,13 @@ onBeforeUnmount(() => {
           <LogOut :size="14" />
           Sair
         </Button>
-        <div class="level-box">
-          <strong>LEVEL 42</strong>
+        <div class="level-box" :class="{ 'level-box--up': levelUpBurst }">
+          <strong>LEVEL {{ level }}</strong>
           <span>{{ session.currentUser.value?.nickname ?? 'operator' }}</span>
+          <small>{{ xpIntoLevel }}/100 XP para o próximo nível</small>
+          <div class="level-track">
+            <div class="level-track-fill" :style="{ width: `${xpProgress}%` }"></div>
+          </div>
         </div>
         <div class="icon-row">
           <Terminal :size="18" />
@@ -471,31 +538,31 @@ onBeforeUnmount(() => {
                   </CardFooter>
                 </Card>
 
-                <Card class="console-card">
-                  <CardHeader class="console-header">
-                    <div class="console-heading">
-                      <Terminal :size="16" />
-                      <CardTitle>Console Output</CardTitle>
-                    </div>
-                    <Badge :variant="latestSubmission?.status === 'passed' ? 'default' : 'outline'">
-                      {{ latestSubmission?.status ?? 'idle' }}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent class="console-content">
-                    <div class="console-body">
-                      <div v-for="(line, index) in consoleLines" :key="`${index}-${line}`" class="console-line">
-                        <span class="console-time">{{ String(index).padStart(2, '0') }}:42</span>
-                        <span :class="line.includes('PASSOU') ? 'tag pass' : line.includes('FALHOU') ? 'tag fail' : 'tag exec'">
-                          {{ line.includes('PASSOU') ? '[PASS]' : line.includes('FALHOU') ? '[FAIL]' : '[EXEC]' }}
-                        </span>
-                        <span>{{ line }}</span>
+                <section class="results-grid">
+                  <Card class="console-card">
+                    <CardHeader class="console-header">
+                      <div class="console-heading">
+                        <Terminal :size="16" />
+                        <CardTitle>Console Output</CardTitle>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <Badge :variant="latestSubmission?.status === 'passed' ? 'default' : 'outline'">
+                        {{ latestSubmission?.status ?? 'idle' }}
+                      </Badge>
+                    </CardHeader>
+                    <CardContent class="console-content">
+                      <div class="console-body">
+                        <div v-for="(line, index) in consoleLines" :key="`${index}-${line}`" class="console-line">
+                          <span class="console-time">{{ String(index).padStart(2, '0') }}:42</span>
+                          <span :class="line.includes('PASSOU') ? 'tag pass' : line.includes('FALHOU') ? 'tag fail' : 'tag exec'">
+                            {{ line.includes('PASSOU') ? '[PASS]' : line.includes('FALHOU') ? '[FAIL]' : '[EXEC]' }}
+                          </span>
+                          <span>{{ line }}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                <section v-if="latestSubmission" class="submission-review-grid">
-                  <Card class="feedback-card">
+                  <Card v-if="latestSubmission" class="feedback-card">
                     <CardHeader>
                       <div class="feedback-header">
                         <div>
@@ -533,54 +600,55 @@ onBeforeUnmount(() => {
                       </div>
                     </CardContent>
                   </Card>
-
-                  <Card v-if="chatOpen && latestSubmission" class="review-chat-card">
-                    <CardHeader>
-                      <div class="feedback-header">
-                        <div>
-                          <p class="eyebrow">IA Review</p>
-                          <CardTitle>Conversar sobre a submissão</CardTitle>
-                        </div>
-                        <Badge variant="outline">{{ latestSubmission.feedback_source }}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent class="review-chat-content">
-                      <div class="review-chat-log">
-                        <article
-                          v-for="(message, index) in chatMessages"
-                          :key="`${message.role}-${index}`"
-                          class="review-chat-message"
-                          :class="message.role"
-                        >
-                          <strong>{{ message.role === 'assistant' ? 'IA' : 'Você' }}</strong>
-                          <p>{{ message.content }}</p>
-                        </article>
-                        <div v-if="isChatBusy" class="review-chat-message assistant">
-                          <strong>IA</strong>
-                          <p><LoaderCircle class="inline-loader" :size="16" /> Revisando sua dúvida...</p>
-                        </div>
-                      </div>
-                      <div class="review-chat-form">
-                        <textarea
-                          v-model="chatInput"
-                          class="review-chat-input"
-                          rows="3"
-                          placeholder="Pergunte por que falhou, como melhorar a solução ou qual raciocínio a banca esperava."
-                        ></textarea>
-                        <div class="review-chat-actions">
-                          <Button :disabled="isChatBusy || !chatInput.trim()" @click="sendReviewChat">
-                            <Send :size="16" />
-                            Enviar
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
                 </section>
               </div>
             </section>
           </div>
         </ScrollArea>
+        <aside class="review-drawer" :class="{ open: chatOpen }" v-if="latestSubmission">
+          <div class="review-drawer-header">
+            <div>
+              <p class="eyebrow">IA Review</p>
+              <h3>Conversar sobre a submissão</h3>
+            </div>
+            <button class="review-drawer-close" @click="chatOpen = false" aria-label="Fechar revisão com IA">
+              <X :size="16" />
+            </button>
+          </div>
+          <div class="review-drawer-meta">
+            <Badge>{{ latestSubmission.status }}</Badge>
+            <Badge variant="outline">{{ latestSubmission.feedback_source }}</Badge>
+          </div>
+          <div class="review-chat-log">
+            <article
+              v-for="(message, index) in chatMessages"
+              :key="`${message.role}-${index}`"
+              class="review-chat-message"
+              :class="message.role"
+            >
+              <strong>{{ message.role === 'assistant' ? 'IA' : 'Você' }}</strong>
+              <p>{{ message.content }}</p>
+            </article>
+            <div v-if="isChatBusy" class="review-chat-message assistant">
+              <strong>IA</strong>
+              <p><LoaderCircle class="inline-loader" :size="16" /> Revisando sua dúvida...</p>
+            </div>
+          </div>
+          <div class="review-chat-form">
+            <textarea
+              v-model="chatInput"
+              class="review-chat-input"
+              rows="4"
+              placeholder="Pergunte por que falhou, como melhorar a solução ou qual raciocínio a banca esperava."
+            ></textarea>
+            <div class="review-chat-actions">
+              <Button :disabled="isChatBusy || !chatInput.trim()" @click="sendReviewChat">
+                <Send :size="16" />
+                Enviar
+              </Button>
+            </div>
+          </div>
+        </aside>
       </main>
     </div>
   </div>
