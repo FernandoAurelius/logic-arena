@@ -1,0 +1,71 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: logic-arena-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VPS_HOST: 164.152.37.219
+      VPS_USER: ubuntu
+      APP_DIR: /opt/logic-arena
+      DOMAIN: logic-arena.floresdev.com.br
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start ssh-agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add VPS to known_hosts
+        run: ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy on VPS
+        run: |
+          ssh "$VPS_USER@$VPS_HOST" <<EOF
+          set -euo pipefail
+          export NVM_DIR="\$HOME/.nvm"
+          . "\$NVM_DIR/nvm.sh"
+          nvm use 22 >/dev/null
+
+          cd "$APP_DIR"
+          git fetch origin
+          git reset --hard origin/main
+
+          cd "$APP_DIR/backend"
+          ./.venv/bin/python manage.py migrate
+          ./.venv/bin/python manage.py check
+          ./.venv/bin/python manage.py export_openapi
+          sudo systemctl restart logic-arena-backend.service
+          sudo systemctl is-active --quiet logic-arena-backend.service
+
+          cd "$APP_DIR/frontend"
+          npm ci >/dev/null
+          VITE_API_BASE_URL="https://$DOMAIN" npm run build >/dev/null
+          sudo rsync -a --delete "$APP_DIR/frontend/dist/" "/var/www/$DOMAIN/"
+          sudo chown -R www-data:www-data "/var/www/$DOMAIN"
+          sudo nginx -t
+          sudo systemctl reload nginx
+          EOF
+
+      - name: Wait for API
+        run: |
+          for attempt in {1..20}; do
+            if curl --fail --silent "https://$DOMAIN/api/health" > /tmp/logic-arena-health.json; then
+              cat /tmp/logic-arena-health.json
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "API health check failed after deploy"
+          exit 1

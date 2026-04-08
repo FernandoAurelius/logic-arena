@@ -30,6 +30,7 @@ api = NinjaAPI(
 auth_router = Router(tags=['auth'])
 exercise_router = Router(tags=['exercises'])
 submission_router = Router(tags=['submissions'])
+system_router = Router(tags=['system'])
 
 
 def require_session(authorization: str | None) -> AuthSession:
@@ -76,6 +77,11 @@ def login(request, payload: LoginInputSchema):
             'created_at': session.user.created_at,
         },
     }
+
+
+@system_router.get('/health', summary='Health check público da API.')
+def health(request):
+    return 200, {'status': 'ok'}
 
 
 @auth_router.get('/me', response={200: UserSchema, 401: ErrorSchema}, summary='Retorna o usuário autenticado.')
@@ -228,3 +234,4 @@ def review_chat(request, submission_id: int, payload: ReviewChatInputSchema, aut
 api.add_router('/auth', auth_router)
 api.add_router('/exercises', exercise_router)
 api.add_router('/submissions', submission_router)
+api.add_router('', system_router)

@@ -541,6 +541,21 @@
           "required": true
         }
       }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "arena_api_health",
+        "summary": "Health check público da API.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "system"
+        ]
+      }
     }
   },
   "components": {
