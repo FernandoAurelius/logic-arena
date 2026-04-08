@@ -1,0 +1,283 @@
+import { makeApi, Zodios } from "@zodios/core";
+import type { ZodiosOptions } from "@zodios/core";
+import { z } from "zod";
+
+const LoginInputSchema = z
+  .object({ nickname: z.string(), password: z.string() })
+  .passthrough();
+const UserSchema = z
+  .object({
+    id: z.number().int(),
+    nickname: z.string(),
+    created_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const LoginResponseSchema = z
+  .object({ token: z.string(), created: z.boolean(), user: UserSchema })
+  .passthrough();
+const ErrorSchema = z.object({ message: z.string() }).passthrough();
+const authorization = z.union([z.string(), z.null()]).optional();
+const ExerciseSummarySchema = z
+  .object({
+    id: z.number().int(),
+    slug: z.string(),
+    title: z.string(),
+    difficulty: z.string(),
+    language: z.string(),
+    professor_note: z.string(),
+  })
+  .passthrough();
+const TestCaseInputSchema = z
+  .object({
+    input_data: z.string(),
+    expected_output: z.string(),
+    is_hidden: z.boolean().optional().default(true),
+  })
+  .passthrough();
+const ExerciseCreateSchema = z
+  .object({
+    slug: z.string(),
+    title: z.string(),
+    statement: z.string(),
+    difficulty: z.string().optional().default("iniciante"),
+    language: z.string().optional().default("python"),
+    starter_code: z.string().optional().default(""),
+    sample_input: z.string().optional().default(""),
+    sample_output: z.string().optional().default(""),
+    professor_note: z.string().optional().default(""),
+    test_cases: z.array(TestCaseInputSchema),
+  })
+  .passthrough();
+const ExerciseTestCaseSchema = z
+  .object({
+    id: z.number().int(),
+    input_data: z.string(),
+    expected_output: z.string(),
+    is_hidden: z.boolean(),
+  })
+  .passthrough();
+const ExerciseDetailSchema = z
+  .object({
+    id: z.number().int(),
+    slug: z.string(),
+    title: z.string(),
+    difficulty: z.string(),
+    language: z.string(),
+    professor_note: z.string(),
+    statement: z.string(),
+    starter_code: z.string(),
+    sample_input: z.string(),
+    sample_output: z.string(),
+    test_cases: z.array(ExerciseTestCaseSchema),
+  })
+  .passthrough();
+const SubmissionInputSchema = z
+  .object({ source_code: z.string() })
+  .passthrough();
+const TestResultSchema = z
+  .object({
+    index: z.number().int(),
+    input_data: z.string(),
+    expected_output: z.string(),
+    actual_output: z.string(),
+    passed: z.boolean(),
+    stderr: z.string(),
+  })
+  .passthrough();
+const SubmissionSchema = z
+  .object({
+    id: z.number().int(),
+    status: z.string(),
+    passed_tests: z.number().int(),
+    total_tests: z.number().int(),
+    console_output: z.string(),
+    feedback: z.string(),
+    created_at: z.string().datetime({ offset: true }),
+    results: z.array(TestResultSchema),
+  })
+  .passthrough();
+const SubmissionSummarySchema = z
+  .object({
+    id: z.number().int(),
+    exercise_slug: z.string(),
+    exercise_title: z.string(),
+    status: z.string(),
+    passed_tests: z.number().int(),
+    total_tests: z.number().int(),
+    created_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+
+export const schemas = {
+  LoginInputSchema,
+  UserSchema,
+  LoginResponseSchema,
+  ErrorSchema,
+  authorization,
+  ExerciseSummarySchema,
+  TestCaseInputSchema,
+  ExerciseCreateSchema,
+  ExerciseTestCaseSchema,
+  ExerciseDetailSchema,
+  SubmissionInputSchema,
+  TestResultSchema,
+  SubmissionSchema,
+  SubmissionSummarySchema,
+};
+
+export const authEndpoints = makeApi([
+  {
+    method: "post",
+    path: "/api/auth/login",
+    alias: "arena_api_login",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: LoginInputSchema,
+      },
+    ],
+    response: LoginResponseSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/auth/me",
+    alias: "arena_api_me",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: UserSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+]);
+
+export const authApi = new Zodios(authEndpoints);
+
+export const exercisesEndpoints = makeApi([
+  {
+    method: "get",
+    path: "/api/exercises/",
+    alias: "arena_api_list_exercises",
+    requestFormat: "json",
+    response: z.array(ExerciseSummarySchema),
+  },
+  {
+    method: "post",
+    path: "/api/exercises/",
+    alias: "arena_api_post_exercise",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: ExerciseCreateSchema,
+      },
+    ],
+    response: ExerciseDetailSchema,
+    errors: [
+      {
+        status: 400,
+        description: `Bad Request`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/exercises/:slug",
+    alias: "arena_api_get_exercise",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "slug",
+        type: "Path",
+        schema: z.string(),
+      },
+    ],
+    response: ExerciseDetailSchema,
+  },
+]);
+
+export const exercisesApi = new Zodios(exercisesEndpoints);
+
+export const submissionsEndpoints = makeApi([
+  {
+    method: "post",
+    path: "/api/submissions/exercises/:slug/submit",
+    alias: "arena_api_submit_exercise",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ source_code: z.string() }).passthrough(),
+      },
+      {
+        name: "slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: SubmissionSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/submissions/me",
+    alias: "arena_api_list_my_submissions",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: z.array(SubmissionSummarySchema),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+]);
+
+export const submissionsApi = new Zodios(submissionsEndpoints);
+
+export const endpoints = [...authEndpoints, ...exercisesEndpoints, ...submissionsEndpoints];
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
+  return new Zodios(baseUrl, endpoints, options);
+}

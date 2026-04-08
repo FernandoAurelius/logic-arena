@@ -1,0 +1,285 @@
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #f4f1ec;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    #111417;
+  background-size: 28px 28px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+}
+
+.sidebar {
+  padding: 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(11, 14, 16, 0.92);
+  display: grid;
+  gap: 18px;
+}
+
+.content {
+  padding: 28px;
+  display: grid;
+  gap: 20px;
+}
+
+.panel,
+.hero,
+.hero-chip,
+.exercise-item,
+.metric-card {
+  background: rgba(20, 24, 28, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 8px 8px 0 rgba(181, 39, 1, 0.26);
+}
+
+.panel,
+.hero {
+  padding: 20px;
+}
+
+.brand-block h1,
+.panel-head h2,
+.hero h2,
+.io-card h3,
+.feedback-box h3 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.04em;
+}
+
+.muted,
+.exercise-item span,
+.status-line,
+.submission-list span {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: #ff8f70;
+}
+
+.panel-head {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.field-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.field-stack label {
+  display: grid;
+  gap: 8px;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0d1114;
+  color: #f4f1ec;
+  padding: 12px 14px;
+}
+
+textarea {
+  min-height: 420px;
+  resize: vertical;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  line-height: 1.55;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.primary,
+.ghost {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.primary {
+  background: linear-gradient(135deg, #b52701, #ff5c35);
+  color: white;
+}
+
+.ghost {
+  background: transparent;
+  color: #f4f1ec;
+}
+
+.primary:disabled,
+.ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.exercise-list,
+.submission-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exercise-item {
+  padding: 14px;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.exercise-item.active {
+  border-color: #ff5c35;
+  box-shadow: 8px 8px 0 rgba(255, 92, 53, 0.35);
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.hero-chip {
+  padding: 14px 16px;
+  min-width: 240px;
+  display: grid;
+  gap: 6px;
+}
+
+.hero-chip span,
+.metric-card span {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: #ff8f70;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(420px, 1.2fr);
+  gap: 20px;
+}
+
+.io-grid,
+.result-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.io-card,
+.feedback-box {
+  margin-top: 14px;
+  padding: 16px;
+  background: rgba(10, 13, 16, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.visible-tests {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.results-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.metric-card {
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.metric-card strong {
+  font-size: 1.4rem;
+}
+
+.error-banner,
+.success-line {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.error-banner {
+  background: rgba(129, 30, 17, 0.45);
+  color: #ffcec4;
+}
+
+.success-line {
+  margin-top: 12px;
+  background: rgba(28, 85, 54, 0.35);
+  color: #c8ffd9;
+}
+
+@media (max-width: 1100px) {
+  .app-shell,
+  .workspace-grid,
+  .io-grid,
+  .result-summary,
+  .hero {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .sidebar,
+  .content {
+    padding: 18px;
+  }
+}

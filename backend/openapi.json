@@ -1,0 +1,765 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Logic Arena API",
+    "version": "0.1.0",
+    "description": "API do MVP do Logic Arena com autenticação simples, exercícios persistidos e submissões avaliadas."
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "operationId": "arena_api_login",
+        "summary": "Faz login ou cria o usuário automaticamente.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "arena_api_me",
+        "summary": "Retorna o usuário autenticado.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/exercises/": {
+      "get": {
+        "operationId": "arena_api_list_exercises",
+        "summary": "Lista exercícios ativos.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExerciseSummarySchema"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "exercises"
+        ]
+      },
+      "post": {
+        "operationId": "arena_api_post_exercise",
+        "summary": "Cadastra um exercício novo via API.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseDetailSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "exercises"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseCreateSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/exercises/{slug}": {
+      "get": {
+        "operationId": "arena_api_get_exercise",
+        "summary": "Detalha um exercício específico.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseDetailSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "exercises"
+        ]
+      }
+    },
+    "/api/submissions/exercises/{slug}/submit": {
+      "post": {
+        "operationId": "arena_api_submit_exercise",
+        "summary": "Executa os testes, persiste a submissão e devolve o resultado.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "submissions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/submissions/me": {
+      "get": {
+        "operationId": "arena_api_list_my_submissions",
+        "summary": "Lista as submissões do usuário autenticado.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubmissionSummarySchema"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "submissions"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LoginResponseSchema": {
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          },
+          "created": {
+            "title": "Created",
+            "type": "boolean"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserSchema"
+          }
+        },
+        "required": [
+          "token",
+          "created",
+          "user"
+        ],
+        "title": "LoginResponseSchema",
+        "type": "object"
+      },
+      "UserSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "nickname": {
+            "title": "Nickname",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nickname",
+          "created_at"
+        ],
+        "title": "UserSchema",
+        "type": "object"
+      },
+      "ErrorSchema": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ErrorSchema",
+        "type": "object"
+      },
+      "LoginInputSchema": {
+        "properties": {
+          "nickname": {
+            "title": "Nickname",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nickname",
+          "password"
+        ],
+        "title": "LoginInputSchema",
+        "type": "object"
+      },
+      "ExerciseSummarySchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "professor_note": {
+            "title": "Professor Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "difficulty",
+          "language",
+          "professor_note"
+        ],
+        "title": "ExerciseSummarySchema",
+        "type": "object"
+      },
+      "ExerciseDetailSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "professor_note": {
+            "title": "Professor Note",
+            "type": "string"
+          },
+          "statement": {
+            "title": "Statement",
+            "type": "string"
+          },
+          "starter_code": {
+            "title": "Starter Code",
+            "type": "string"
+          },
+          "sample_input": {
+            "title": "Sample Input",
+            "type": "string"
+          },
+          "sample_output": {
+            "title": "Sample Output",
+            "type": "string"
+          },
+          "test_cases": {
+            "items": {
+              "$ref": "#/components/schemas/ExerciseTestCaseSchema"
+            },
+            "title": "Test Cases",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "difficulty",
+          "language",
+          "professor_note",
+          "statement",
+          "starter_code",
+          "sample_input",
+          "sample_output",
+          "test_cases"
+        ],
+        "title": "ExerciseDetailSchema",
+        "type": "object"
+      },
+      "ExerciseTestCaseSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "input_data": {
+            "title": "Input Data",
+            "type": "string"
+          },
+          "expected_output": {
+            "title": "Expected Output",
+            "type": "string"
+          },
+          "is_hidden": {
+            "title": "Is Hidden",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "input_data",
+          "expected_output",
+          "is_hidden"
+        ],
+        "title": "ExerciseTestCaseSchema",
+        "type": "object"
+      },
+      "ExerciseCreateSchema": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "statement": {
+            "title": "Statement",
+            "type": "string"
+          },
+          "difficulty": {
+            "default": "iniciante",
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "language": {
+            "default": "python",
+            "title": "Language",
+            "type": "string"
+          },
+          "starter_code": {
+            "default": "",
+            "title": "Starter Code",
+            "type": "string"
+          },
+          "sample_input": {
+            "default": "",
+            "title": "Sample Input",
+            "type": "string"
+          },
+          "sample_output": {
+            "default": "",
+            "title": "Sample Output",
+            "type": "string"
+          },
+          "professor_note": {
+            "default": "",
+            "title": "Professor Note",
+            "type": "string"
+          },
+          "test_cases": {
+            "items": {
+              "$ref": "#/components/schemas/TestCaseInputSchema"
+            },
+            "title": "Test Cases",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "statement",
+          "test_cases"
+        ],
+        "title": "ExerciseCreateSchema",
+        "type": "object"
+      },
+      "TestCaseInputSchema": {
+        "properties": {
+          "input_data": {
+            "title": "Input Data",
+            "type": "string"
+          },
+          "expected_output": {
+            "title": "Expected Output",
+            "type": "string"
+          },
+          "is_hidden": {
+            "default": true,
+            "title": "Is Hidden",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "input_data",
+          "expected_output"
+        ],
+        "title": "TestCaseInputSchema",
+        "type": "object"
+      },
+      "SubmissionSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "passed_tests": {
+            "title": "Passed Tests",
+            "type": "integer"
+          },
+          "total_tests": {
+            "title": "Total Tests",
+            "type": "integer"
+          },
+          "console_output": {
+            "title": "Console Output",
+            "type": "string"
+          },
+          "feedback": {
+            "title": "Feedback",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/TestResultSchema"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "passed_tests",
+          "total_tests",
+          "console_output",
+          "feedback",
+          "created_at",
+          "results"
+        ],
+        "title": "SubmissionSchema",
+        "type": "object"
+      },
+      "TestResultSchema": {
+        "properties": {
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "input_data": {
+            "title": "Input Data",
+            "type": "string"
+          },
+          "expected_output": {
+            "title": "Expected Output",
+            "type": "string"
+          },
+          "actual_output": {
+            "title": "Actual Output",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "stderr": {
+            "title": "Stderr",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "input_data",
+          "expected_output",
+          "actual_output",
+          "passed",
+          "stderr"
+        ],
+        "title": "TestResultSchema",
+        "type": "object"
+      },
+      "SubmissionInputSchema": {
+        "properties": {
+          "source_code": {
+            "title": "Source Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_code"
+        ],
+        "title": "SubmissionInputSchema",
+        "type": "object"
+      },
+      "SubmissionSummarySchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "exercise_slug": {
+            "title": "Exercise Slug",
+            "type": "string"
+          },
+          "exercise_title": {
+            "title": "Exercise Title",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "passed_tests": {
+            "title": "Passed Tests",
+            "type": "integer"
+          },
+          "total_tests": {
+            "title": "Total Tests",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "exercise_slug",
+          "exercise_title",
+          "status",
+          "passed_tests",
+          "total_tests",
+          "created_at"
+        ],
+        "title": "SubmissionSummarySchema",
+        "type": "object"
+      }
+    }
+  },
+  "servers": []
+}

@@ -1,0 +1,10 @@
+[project]
+name = "logic-arena-backend"
+version = "0.1.0"
+description = "Backend Django Ninja do Logic Arena"
+requires-python = ">=3.12"
+dependencies = [
+  "django==5.2.1",
+  "django-cors-headers==4.7.0",
+  "django-ninja==1.6.2",
+]
