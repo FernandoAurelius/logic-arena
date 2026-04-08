@@ -12,6 +12,7 @@
   "dependencies": {
     "@zodios/core": "^10.9.6",
     "axios": "^1.14.0",
+    "markdown-it": "^14.1.1",
     "monaco-editor": "^0.55.1",
     "reka-ui": "^2.9.5",
     "tailwind-variants": "^3.2.2",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.12.2",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/tsconfig": "^0.9.1",

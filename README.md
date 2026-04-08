@@ -115,6 +115,9 @@ python3 -m venv .venv
 - a faixa inferior de gamificação antiga foi removida para simplificar a leitura, substituída por microinterações mais orgânicas: confete ao concluir com sucesso e um indicador de `forge heat` enquanto o usuário está digitando
 - o bloco de `Submission` agora divide espaço com o chat de revisão em um grid de duas colunas, reduzindo ruído vertical na arena
 - a revisão com IA saiu do fluxo central e virou um drawer lateral direito colapsável, deixando a leitura do exercício e do resultado principal mais limpa
+- as respostas do drawer passaram a renderizar Markdown básico, incluindo blocos de código, e o painel agora abre/fecha de verdade com rolagem completa do conteúdo
+- o bloco `History` da sidebar passou a ser colapsável e inicia fechado por padrão para reduzir ruído visual
+- a navegação superior foi simplificada para reforçar o produto, usando apenas `LOGIC ARENA` como marca principal
 - a arena agora mantém um sistema mínimo de XP por operador, com persistência local por usuário, barra de progresso no topo e destaque visual quando acontece subida de nível
 
 ## Próximos passos naturais

@@ -49,7 +49,7 @@ async function handlePrimaryAction() {
   <div class="landing-page">
     <header class="landing-topbar">
       <div class="landing-brand">
-        <span class="brand-wordmark">IGNITION_OS</span>
+        <span class="brand-wordmark">LOGIC ARENA</span>
         <span class="landing-subtitle">Logic Arena</span>
       </div>
       <div class="landing-actions">

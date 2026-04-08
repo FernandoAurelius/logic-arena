@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { BookOpenText, ChevronRight, Cpu, Flame, LoaderCircle, LogOut, MessageSquare, Play, Send, Terminal, Trophy, X } from 'lucide-vue-next'
+import MarkdownIt from 'markdown-it'
+import { BookOpenText, ChevronRight, ChevronDown, ChevronLeft, Cpu, Flame, LoaderCircle, LogOut, MessageSquare, Play, Send, Terminal, Trophy, X } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
 import { schemas } from '@/lib/api/generated'
@@ -32,6 +33,7 @@ const isSubmitting = ref(false)
 const isChatBusy = ref(false)
 const errorMessage = ref('')
 const chatOpen = ref(false)
+const historyOpen = ref(false)
 const chatInput = ref('')
 const chatMessages = ref<ReviewChatMessage[]>([])
 const typingHeat = ref(0)
@@ -65,6 +67,16 @@ const heatLabel = computed(() => {
   if (typingHeat.value === 1) return 'Aquecendo'
   return 'Idle'
 })
+
+const markdown = new MarkdownIt({
+  html: false,
+  breaks: true,
+  linkify: true,
+})
+
+function renderMessage(content: string) {
+  return markdown.render(content)
+}
 
 function progressStorageKey() {
   return `logic-arena-progress:${session.currentUser.value?.nickname ?? 'guest'}`
@@ -336,12 +348,7 @@ onBeforeUnmount(() => {
     </div>
     <header class="topbar">
       <div class="topbar-left">
-        <span class="brand-wordmark">IGNITION_OS</span>
-        <nav class="topnav">
-          <a class="active" href="#">COMPILER</a>
-          <a href="#">ARENA</a>
-          <a href="#">RUNNER</a>
-        </nav>
+        <span class="brand-wordmark">LOGIC ARENA</span>
       </div>
       <div class="topbar-right">
         <Button variant="outline" size="sm" @click="logout">
@@ -405,10 +412,18 @@ onBeforeUnmount(() => {
 
             <Card class="history-panel">
               <CardHeader>
-                <CardTitle>History</CardTitle>
-                <CardDescription>Últimas execuções persistidas por exercício.</CardDescription>
+                <div class="panel-header-inline">
+                  <div>
+                    <CardTitle>History</CardTitle>
+                    <CardDescription>Últimas execuções persistidas por exercício.</CardDescription>
+                  </div>
+                  <button class="collapse-button" @click="historyOpen = !historyOpen" :aria-expanded="historyOpen">
+                    <ChevronDown v-if="historyOpen" :size="16" />
+                    <ChevronLeft v-else :size="16" />
+                  </button>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent v-if="historyOpen">
                 <ul class="history-list">
                   <li v-for="submission in sidebarHistory" :key="submission.id">
                     <div class="history-line">
@@ -627,7 +642,7 @@ onBeforeUnmount(() => {
               :class="message.role"
             >
               <strong>{{ message.role === 'assistant' ? 'IA' : 'Você' }}</strong>
-              <p>{{ message.content }}</p>
+              <div class="markdown-body" v-html="renderMessage(message.content)"></div>
             </article>
             <div v-if="isChatBusy" class="review-chat-message assistant">
               <strong>IA</strong>
