@@ -118,6 +118,8 @@ python3 -m venv .venv
 - as respostas do drawer passaram a renderizar Markdown básico, incluindo blocos de código, e o painel agora abre/fecha de verdade com rolagem completa do conteúdo
 - o bloco `History` da sidebar passou a ser colapsável e inicia fechado por padrão para reduzir ruído visual
 - a navegação superior foi simplificada para reforçar o produto, usando apenas `LOGIC ARENA` como marca principal
+- o projeto agora possui uma migration-seed rica em `backend/arena/migrations/0004_seed_professor_exercises.py`, gerando 26 exercícios baseados nas atividades reais do professor e nos scripts das aulas
+- os materiais descompactados que serviram de base para esse seed ficaram organizados em `/home/miguelbarreto/estudos/logica-de-programacao/material-professor-downloads`
 - a arena agora mantém um sistema mínimo de XP por operador, com persistência local por usuário, barra de progresso no topo e destaque visual quando acontece subida de nível
 
 ## Próximos passos naturais
