@@ -2,6 +2,10 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import MarkdownIt from 'markdown-it'
+import hljs from 'highlight.js/lib/core'
+import python from 'highlight.js/lib/languages/python'
+import javascript from 'highlight.js/lib/languages/javascript'
+import json from 'highlight.js/lib/languages/json'
 import { BookOpenText, ChevronRight, ChevronDown, ChevronLeft, Cpu, Flame, LoaderCircle, LogOut, MessageSquare, Moon, Play, Send, Sun, Terminal, Trophy, X } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
@@ -24,6 +28,10 @@ type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>
 const router = useRouter()
 const session = useSession()
 const theme = useTheme()
+
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('json', json)
 
 const exercises = ref<ExerciseSummary[]>([])
 const activeExercise = ref<ExerciseDetail | null>(null)
@@ -75,6 +83,13 @@ const markdown = new MarkdownIt({
   html: false,
   breaks: true,
   linkify: true,
+  highlight(code, language) {
+    const normalizedLanguage = language?.trim().toLowerCase()
+    if (normalizedLanguage && hljs.getLanguage(normalizedLanguage)) {
+      return `<pre class="hljs"><code>${hljs.highlight(code, { language: normalizedLanguage }).value}</code></pre>`
+    }
+    return `<pre class="hljs"><code>${hljs.highlightAuto(code).value}</code></pre>`
+  },
 })
 
 function renderMessage(content: string) {
@@ -359,27 +374,31 @@ onBeforeUnmount(() => {
         <span class="brand-wordmark">LOGIC ARENA</span>
       </div>
       <div class="topbar-right">
-        <Button variant="outline" size="sm" @click="theme.toggleTheme">
-          <Sun v-if="theme.isDark.value" :size="14" />
-          <Moon v-else :size="14" />
-          {{ theme.isDark.value ? 'Claro' : 'Escuro' }}
-        </Button>
-        <Button variant="outline" size="sm" @click="logout">
-          <LogOut :size="14" />
-          Sair
-        </Button>
-        <div class="level-box" :class="{ 'level-box--up': levelUpBurst }">
-          <strong>LEVEL {{ level }}</strong>
-          <span>{{ session.currentUser.value?.nickname ?? 'operator' }}</span>
-          <small>{{ xpIntoLevel }}/100 XP para o próximo nível</small>
-          <div class="level-track">
-            <div class="level-track-fill" :style="{ width: `${xpProgress}%` }"></div>
-          </div>
+        <div class="topbar-actions">
+          <Button variant="outline" size="sm" @click="theme.toggleTheme">
+            <Sun v-if="theme.isDark.value" :size="14" />
+            <Moon v-else :size="14" />
+            {{ theme.isDark.value ? 'Claro' : 'Escuro' }}
+          </Button>
+          <Button variant="outline" size="sm" @click="logout">
+            <LogOut :size="14" />
+            Sair
+          </Button>
         </div>
-        <div class="icon-row">
-          <Terminal :size="18" />
-          <Cpu :size="18" />
-          <Trophy :size="18" />
+        <div class="topbar-status">
+          <div class="level-box" :class="{ 'level-box--up': levelUpBurst }">
+            <strong>LEVEL {{ level }}</strong>
+            <span>{{ session.currentUser.value?.nickname ?? 'operator' }}</span>
+            <small>{{ xpIntoLevel }}/100 XP para o próximo nível</small>
+            <div class="level-track">
+              <div class="level-track-fill" :style="{ width: `${xpProgress}%` }"></div>
+            </div>
+          </div>
+          <div class="icon-row">
+            <Terminal :size="18" />
+            <Cpu :size="18" />
+            <Trophy :size="18" />
+          </div>
         </div>
       </div>
     </header>

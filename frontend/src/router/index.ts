@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import LandingView from '@/views/LandingView.vue'
 import ArenaView from '@/views/ArenaView.vue'
+import TutorialView from '@/views/TutorialView.vue'
 import { useSession } from '@/lib/session'
 
 const router = createRouter({
@@ -17,6 +18,11 @@ const router = createRouter({
       name: 'arena',
       component: ArenaView,
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/ajuda',
+      name: 'tutorial',
+      component: TutorialView,
     },
   ],
 })

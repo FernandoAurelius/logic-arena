@@ -54,13 +54,16 @@ async function handlePrimaryAction() {
         <span class="brand-wordmark">LOGIC ARENA</span>
         <span class="landing-subtitle">Logic Arena</span>
       </div>
-      <div class="landing-actions">
-        <Button variant="outline" @click="theme.toggleTheme">
+      <div class="landing-actions landing-actions--split">
+        <Button variant="outline" class="landing-action-button" @click="theme.toggleTheme">
           <Sun v-if="theme.isDark.value" :size="16" />
           <Moon v-else :size="16" />
           {{ theme.isDark.value ? 'Tema Claro' : 'Tema Escuro' }}
         </Button>
-        <Button variant="outline" @click="handlePrimaryAction">
+        <Button variant="outline" class="landing-action-button" @click="router.push({ name: 'tutorial' })">
+          Ajuda
+        </Button>
+        <Button variant="outline" class="landing-action-button" @click="handlePrimaryAction">
           {{ session.isAuthenticated.value ? 'Ir Para A Arena' : 'Entrar' }}
         </Button>
       </div>
@@ -79,6 +82,9 @@ async function handlePrimaryAction() {
             <Button @click="handlePrimaryAction">
               Entrar Na Plataforma
               <ArrowRight :size="16" />
+            </Button>
+            <Button variant="outline" @click="router.push({ name: 'tutorial' })">
+              Ver Tutorial
             </Button>
           </div>
         </div>

@@ -176,6 +176,21 @@ textarea {
   gap: 1rem;
 }
 
+.landing-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.landing-actions--split {
+  gap: 1rem;
+}
+
+.landing-action-button {
+  min-width: 10.5rem;
+}
+
 .landing-subtitle {
   font-size: 0.95rem;
   text-transform: uppercase;
@@ -217,6 +232,9 @@ textarea {
 
 .landing-cta-row {
   margin-top: 1.5rem;
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
 }
 
 .landing-preview-card,
@@ -288,6 +306,186 @@ textarea {
   color: var(--on-surface-variant);
 }
 
+.tutorial-page {
+  min-height: 100vh;
+}
+
+.tutorial-main {
+  gap: 2rem;
+}
+
+.tutorial-title {
+  max-width: 10ch;
+}
+
+.tutorial-grid {
+  display: grid;
+  grid-template-columns: minmax(20rem, 28rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.tutorial-step-content,
+.tutorial-controls,
+.tutorial-step-list,
+.tutorial-shell,
+.tutorial-shell-body,
+.tutorial-shell-workspace,
+.tutorial-shell-bottom-grid,
+.tutorial-shell-topbar-actions {
+  display: grid;
+  gap: 1rem;
+}
+
+.tutorial-controls {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tutorial-step-list {
+  grid-template-columns: 1fr;
+}
+
+.tutorial-step-chip {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  color: var(--on-surface);
+  padding: 0.75rem 0.85rem;
+  cursor: pointer;
+}
+
+.tutorial-step-chip.active {
+  background: var(--on-surface);
+  color: var(--surface);
+  border-color: var(--on-surface);
+}
+
+.tutorial-shell {
+  background: var(--surface-container-high);
+  border: 1px solid var(--outline-variant);
+  padding: 1rem;
+}
+
+.tutorial-shell-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid var(--outline);
+  padding: 0.8rem 0.9rem;
+  background: var(--surface);
+}
+
+.tutorial-shell-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.tutorial-shell-topbar-actions {
+  grid-auto-flow: column;
+}
+
+.tutorial-shell-button {
+  border: 1px solid var(--outline);
+  padding: 0.45rem 0.7rem;
+  background: var(--surface-low);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.tutorial-shell-body {
+  grid-template-columns: 14rem minmax(0, 1fr);
+}
+
+.tutorial-shell-sidebar,
+.tutorial-shell-spec,
+.tutorial-shell-editor,
+.tutorial-shell-console,
+.tutorial-shell-review {
+  border: 1px solid var(--outline);
+  background: var(--surface);
+  transition: box-shadow 140ms ease, transform 140ms ease, border-color 140ms ease;
+}
+
+.tutorial-shell-sidebar.active,
+.tutorial-shell-spec.active,
+.tutorial-shell-editor.active,
+.tutorial-shell-console.active,
+.tutorial-shell-review.active {
+  border-color: var(--primary);
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--primary) 45%, transparent);
+  transform: translate(-2px, -2px);
+}
+
+.tutorial-shell-sidebar {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.8rem;
+}
+
+.tutorial-shell-card {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-low);
+}
+
+.tutorial-shell-card--operator {
+  background: color-mix(in srgb, var(--primary-container) 18%, var(--surface));
+}
+
+.tutorial-shell-workspace {
+  grid-template-columns: 1fr;
+}
+
+.tutorial-shell-spec,
+.tutorial-shell-editor,
+.tutorial-shell-console,
+.tutorial-shell-review {
+  padding: 1rem;
+}
+
+.tutorial-shell-spec,
+.tutorial-shell-console,
+.tutorial-shell-review {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tutorial-shell-editor {
+  background: var(--bg-code);
+  color: var(--surface);
+}
+
+.tutorial-shell-editor-top,
+.tutorial-shell-pills {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.tutorial-shell-pills span {
+  border: 1px solid color-mix(in srgb, var(--surface) 30%, transparent);
+  padding: 0.3rem 0.55rem;
+}
+
+.tutorial-shell-editor-body {
+  min-height: 12rem;
+  display: grid;
+  place-items: center;
+  gap: 0.7rem;
+  text-align: center;
+}
+
+.tutorial-shell-bottom-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .terminal-shell {
   height: 100vh;
   display: grid;
@@ -308,6 +506,8 @@ textarea {
 
 .topbar-left,
 .topbar-right,
+.topbar-actions,
+.topbar-status,
 .topnav,
 .icon-row,
 .workspace-status,
@@ -325,6 +525,21 @@ textarea {
   font-weight: 700;
   font-style: italic;
   letter-spacing: -0.04em;
+}
+
+.topbar-right {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.topbar-actions {
+  padding-right: 1rem;
+  margin-right: 1rem;
+  border-right: 1px solid var(--outline-variant);
+}
+
+.topbar-status {
+  gap: 1.25rem;
 }
 
 .topnav a {
@@ -829,10 +1044,57 @@ textarea {
   border: 1px solid var(--outline);
 }
 
+.markdown-body .hljs {
+  display: block;
+  overflow-x: auto;
+  background: var(--bg-code);
+  color: #f7f4ee;
+}
+
 .markdown-body pre code {
   background: transparent;
   padding: 0;
   color: inherit;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-link {
+  color: #ff8a65;
+}
+
+.hljs-string,
+.hljs-title,
+.hljs-name,
+.hljs-type,
+.hljs-attribute,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition,
+.hljs-template-tag,
+.hljs-template-variable {
+  color: #ffd180;
+}
+
+.hljs-number,
+.hljs-quote,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-code {
+  color: #80cbc4;
+}
+
+.hljs-comment,
+.hljs-meta,
+.hljs-deletion {
+  color: #8fa39a;
+}
+
+.hljs-variable,
+.hljs-params {
+  color: #f7f4ee;
 }
 
 .review-chat-form {
@@ -1068,6 +1330,8 @@ textarea {
 @media (max-width: 1280px) {
   .landing-hero-grid,
   .landing-features-grid,
+  .tutorial-grid,
+  .tutorial-shell-body,
   .terminal-body,
   .two-column,
   .feedback-grid,
@@ -1088,10 +1352,18 @@ textarea {
   .topbar,
   .topbar-left,
   .topbar-right,
+  .topbar-actions,
+  .topbar-status,
   .workspace-header,
   .feedback-header {
     flex-direction: column;
     align-items: start;
+  }
+
+  .topbar-actions {
+    padding-right: 0;
+    margin-right: 0;
+    border-right: none;
   }
 
   .review-drawer {
