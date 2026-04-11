@@ -6,6 +6,7 @@ import { authApi } from '@/lib/api/client'
 
 type User = ZodInfer<typeof schemas.UserSchema>
 type LoginResponse = ZodInfer<typeof schemas.LoginResponseSchema>
+type UserProgressSummary = ZodInfer<typeof schemas.UserProgressSummarySchema>
 
 const STORAGE_KEY = 'logic-arena-session'
 
@@ -22,6 +23,13 @@ function authHeader() {
 
 function persistSession(payload: { token: string; user: User }) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+}
+
+function setCurrentUser(user: User | null) {
+  currentUser.value = user
+  if (token.value && user) {
+    persistSession({ token: token.value, user })
+  }
 }
 
 function clearSession() {
@@ -80,6 +88,17 @@ async function login(nickname: string, password: string): Promise<LoginResponse>
   }
 }
 
+function mergeCurrentUserProgress(progress: UserProgressSummary) {
+  if (!currentUser.value) return
+  setCurrentUser({
+    ...currentUser.value,
+    xp_total: progress.xp_total,
+    level: progress.level,
+    xp_into_level: progress.xp_into_level,
+    xp_to_next_level: progress.xp_to_next_level,
+  })
+}
+
 export function useSession() {
   return {
     token,
@@ -92,5 +111,7 @@ export function useSession() {
     hydrateSession,
     login,
     clearSession,
+    setCurrentUser,
+    mergeCurrentUserProgress,
   }
 }

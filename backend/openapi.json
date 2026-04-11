@@ -596,12 +596,32 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "xp_total": {
+            "title": "Xp Total",
+            "type": "integer"
+          },
+          "level": {
+            "title": "Level",
+            "type": "integer"
+          },
+          "xp_into_level": {
+            "title": "Xp Into Level",
+            "type": "integer"
+          },
+          "xp_to_next_level": {
+            "title": "Xp To Next Level",
+            "type": "integer"
           }
         },
         "required": [
           "id",
           "nickname",
-          "created_at"
+          "created_at",
+          "xp_total",
+          "level",
+          "xp_into_level",
+          "xp_to_next_level"
         ],
         "title": "UserSchema",
         "type": "object"
@@ -662,6 +682,50 @@
           "professor_note": {
             "title": "Professor Note",
             "type": "string"
+          },
+          "category_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Slug"
+          },
+          "category_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Name"
+          },
+          "track_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Slug"
+          },
+          "track_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Name"
           }
         },
         "required": [
@@ -700,6 +764,50 @@
           "professor_note": {
             "title": "Professor Note",
             "type": "string"
+          },
+          "category_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Slug"
+          },
+          "category_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Name"
+          },
+          "track_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Slug"
+          },
+          "track_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Name"
           },
           "statement": {
             "title": "Statement",
@@ -793,6 +901,26 @@
             "title": "Language",
             "type": "string"
           },
+          "category_slug": {
+            "default": "",
+            "title": "Category Slug",
+            "type": "string"
+          },
+          "category_name": {
+            "default": "",
+            "title": "Category Name",
+            "type": "string"
+          },
+          "track_slug": {
+            "default": "",
+            "title": "Track Slug",
+            "type": "string"
+          },
+          "track_name": {
+            "default": "",
+            "title": "Track Name",
+            "type": "string"
+          },
           "starter_code": {
             "default": "",
             "title": "Starter Code",
@@ -853,6 +981,59 @@
         "title": "TestCaseInputSchema",
         "type": "object"
       },
+      "ExerciseProgressSchema": {
+        "properties": {
+          "attempts_count": {
+            "title": "Attempts Count",
+            "type": "integer"
+          },
+          "best_passed_tests": {
+            "title": "Best Passed Tests",
+            "type": "integer"
+          },
+          "best_total_tests": {
+            "title": "Best Total Tests",
+            "type": "integer"
+          },
+          "best_ratio": {
+            "title": "Best Ratio",
+            "type": "number"
+          },
+          "xp_awarded_total": {
+            "title": "Xp Awarded Total",
+            "type": "integer"
+          },
+          "first_passed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Passed At"
+          },
+          "awarded_progress_markers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Awarded Progress Markers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "attempts_count",
+          "best_passed_tests",
+          "best_total_tests",
+          "best_ratio",
+          "xp_awarded_total",
+          "awarded_progress_markers"
+        ],
+        "title": "ExerciseProgressSchema",
+        "type": "object"
+      },
       "FeedbackPayloadSchema": {
         "properties": {
           "summary": {
@@ -893,6 +1074,29 @@
           "source"
         ],
         "title": "FeedbackPayloadSchema",
+        "type": "object"
+      },
+      "ProgressRewardSchema": {
+        "properties": {
+          "milestone_key": {
+            "title": "Milestone Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "xp_awarded": {
+            "title": "Xp Awarded",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "milestone_key",
+          "label",
+          "xp_awarded"
+        ],
+        "title": "ProgressRewardSchema",
         "type": "object"
       },
       "ReviewChatMessageSchema": {
@@ -972,6 +1176,23 @@
             },
             "title": "Results",
             "type": "array"
+          },
+          "xp_awarded": {
+            "title": "Xp Awarded",
+            "type": "integer"
+          },
+          "unlocked_progress_rewards": {
+            "items": {
+              "$ref": "#/components/schemas/ProgressRewardSchema"
+            },
+            "title": "Unlocked Progress Rewards",
+            "type": "array"
+          },
+          "exercise_progress": {
+            "$ref": "#/components/schemas/ExerciseProgressSchema"
+          },
+          "user_progress": {
+            "$ref": "#/components/schemas/UserProgressSummarySchema"
           }
         },
         "required": [
@@ -987,7 +1208,11 @@
           "feedback_payload",
           "review_chat_history",
           "created_at",
-          "results"
+          "results",
+          "xp_awarded",
+          "unlocked_progress_rewards",
+          "exercise_progress",
+          "user_progress"
         ],
         "title": "SubmissionSchema",
         "type": "object"
@@ -1028,6 +1253,34 @@
           "stderr"
         ],
         "title": "TestResultSchema",
+        "type": "object"
+      },
+      "UserProgressSummarySchema": {
+        "properties": {
+          "xp_total": {
+            "title": "Xp Total",
+            "type": "integer"
+          },
+          "level": {
+            "title": "Level",
+            "type": "integer"
+          },
+          "xp_into_level": {
+            "title": "Xp Into Level",
+            "type": "integer"
+          },
+          "xp_to_next_level": {
+            "title": "Xp To Next Level",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "xp_total",
+          "level",
+          "xp_into_level",
+          "xp_to_next_level"
+        ],
+        "title": "UserProgressSummarySchema",
         "type": "object"
       },
       "SubmissionInputSchema": {

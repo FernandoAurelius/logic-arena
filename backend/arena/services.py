@@ -2,19 +2,31 @@ import re
 import secrets
 import json
 import threading
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.conf import settings
-from django.db import close_old_connections
+from django.db import close_old_connections, transaction
+from django.utils import timezone
 
-from .models import ArenaUser, AuthSession, Exercise, ExerciseTestCase, Submission
+from .models import (
+    ArenaUser,
+    AuthSession,
+    Exercise,
+    ExerciseCategory,
+    ExerciseTestCase,
+    ExerciseTrack,
+    Submission,
+    UserExerciseProgress,
+)
 from .feedback import build_feedback_error_payload, generate_feedback
 
 
 NUMERIC_TOLERANCE = 1e-9
+PASSED_ONCE_MARKER = 'passed_once'
+PASSED_ONCE_XP = 35
 
 APPROVAL_PATTERNS = {
     'approved': [
@@ -89,12 +101,26 @@ def get_or_create_session(nickname: str, password: str) -> tuple[AuthSession, bo
 
 
 def create_exercise(payload) -> Exercise:
+    category = None
+    track = None
+    if payload.category_slug and payload.category_name:
+        category, _ = ExerciseCategory.objects.get_or_create(
+            slug=payload.category_slug,
+            defaults={'name': payload.category_name},
+        )
+    if payload.track_slug and payload.track_name and category is not None:
+        track, _ = ExerciseTrack.objects.get_or_create(
+            slug=payload.track_slug,
+            defaults={'name': payload.track_name, 'category': category},
+        )
     exercise = Exercise.objects.create(
         slug=payload.slug,
         title=payload.title,
         statement=payload.statement,
         difficulty=payload.difficulty,
         language=payload.language,
+        category=category,
+        track=track,
         starter_code=payload.starter_code,
         sample_input=payload.sample_input,
         sample_output=payload.sample_output,
@@ -119,6 +145,13 @@ class ExecutionResult:
     ok: bool
     stdout: str
     stderr: str
+
+
+@dataclass
+class ProgressReward:
+    milestone_key: str
+    label: str
+    xp_awarded: int
 
 
 def run_python(source_code: str, stdin: str) -> ExecutionResult:
@@ -149,6 +182,102 @@ def run_python(source_code: str, stdin: str) -> ExecutionResult:
         return ExecutionResult(ok=False, stdout='', stderr=f'Runner indisponível: {error}')
     except Exception as error:  # pragma: no cover
         return ExecutionResult(ok=False, stdout='', stderr=str(error))
+
+
+def compute_level_from_xp(xp_total: int) -> int:
+    return max(1, (xp_total // 100) + 1)
+
+
+def build_user_progress_summary(user: ArenaUser) -> dict:
+    xp_total = user.xp_total
+    level = compute_level_from_xp(xp_total)
+    xp_into_level = xp_total - ((level - 1) * 100)
+    return {
+        'xp_total': xp_total,
+        'level': level,
+        'xp_into_level': xp_into_level,
+        'xp_to_next_level': max(0, 100 - xp_into_level),
+    }
+
+
+def build_user_schema_payload(user: ArenaUser) -> dict:
+    return {
+        'id': user.id,
+        'nickname': user.nickname,
+        'created_at': user.created_at,
+        **build_user_progress_summary(user),
+    }
+
+
+def build_exercise_progress_payload(progress: UserExerciseProgress) -> dict:
+    return {
+        'attempts_count': progress.attempts_count,
+        'best_passed_tests': progress.best_passed_tests,
+        'best_total_tests': progress.best_total_tests,
+        'best_ratio': progress.best_ratio,
+        'xp_awarded_total': progress.xp_awarded_total,
+        'first_passed_at': progress.first_passed_at,
+        'awarded_progress_markers': progress.awarded_progress_markers,
+    }
+
+
+def apply_submission_progress(user: ArenaUser, exercise: Exercise, submission: Submission) -> tuple[UserExerciseProgress, list[ProgressReward], int]:
+    with transaction.atomic():
+        locked_user = ArenaUser.objects.select_for_update().get(pk=user.pk)
+        progress, _ = UserExerciseProgress.objects.select_for_update().get_or_create(
+            user=locked_user,
+            exercise=exercise,
+        )
+
+        progress.attempts_count += 1
+        progress.last_submission = submission
+
+        total_tests = submission.total_tests
+        current_ratio = (submission.passed_tests / total_tests) if total_tests else 0
+        best_ratio = progress.best_ratio or 0
+        improved = (
+            current_ratio > best_ratio
+            or submission.passed_tests > progress.best_passed_tests
+            or (submission.passed_tests == progress.best_passed_tests and total_tests > progress.best_total_tests)
+        )
+
+        if improved:
+            progress.best_passed_tests = submission.passed_tests
+            progress.best_total_tests = total_tests
+            progress.best_ratio = current_ratio
+            progress.best_progress_submission = submission
+
+        awarded_progress_markers = list(progress.awarded_progress_markers or [])
+        unlocked_rewards: list[ProgressReward] = []
+        xp_awarded = 0
+
+        if submission.status == Submission.STATUS_PASSED and PASSED_ONCE_MARKER not in awarded_progress_markers:
+            awarded_progress_markers.append(PASSED_ONCE_MARKER)
+            unlocked_rewards.append(
+                ProgressReward(
+                    milestone_key=PASSED_ONCE_MARKER,
+                    label='Primeira aprovação',
+                    xp_awarded=PASSED_ONCE_XP,
+                )
+            )
+            xp_awarded += PASSED_ONCE_XP
+            progress.first_passed_at = progress.first_passed_at or timezone.now()
+            progress.first_pass_submission = progress.first_pass_submission or submission
+
+        progress.awarded_progress_markers = awarded_progress_markers
+        progress.xp_awarded_total += xp_awarded
+        progress.save()
+
+        if xp_awarded:
+            locked_user.xp_total += xp_awarded
+            locked_user.save(update_fields=['xp_total', 'updated_at'])
+
+        submission.xp_awarded = xp_awarded
+        submission.unlocked_progress_rewards = [asdict(reward) for reward in unlocked_rewards]
+        submission.save(update_fields=['xp_awarded', 'unlocked_progress_rewards', 'updated_at'])
+
+        user.xp_total = locked_user.xp_total
+        return progress, unlocked_rewards, xp_awarded
 
 
 def evaluate_submission(user: ArenaUser, exercise: Exercise, source_code: str) -> tuple[Submission, list[dict]]:
@@ -209,7 +338,10 @@ def evaluate_submission(user: ArenaUser, exercise: Exercise, source_code: str) -
         },
         execution_results=results,
         review_chat_history=[],
+        xp_awarded=0,
+        unlocked_progress_rewards=[],
     )
+    apply_submission_progress(user, exercise, submission)
     _start_feedback_job(submission.id, exercise.title, exercise.statement, source_code, passed_tests, total_tests, results)
     return submission, results
 

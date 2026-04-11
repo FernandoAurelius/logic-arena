@@ -1,54 +1,116 @@
 # Logic Arena
 
-Repositório da evolução do simulador de prova prática de Lógica de Programação.
+`Logic Arena` é uma plataforma de treino prático de lógica de programação orientada a simular avaliação real: o aluno escolhe um exercício, escreve código em um editor de verdade, executa contra testes automatizados, recebe console detalhado, feedback estruturado com IA e pode revisitar sessões anteriores para estudar o próprio raciocínio.
 
-Hoje ele tem duas camadas:
+Hoje o projeto está em uma fase de MVP operacional. Ele já resolve o ciclo central de prática, mas ainda está amadurecendo em quatro frentes: progressão anti-farm, navegação canônica do banco de exercícios, ranking/gamificação útil e expansão do catálogo para desafios mais integradores.
 
-- um protótipo local em `React/Vite` na raiz, criado para calibrar UX, editor e correção prática rapidamente
-- uma base de MVP em `backend/` + `frontend/`, já alinhada com a stack alvo: `Django Ninja` no backend e `Vue 3 + TypeScript` no frontend, com contrato `OpenAPI` explícito e geração de client tipado para `Zodios`
-- um `runner_service/` isolado para execução de código Python fora do processo principal do backend
+## Propósito
 
-## Direção do produto
+O produto existe para atacar um problema muito específico: treinar programação do jeito que ela costuma ser cobrada em contexto de aula e prova prática, sem depender apenas de listas estáticas ou IDEs sem contexto pedagógico.
 
-O `Logic Arena` quer ser uma estação simples de treino interno para colegas praticarem exatamente o estilo de avaliação prática cobrado em aula:
+Em vez de ser só uma coleção de exercícios, o `Logic Arena` quer se tornar uma estação de prática com:
 
-- autenticação mínima por `nickname + senha`
-- criação automática do usuário no primeiro login
-- exercícios persistidos em banco
-- cadastro de novos exercícios via API, sem painel administrativo
-- submissões salvas por exercício
-- resultado da execução devolvido imediatamente, com revisão por IA concluída em segundo plano
-- feedback por IA sempre ativo via `Agno + Gemini`, com `GEMINI_API_KEY` obrigatório para o backend subir
+- execução real de código Python em ambiente isolado;
+- correção baseada em testes visíveis e ocultos;
+- feedback automático com IA após cada submissão;
+- histórico restaurável de tentativas, console, revisão e conversa;
+- progressão gamificada sem perder valor pedagógico;
+- catálogo crescente de exercícios, começando em fundamentos e evoluindo para problemas mais sistêmicos.
 
-## Estrutura atual
+## Estado atual do produto
 
-### Protótipo inicial
+O repositório convive hoje com duas camadas:
 
-- `src/`
-- `server.mjs`
+- um protótipo inicial na raiz, em `React/Vite`, usado para iterar rápido sobre UX, editor e correção;
+- um MVP mais estável em `backend/` + `frontend/` + `runner_service/`, que representa a base arquitetural do produto.
 
-Essa parte continua útil como referência de interação rápida e da arena prática original.
+O MVP já possui:
 
-### MVP novo
+- login mínimo por `nickname + senha`, com criação automática do usuário no primeiro acesso;
+- catálogo persistido de exercícios no banco;
+- submissões persistidas por usuário e exercício;
+- execução assíncrona via runner isolado;
+- revisão com IA via `Agno + Gemini`;
+- landing pública, arena autenticada e página de ajuda;
+- deploy contínuo para produção em [logic-arena.floresdev.com.br](https://logic-arena.floresdev.com.br).
 
-- `backend/`: `Django Ninja`, agora com `PostgreSQL` como padrão real de desenvolvimento, modelos de usuário, sessão, exercício, casos de teste e submissão
-- `backend/openapi.json`: schema exportado da API para geração do client tipado
-- `frontend/`: `Vue 3 + TypeScript`, consumindo a API via `Zodios`, com camada de componentes no estilo `shadcn-vue` aplicada à arena principal e interface refeita para ficar fiel à linguagem visual da referência original
-- `runner_service/`: microserviço `FastAPI` que executa o código Python e devolve `stdout/stderr/status` ao backend
-- `docker-compose.yml`: stack local mínima com `PostgreSQL` e `runner`
+## Para quem o projeto está sendo feito
 
-## Como rodar o MVP novo
+O recorte atual é deliberadamente pequeno: colegas e estudantes que querem praticar lógica de programação em um formato mais próximo da avaliação prática real. A plataforma ainda não tenta ser uma escola ampla, um judge online genérico ou um LMS completo.
 
-### Infra local
+## Autor
+
+Projeto idealizado e mantido por **Miguel Barreto**.
+
+- GitHub: [FernandoAurelius](https://github.com/FernandoAurelius)
+- Repositório: [logic-arena](https://github.com/FernandoAurelius/logic-arena)
+
+## Stack
+
+### Backend
+
+- `Python`
+- `Django`
+- `Django Ninja`
+- `PostgreSQL`
+- `Agno`
+- `Google Gemini`
+
+### Frontend
+
+- `Vue 3`
+- `TypeScript`
+- `Vite`
+- `Monaco Editor`
+- `Zodios` gerado a partir de `OpenAPI`
+- componentes inspirados em `shadcn-vue`
+
+### Execução de código
+
+- `FastAPI` no `runner_service/`
+- execução isolada do código submetido
+
+### Operações
+
+- `Docker Compose` para infraestrutura local mínima
+- `Nginx` + `systemd` em produção
+- `GitHub Actions` para deploy contínuo
+
+## Mapa do repositório
+
+```text
+.
+├── backend/                  # API principal, modelos, serviços, migrations e OpenAPI
+├── frontend/                 # Aplicação Vue 3 + TS da arena autenticada e da landing
+├── runner_service/           # Serviço isolado de execução Python
+├── .github/workflows/        # Pipeline de deploy
+├── src/                      # Protótipo inicial em React/Vite
+├── server.mjs                # API local antiga do protótipo inicial
+└── kb/                       # Knowledge base Obsidian-oriented do projeto
+```
+
+## Arquitetura em uma leitura rápida
+
+1. O usuário entra pela landing pública.
+2. Faz login com `nickname + senha`.
+3. O frontend autenticado consome a API principal em `backend/`.
+4. Ao submeter código, o backend chama o `runner_service/` para executar a solução.
+5. O backend persiste a submissão, calcula status e agenda a revisão com IA.
+6. O frontend faz polling da submissão até o feedback ficar pronto.
+7. O histórico permite reabrir código, console, revisão automática e conversa com IA.
+
+## Como rodar localmente
+
+### 1. Infra mínima
 
 ```bash
 cd "/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app"
 docker compose up -d postgres runner
 ```
 
-O Postgres do projeto fica exposto em `127.0.0.1:5433`, para não colidir com outras instâncias locais em `5432`.
+Por padrão, o `PostgreSQL` fica em `127.0.0.1:5433`.
 
-### Backend principal
+### 2. Backend
 
 ```bash
 cd "/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/backend"
@@ -59,7 +121,9 @@ cd "/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/back
 .venv/bin/python manage.py runserver 127.0.0.1:8000
 ```
 
-### Frontend
+O backend exige `GEMINI_API_KEY` em `backend/.env`. Sem essa chave, a aplicação falha na inicialização por design.
+
+### 3. Frontend
 
 ```bash
 cd "/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/frontend"
@@ -68,13 +132,13 @@ npm run generate:api
 npm run dev
 ```
 
-Se quiser apontar o frontend para outro host da API:
+Se quiser apontar para outra API:
 
 ```bash
 VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev
 ```
 
-### Runner isolado sem Docker
+### 4. Runner isolado sem Docker
 
 ```bash
 cd "/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/runner_service"
@@ -83,7 +147,9 @@ python3 -m venv .venv
 .venv/bin/uvicorn app:app --host 127.0.0.1 --port 8010
 ```
 
-## Endpoints iniciais do MVP
+## Contrato principal da API
+
+Os endpoints centrais do MVP hoje são:
 
 - `POST /api/auth/login`
 - `GET /api/auth/me`
@@ -94,36 +160,58 @@ python3 -m venv .venv
 - `GET /api/submissions/me`
 - `GET /api/submissions/{id}`
 - `POST /api/submissions/{id}/review-chat`
+- `GET /api/health`
 
-## Estado atual da rodada estrutural
+O contrato `OpenAPI` exportado pelo backend vive em [`backend/openapi.json`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/backend/openapi.json).
 
-- autenticação mínima com criação automática de usuário no `login`
-- `OpenAPI` exportado pelo backend e consumido pelo frontend com `Zodios`
-- `PostgreSQL` agora é o padrão real do setup local, rodando em `5433`
-- `runner_service` já separado do backend principal
-- feedback estruturado persistido em cada submissão, sempre vindo de `Agno + Gemini`
-- UI refeita para ficar muito mais fiel ao idioma visual brutalista/técnico da referência original
-- camada de componentes `shadcn-vue` aplicada de fato na estação principal (`Button`, `Card`, `Input`, `Textarea`, `Badge`, `ScrollArea`, `Separator`)
-- `GEMINI_API_KEY` obrigatório em `backend/.env`; sem essa chave o backend falha na inicialização por design
-- listagem e leitura de exercícios agora exigem autenticação válida; a arena não expõe mais conteúdo programático sem sessão
-- o `Execution Canvas` voltou a ser um editor real com `Monaco`, usando tema customizado `Typewriter`
-- a experiência de entrada foi separada em duas views: uma landing limpa em `/` e a arena autenticada em `/arena`, com login via modal e redirecionamento após a sessão
-- a execução agora devolve a submissão imediatamente e o feedback com `Agno + Gemini` é finalizado em background, com polling na arena em vez de travar a estação até a IA responder
-- a arena ganhou um botão `Revisar com IA`, que abre um chat curto sobre a última submissão para entender erro, raciocínio esperado e melhorias possíveis
-- o cabeçalho pesado do `Execution Canvas` foi removido para devolver mais altura útil ao editor
-- o corretor ficou semanticamente mais tolerante para saídas equivalentes em português, aceitando variações como `aprovado/passou` e `reprovado/reprovou` quando a intenção da resposta está correta
-- a faixa inferior de gamificação antiga foi removida para simplificar a leitura, substituída por microinterações mais orgânicas: confete ao concluir com sucesso e um indicador de `forge heat` enquanto o usuário está digitando
-- o bloco de `Submission` agora divide espaço com o chat de revisão em um grid de duas colunas, reduzindo ruído vertical na arena
-- a revisão com IA saiu do fluxo central e virou um drawer lateral direito colapsável, deixando a leitura do exercício e do resultado principal mais limpa
-- as respostas do drawer passaram a renderizar Markdown básico, incluindo blocos de código, e o painel agora abre/fecha de verdade com rolagem completa do conteúdo
-- o bloco `History` da sidebar passou a ser colapsável e inicia fechado por padrão para reduzir ruído visual
-- a navegação superior foi simplificada para reforçar o produto, usando apenas `LOGIC ARENA` como marca principal
-- o projeto agora possui uma migration-seed rica em `backend/arena/migrations/0004_seed_professor_exercises.py`, gerando 26 exercícios baseados nas atividades reais do professor e nos scripts das aulas
-- os materiais descompactados que serviram de base para esse seed ficaram organizados em `/home/miguelbarreto/estudos/logica-de-programacao/material-professor-downloads`
-- a arena agora mantém um sistema mínimo de XP por operador, com persistência local por usuário, barra de progresso no topo e destaque visual quando acontece subida de nível
+## Knowledge Base do projeto
 
-## Próximos passos naturais
+O projeto agora possui uma KB em Markdown orientada a Obsidian dentro de [`kb/`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/kb).
 
-- endurecer o consumo tipado do client gerado pelo `openapi-zod-client` sem depender do fallback leve atual em `frontend/src/lib/api/client.ts`
-- adicionar autenticação de sessão mais durável e logout global
-- criar fluxo programático de cadastro/edição de exercícios com autenticação interna
+Ela foi organizada para servir a quatro propósitos:
+
+- onboarding técnico do sistema;
+- documentação didática do código existente;
+- registro de decisões arquiteturais;
+- planejamento incremental das próximas milestones, inclusive para trabalho com subagentes.
+
+O melhor ponto de entrada é:
+
+- [`kb/00_MOC/Logic Arena KB.md`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/kb/00_MOC/Logic%20Arena%20KB.md)
+
+## Como contribuir
+
+O projeto ainda é pequeno, então o processo de contribuição também é propositalmente simples.
+
+1. Leia este `README`.
+2. Leia a KB técnica antes de propor mudanças estruturais.
+3. Entenda qual bounded context você está tocando.
+4. Registre decisões importantes na KB junto com a mudança.
+5. Se a mudança afetar produto, arquitetura ou operação, atualize a documentação correspondente no mesmo PR/commit.
+
+Mais detalhes estão em [`CONTRIBUTING.md`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/CONTRIBUTING.md).
+
+## Roadmap de curto prazo
+
+As próximas frentes priorizadas hoje são:
+
+- guardrails de XP para impedir farm infinito por reexecução;
+- taxonomia canônica de categorias, assuntos, trilhas e dificuldade;
+- ranking útil, separado de XP;
+- expansão do catálogo para exercícios mais complexos e integradores.
+
+Essas milestones estão detalhadas na KB, em [`kb/04_Milestones/Mapa de Milestones.md`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/kb/04_Milestones/Mapa%20de%20Milestones.md).
+
+## Produção
+
+- domínio: [logic-arena.floresdev.com.br](https://logic-arena.floresdev.com.br)
+- deploy: `GitHub Actions` + `SSH` na VPS
+- health check público: [logic-arena.floresdev.com.br/api/health](https://logic-arena.floresdev.com.br/api/health)
+
+## Princípios do projeto
+
+- prática antes de abstração desnecessária;
+- UX de prova sem perder apoio didático;
+- feedback acionável em vez de correção opaca;
+- documentação como parte do produto técnico;
+- evolução incremental com arquitetura suficientemente clara.

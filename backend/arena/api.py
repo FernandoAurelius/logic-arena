@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from ninja import Header, NinjaAPI, Router
 
-from .models import AuthSession, Exercise, Submission
+from .models import AuthSession, Exercise, Submission, UserExerciseProgress
 from .schemas import (
     ErrorSchema,
     ExerciseCreateSchema,
@@ -17,7 +17,14 @@ from .schemas import (
     UserSchema,
 )
 from .feedback import review_submission_chat
-from .services import create_exercise, evaluate_submission, get_or_create_session
+from .services import (
+    build_exercise_progress_payload,
+    build_user_progress_summary,
+    build_user_schema_payload,
+    create_exercise,
+    evaluate_submission,
+    get_or_create_session,
+)
 
 
 api = NinjaAPI(
@@ -44,6 +51,7 @@ def require_session(authorization: str | None) -> AuthSession:
 
 
 def serialize_submission(submission: Submission) -> dict:
+    progress = UserExerciseProgress.objects.filter(user=submission.user, exercise=submission.exercise).first()
     return {
         'id': submission.id,
         'status': submission.status,
@@ -58,6 +66,33 @@ def serialize_submission(submission: Submission) -> dict:
         'review_chat_history': submission.review_chat_history,
         'created_at': submission.created_at,
         'results': submission.execution_results,
+        'xp_awarded': submission.xp_awarded,
+        'unlocked_progress_rewards': submission.unlocked_progress_rewards,
+        'exercise_progress': build_exercise_progress_payload(progress) if progress else {
+            'attempts_count': 0,
+            'best_passed_tests': 0,
+            'best_total_tests': 0,
+            'best_ratio': 0,
+            'xp_awarded_total': 0,
+            'first_passed_at': None,
+            'awarded_progress_markers': [],
+        },
+        'user_progress': build_user_progress_summary(submission.user),
+    }
+
+
+def serialize_exercise_summary(exercise: Exercise) -> dict:
+    return {
+        'id': exercise.id,
+        'slug': exercise.slug,
+        'title': exercise.title,
+        'difficulty': exercise.difficulty,
+        'language': exercise.language,
+        'professor_note': exercise.professor_note,
+        'category_slug': exercise.category.slug if exercise.category else None,
+        'category_name': exercise.category.name if exercise.category else None,
+        'track_slug': exercise.track.slug if exercise.track else None,
+        'track_name': exercise.track.name if exercise.track else None,
     }
 
 
@@ -71,11 +106,7 @@ def login(request, payload: LoginInputSchema):
     return 200, {
         'token': session.token,
         'created': created,
-        'user': {
-            'id': session.user.id,
-            'nickname': session.user.nickname,
-            'created_at': session.user.created_at,
-        },
+        'user': build_user_schema_payload(session.user),
     }
 
 
@@ -90,7 +121,7 @@ def me(request, authorization: str | None = Header(default=None)):
         session = require_session(authorization)
     except PermissionError as error:
         return 401, {'message': str(error)}
-    return 200, session.user
+    return 200, build_user_schema_payload(session.user)
 
 
 @exercise_router.get('/', response={200: list[ExerciseSummarySchema], 401: ErrorSchema}, summary='Lista exercícios ativos.')
@@ -99,7 +130,8 @@ def list_exercises(request, authorization: str | None = Header(default=None)):
         require_session(authorization)
     except PermissionError as error:
         return 401, {'message': str(error)}
-    return 200, Exercise.objects.filter(is_active=True)
+    exercises = Exercise.objects.filter(is_active=True).select_related('category', 'track')
+    return 200, [serialize_exercise_summary(exercise) for exercise in exercises]
 
 
 @exercise_router.get('/{slug}', response={200: ExerciseDetailSchema, 401: ErrorSchema}, summary='Detalha um exercício específico.')
@@ -108,14 +140,9 @@ def get_exercise(request, slug: str, authorization: str | None = Header(default=
         require_session(authorization)
     except PermissionError as error:
         return 401, {'message': str(error)}
-    exercise = get_object_or_404(Exercise.objects.prefetch_related('test_cases'), slug=slug, is_active=True)
+    exercise = get_object_or_404(Exercise.objects.prefetch_related('test_cases').select_related('category', 'track'), slug=slug, is_active=True)
     return 200, {
-        'id': exercise.id,
-        'slug': exercise.slug,
-        'title': exercise.title,
-        'difficulty': exercise.difficulty,
-        'language': exercise.language,
-        'professor_note': exercise.professor_note,
+        **serialize_exercise_summary(exercise),
         'statement': exercise.statement,
         'starter_code': exercise.starter_code,
         'sample_input': exercise.sample_input,
@@ -135,12 +162,7 @@ def post_exercise(request, payload: ExerciseCreateSchema, authorization: str | N
 
     exercise = create_exercise(payload)
     return 201, {
-        'id': exercise.id,
-        'slug': exercise.slug,
-        'title': exercise.title,
-        'difficulty': exercise.difficulty,
-        'language': exercise.language,
-        'professor_note': exercise.professor_note,
+        **serialize_exercise_summary(exercise),
         'statement': exercise.statement,
         'starter_code': exercise.starter_code,
         'sample_input': exercise.sample_input,

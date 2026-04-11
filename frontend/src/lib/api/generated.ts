@@ -10,6 +10,10 @@ const UserSchema = z
     id: z.number().int(),
     nickname: z.string(),
     created_at: z.string().datetime({ offset: true }),
+    xp_total: z.number().int(),
+    level: z.number().int(),
+    xp_into_level: z.number().int(),
+    xp_to_next_level: z.number().int(),
   })
   .passthrough();
 const LoginResponseSchema = z
@@ -25,6 +29,10 @@ const ExerciseSummarySchema = z
     difficulty: z.string(),
     language: z.string(),
     professor_note: z.string(),
+    category_slug: z.union([z.string(), z.null()]).optional(),
+    category_name: z.union([z.string(), z.null()]).optional(),
+    track_slug: z.union([z.string(), z.null()]).optional(),
+    track_name: z.union([z.string(), z.null()]).optional(),
   })
   .passthrough();
 const TestCaseInputSchema = z
@@ -41,6 +49,10 @@ const ExerciseCreateSchema = z
     statement: z.string(),
     difficulty: z.string().optional().default("iniciante"),
     language: z.string().optional().default("python"),
+    category_slug: z.string().optional().default(""),
+    category_name: z.string().optional().default(""),
+    track_slug: z.string().optional().default(""),
+    track_name: z.string().optional().default(""),
     starter_code: z.string().optional().default(""),
     sample_input: z.string().optional().default(""),
     sample_output: z.string().optional().default(""),
@@ -64,6 +76,10 @@ const ExerciseDetailSchema = z
     difficulty: z.string(),
     language: z.string(),
     professor_note: z.string(),
+    category_slug: z.union([z.string(), z.null()]).optional(),
+    category_name: z.union([z.string(), z.null()]).optional(),
+    track_slug: z.union([z.string(), z.null()]).optional(),
+    track_name: z.union([z.string(), z.null()]).optional(),
     statement: z.string(),
     starter_code: z.string(),
     sample_input: z.string(),
@@ -96,6 +112,32 @@ const TestResultSchema = z
     stderr: z.string(),
   })
   .passthrough();
+const ProgressRewardSchema = z
+  .object({
+    milestone_key: z.string(),
+    label: z.string(),
+    xp_awarded: z.number().int(),
+  })
+  .passthrough();
+const ExerciseProgressSchema = z
+  .object({
+    attempts_count: z.number().int(),
+    best_passed_tests: z.number().int(),
+    best_total_tests: z.number().int(),
+    best_ratio: z.number(),
+    xp_awarded_total: z.number().int(),
+    first_passed_at: z.union([z.string(), z.null()]).optional(),
+    awarded_progress_markers: z.array(z.string()),
+  })
+  .passthrough();
+const UserProgressSummarySchema = z
+  .object({
+    xp_total: z.number().int(),
+    level: z.number().int(),
+    xp_into_level: z.number().int(),
+    xp_to_next_level: z.number().int(),
+  })
+  .passthrough();
 const SubmissionSchema = z
   .object({
     id: z.number().int(),
@@ -111,6 +153,10 @@ const SubmissionSchema = z
     review_chat_history: z.array(ReviewChatMessageSchema),
     created_at: z.string().datetime({ offset: true }),
     results: z.array(TestResultSchema),
+    xp_awarded: z.number().int(),
+    unlocked_progress_rewards: z.array(ProgressRewardSchema),
+    exercise_progress: ExerciseProgressSchema,
+    user_progress: UserProgressSummarySchema,
   })
   .passthrough();
 const SubmissionSummarySchema = z
@@ -149,6 +195,9 @@ export const schemas = {
   FeedbackPayloadSchema,
   ReviewChatMessageSchema,
   TestResultSchema,
+  ProgressRewardSchema,
+  ExerciseProgressSchema,
+  UserProgressSummarySchema,
   SubmissionSchema,
   SubmissionSummarySchema,
   ReviewChatInputSchema,
@@ -409,7 +458,24 @@ export const submissionsEndpoints = makeApi([
 
 export const submissionsApi = new Zodios(submissionsEndpoints);
 
-const endpoints = [...authEndpoints, ...exercisesEndpoints, ...submissionsEndpoints];
+export const systemEndpoints = makeApi([
+  {
+    method: "get",
+    path: "/api/health",
+    alias: "arena_api_health",
+    requestFormat: "json",
+    response: z.void(),
+  },
+]);
+
+export const systemApi = new Zodios(systemEndpoints);
+
+export const endpoints = makeApi([
+  ...authEndpoints,
+  ...exercisesEndpoints,
+  ...submissionsEndpoints,
+  ...systemEndpoints,
+]);
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options);

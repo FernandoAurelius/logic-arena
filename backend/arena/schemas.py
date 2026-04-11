@@ -16,6 +16,10 @@ class UserSchema(Schema):
     id: int
     nickname: str
     created_at: datetime
+    xp_total: int
+    level: int
+    xp_into_level: int
+    xp_to_next_level: int
 
 
 class LoginResponseSchema(Schema):
@@ -36,6 +40,10 @@ class ExerciseCreateSchema(Schema):
     statement: str
     difficulty: str = 'iniciante'
     language: str = 'python'
+    category_slug: str = ''
+    category_name: str = ''
+    track_slug: str = ''
+    track_name: str = ''
     starter_code: str = ''
     sample_input: str = ''
     sample_output: str = ''
@@ -50,6 +58,10 @@ class ExerciseSummarySchema(Schema):
     difficulty: str
     language: str
     professor_note: str
+    category_slug: str | None = None
+    category_name: str | None = None
+    track_slug: str | None = None
+    track_name: str | None = None
 
 
 class ExerciseTestCaseSchema(Schema):
@@ -102,6 +114,29 @@ class TestResultSchema(Schema):
     stderr: str
 
 
+class ProgressRewardSchema(Schema):
+    milestone_key: str
+    label: str
+    xp_awarded: int
+
+
+class ExerciseProgressSchema(Schema):
+    attempts_count: int
+    best_passed_tests: int
+    best_total_tests: int
+    best_ratio: float
+    xp_awarded_total: int
+    first_passed_at: datetime | None = None
+    awarded_progress_markers: list[str]
+
+
+class UserProgressSummarySchema(Schema):
+    xp_total: int
+    level: int
+    xp_into_level: int
+    xp_to_next_level: int
+
+
 class SubmissionSchema(Schema):
     id: int
     status: str
@@ -116,6 +151,10 @@ class SubmissionSchema(Schema):
     review_chat_history: list[ReviewChatMessageSchema]
     created_at: datetime
     results: list[TestResultSchema]
+    xp_awarded: int
+    unlocked_progress_rewards: list[ProgressRewardSchema]
+    exercise_progress: ExerciseProgressSchema
+    user_progress: UserProgressSummarySchema
 
 
 class SubmissionSummarySchema(Schema):

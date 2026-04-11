@@ -49,8 +49,6 @@ const chatInput = ref('')
 const chatMessages = ref<ReviewChatMessage[]>([])
 const typingHeat = ref(0)
 const confettiBurst = ref(false)
-const xp = ref(0)
-const level = ref(1)
 const levelUpBurst = ref(false)
 
 let feedbackPollTimer: number | null = null
@@ -70,13 +68,62 @@ const visibleTestCases = computed(() => activeExercise.value?.test_cases ?? [])
 const sidebarHistory = computed(() => submissions.value.slice(0, 6))
 const isFeedbackPending = computed(() => latestSubmission.value?.feedback_status === 'pending')
 const canReviewWithAi = computed(() => Boolean(latestSubmission.value) && !isFeedbackPending.value)
-const xpIntoLevel = computed(() => xp.value - (level.value - 1) * 100)
+const level = computed(() => session.currentUser.value?.level ?? 1)
+const xpIntoLevel = computed(() => session.currentUser.value?.xp_into_level ?? 0)
 const xpProgress = computed(() => Math.min(100, Math.max(0, xpIntoLevel.value)))
+const xpToNextLevel = computed(() => session.currentUser.value?.xp_to_next_level ?? 100)
 const heatLabel = computed(() => {
   if (typingHeat.value >= 3) return 'Forge em chamas'
   if (typingHeat.value === 2) return 'Ritmo alto'
   if (typingHeat.value === 1) return 'Aquecendo'
   return 'Idle'
+})
+const progressRewards = computed(() => latestSubmission.value?.unlocked_progress_rewards ?? [])
+const groupedExercises = computed(() => {
+  const groups = new Map<string, { key: string; label: string; exercises: ExerciseSummary[] }>()
+  for (const exercise of exercises.value) {
+    const key = exercise.category_slug ?? 'sem-categoria'
+    const label = exercise.category_name ?? 'Sem categoria'
+    if (!groups.has(key)) {
+      groups.set(key, { key, label, exercises: [] })
+    }
+    groups.get(key)?.exercises.push(exercise)
+  }
+  return Array.from(groups.values())
+})
+const submissionOutcomeTone = computed(() => {
+  if (!latestSubmission.value) return 'idle'
+  if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) return 'reward'
+  if (latestSubmission.value.status === 'passed') return 'pass'
+  return 'fail'
+})
+const submissionOutcomeTitle = computed(() => {
+  if (!latestSubmission.value) return 'Aguardando execução'
+  if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) return 'Passou e evoluiu'
+  if (latestSubmission.value.status === 'passed') return 'Passou, mas sem novo XP'
+  return 'Ainda não passou'
+})
+const submissionOutcomeCopy = computed(() => {
+  if (!latestSubmission.value) return 'Execute um exercício para receber o diagnóstico desta rodada.'
+  if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) {
+    return 'Você concluiu o exercício e desbloqueou um marco real de progresso.'
+  }
+  if (latestSubmission.value.status === 'passed') {
+    return 'A solução está correta, mas esta rodada não mudou seu estado estrutural de progresso.'
+  }
+  return 'A rodada ainda precisa de ajuste. Use o console e a revisão com IA para entender onde corrigir.'
+})
+const rewardSummary = computed(() => {
+  const submission = latestSubmission.value
+  if (!submission) return ''
+  if (submission.xp_awarded > 0 && progressRewards.value.length > 0) {
+    const labels = progressRewards.value.map((reward) => reward.label).join(', ')
+    return `${labels}: +${submission.xp_awarded} XP`
+  }
+  if (submission.xp_awarded > 0) {
+    return `+${submission.xp_awarded} XP nesta rodada`
+  }
+  return 'Sem ganho de XP nesta rodada'
 })
 
 const markdown = new MarkdownIt({
@@ -96,32 +143,6 @@ function renderMessage(content: string) {
   return markdown.render(content)
 }
 
-function progressStorageKey() {
-  return `logic-arena-progress:${session.currentUser.value?.nickname ?? 'guest'}`
-}
-
-function hydrateProgress() {
-  const raw = localStorage.getItem(progressStorageKey())
-  if (!raw) {
-    xp.value = 0
-    level.value = 1
-    return
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as { xp: number; level: number }
-    xp.value = parsed.xp ?? 0
-    level.value = parsed.level ?? 1
-  } catch {
-    xp.value = 0
-    level.value = 1
-  }
-}
-
-function persistProgress() {
-  localStorage.setItem(progressStorageKey(), JSON.stringify({ xp: xp.value, level: level.value }))
-}
-
 function triggerLevelUp() {
   levelUpBurst.value = true
   if (levelUpTimer !== null) {
@@ -132,13 +153,10 @@ function triggerLevelUp() {
   }, 2600)
 }
 
-function awardXp(amount: number) {
-  if (!session.currentUser.value) return
-  const previousLevel = level.value
-  xp.value += amount
-  level.value = Math.max(1, Math.floor(xp.value / 100) + 1)
-  persistProgress()
-  if (level.value > previousLevel) {
+function applySubmissionProgress(submission: Submission) {
+  const previousLevel = session.currentUser.value?.level ?? 1
+  session.mergeCurrentUserProgress(submission.user_progress)
+  if (submission.user_progress.level > previousLevel) {
     triggerLevelUp()
     triggerConfetti()
   }
@@ -185,7 +203,6 @@ async function bootstrapArena() {
 
   try {
     await Promise.all([loadExercises(), loadSubmissions()])
-    hydrateProgress()
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Não foi possível carregar a arena autenticada.'
@@ -232,6 +249,7 @@ async function openSubmissionSession(submissionSummary: SubmissionSummary) {
     ])
     activeExercise.value = exercise
     latestSubmission.value = submission
+    applySubmissionProgress(submission)
     code.value = submission.source_code
     chatMessages.value = submission.review_chat_history ?? []
     if (submission.feedback_status === 'pending') {
@@ -254,6 +272,7 @@ async function refreshSubmission(submissionId: number) {
     ...refreshed,
     results: refreshed.results.length ? refreshed.results : latestSubmission.value?.results ?? [],
   }
+  applySubmissionProgress(refreshed)
   if ((refreshed.review_chat_history?.length ?? 0) > 0) {
     chatMessages.value = refreshed.review_chat_history
   }
@@ -294,9 +313,9 @@ async function submitSolution() {
       { params: { slug: activeExercise.value.slug }, headers: { authorization: session.authHeader() ?? undefined } },
     )
     latestSubmission.value = submission
+    applySubmissionProgress(submission)
     chatMessages.value = submission.review_chat_history ?? []
     await loadSubmissions()
-    awardXp(submission.status === 'passed' ? 35 : 10)
     if (submission.feedback_status === 'pending') {
       startFeedbackPolling(submission.id)
     }
@@ -430,7 +449,7 @@ onBeforeUnmount(() => {
           <div class="level-box" :class="{ 'level-box--up': levelUpBurst }">
             <strong>LEVEL {{ level }}</strong>
             <span>{{ session.currentUser.value?.nickname ?? 'operator' }}</span>
-            <small>{{ xpIntoLevel }}/100 XP para o próximo nível</small>
+            <small>{{ xpIntoLevel }}/100 XP para o próximo nível · faltam {{ xpToNextLevel }} XP</small>
             <div class="level-track">
               <div class="level-track-fill" :style="{ width: `${xpProgress}%` }"></div>
             </div>
@@ -461,27 +480,35 @@ onBeforeUnmount(() => {
               </CardContent>
             </Card>
 
-            <Card class="module-panel">
-              <CardHeader>
-                <CardTitle>Core Modules</CardTitle>
-                <CardDescription>Escolha o exercício que vai simular a rodada atual.</CardDescription>
-              </CardHeader>
-              <CardContent class="module-list">
-                <button
-                  v-for="exercise in exercises"
-                  :key="exercise.slug"
-                  class="module-link"
-                  :class="{ active: activeExercise?.slug === exercise.slug }"
-                  @click="selectExercise(exercise.slug)"
-                >
-                  <BookOpenText :size="18" />
-                  <div>
-                    <strong>{{ exercise.title }}</strong>
-                    <small>{{ exercise.difficulty }} · {{ exercise.language }}</small>
+              <Card class="module-panel">
+                <CardHeader>
+                  <CardTitle>Core Modules</CardTitle>
+                  <CardDescription>Escolha o exercício que vai simular a rodada atual.</CardDescription>
+                </CardHeader>
+                <CardContent class="module-list">
+                  <div v-for="group in groupedExercises" :key="group.key" class="module-group">
+                    <div class="module-group-heading">
+                      <span>{{ group.label }}</span>
+                      <small>{{ group.exercises.length }} exercícios</small>
+                    </div>
+                    <button
+                      v-for="exercise in group.exercises"
+                      :key="exercise.slug"
+                      class="module-link"
+                      :class="{ active: activeExercise?.slug === exercise.slug }"
+                      @click="selectExercise(exercise.slug)"
+                    >
+                      <BookOpenText :size="18" />
+                      <div>
+                        <strong>{{ exercise.title }}</strong>
+                        <small>
+                          {{ exercise.track_name ?? 'Trilha livre' }} · {{ exercise.difficulty }} · {{ exercise.language }}
+                        </small>
+                      </div>
+                    </button>
                   </div>
-                </button>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
             <Card class="history-panel">
               <CardHeader>
@@ -539,6 +566,11 @@ onBeforeUnmount(() => {
                     'Selecione um exercício no rail lateral para começar a estação prática.'
                   }}
                 </p>
+                <div v-if="activeExercise" class="challenge-meta">
+                  <Badge variant="outline">{{ activeExercise.category_name ?? 'Sem categoria' }}</Badge>
+                  <Badge variant="outline">{{ activeExercise.track_name ?? 'Sem trilha' }}</Badge>
+                  <Badge variant="outline">{{ activeExercise.difficulty }}</Badge>
+                </div>
               </div>
               <div class="workspace-status">
                 <Badge variant="outline">Quest {{ activeIndex }}/{{ exercises.length || 1 }}</Badge>
@@ -660,6 +692,37 @@ onBeforeUnmount(() => {
                 </Card>
 
                 <section class="results-grid">
+                  <Card v-if="latestSubmission" class="outcome-card" :data-tone="submissionOutcomeTone">
+                    <CardHeader>
+                      <div class="feedback-header">
+                        <div>
+                          <p class="eyebrow">Round Outcome</p>
+                          <CardTitle>{{ submissionOutcomeTitle }}</CardTitle>
+                        </div>
+                        <div class="feedback-badges">
+                          <Badge>{{ latestSubmission.status }}</Badge>
+                          <Badge variant="outline">{{ latestSubmission.xp_awarded > 0 ? `+${latestSubmission.xp_awarded} XP` : '0 XP' }}</Badge>
+                          <Badge variant="outline">LEVEL {{ latestSubmission.user_progress.level }}</Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent class="outcome-grid">
+                      <div class="outcome-block">
+                        <p class="section-label">Execução</p>
+                        <strong>{{ latestSubmission.passed_tests }}/{{ latestSubmission.total_tests }} testes</strong>
+                        <p>{{ submissionOutcomeCopy }}</p>
+                      </div>
+                      <div class="outcome-block">
+                        <p class="section-label">Progressão</p>
+                        <strong>{{ rewardSummary }}</strong>
+                        <p>
+                          XP total: {{ latestSubmission.user_progress.xp_total }} · faltam
+                          {{ latestSubmission.user_progress.xp_to_next_level }} XP para o próximo nível
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   <Card class="console-card">
                     <CardHeader class="console-header">
                       <div class="console-heading">
@@ -690,16 +753,24 @@ onBeforeUnmount(() => {
                           <p class="eyebrow">Submission</p>
                           <CardTitle>{{ latestSubmission.passed_tests }}/{{ latestSubmission.total_tests }} testes</CardTitle>
                         </div>
-                        <div class="feedback-badges">
-                          <Badge>{{ latestSubmission.status }}</Badge>
-                          <Badge variant="outline">{{ latestSubmission.feedback_status }}</Badge>
-                        </div>
+                      <div class="feedback-badges">
+                        <Badge>{{ latestSubmission.status }}</Badge>
+                        <Badge variant="outline">{{ latestSubmission.feedback_status }}</Badge>
+                        <Badge variant="outline">{{ latestSubmission.xp_awarded > 0 ? `+${latestSubmission.xp_awarded} XP` : '0 XP' }}</Badge>
                       </div>
-                    </CardHeader>
+                    </div>
+                  </CardHeader>
                     <CardContent class="feedback-grid feedback-grid--stacked">
                       <div class="feedback-column">
-                        <p class="section-label">Resumo</p>
-                        <p>{{ feedbackPayload?.summary ?? latestSubmission.feedback }}</p>
+                        <p class="section-label">Progressão</p>
+                        <p>{{ rewardSummary }}</p>
+                      <ul v-if="progressRewards.length">
+                        <li v-for="reward in progressRewards" :key="reward.milestone_key">{{ reward.label }}</li>
+                      </ul>
+                    </div>
+                    <div class="feedback-column">
+                      <p class="section-label">Resumo</p>
+                      <p>{{ feedbackPayload?.summary ?? latestSubmission.feedback }}</p>
                       </div>
                       <div class="feedback-column">
                         <p class="section-label">Pontos fortes</p>
