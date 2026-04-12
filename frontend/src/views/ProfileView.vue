@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import '@/styles/catalog.css'
 import { useRouter } from 'vue-router'
 import { LogOut, Route, UserRound } from 'lucide-vue-next'
 
