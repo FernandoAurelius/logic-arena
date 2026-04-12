@@ -1,10 +1,24 @@
 import pytest
 
-from arena import services
+from practice.application import services
 from arena.models import ArenaUser, Submission, UserExerciseProgress
 
 
 pytestmark = pytest.mark.django_db
+
+
+def test_practice_exercise_endpoints_return_active_catalog(client, auth_headers, catalog_graph):
+    exercise = catalog_graph['exercises'][0]
+
+    response = client.get('/api/exercises/', **auth_headers)
+    assert response.status_code == 200
+    assert any(item['slug'] == exercise.slug for item in response.json())
+
+    detail = client.get(f'/api/exercises/{exercise.slug}', **auth_headers)
+    assert detail.status_code == 200
+    payload = detail.json()
+    assert payload['slug'] == exercise.slug
+    assert payload['test_cases']
 
 
 def test_submission_awards_xp_on_first_pass_and_updates_progress(client, auth_headers, arena_user, catalog_graph, monkeypatch):

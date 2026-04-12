@@ -5,46 +5,27 @@ from .models import AuthSession, Exercise, ExerciseCategory, ExerciseTrack, Exer
 from .schemas import (
     CatalogAdminReferenceSchema,
     ErrorSchema,
-    ExerciseCreateSchema,
     ExerciseCatalogUpdateSchema,
     ExerciseDetailSchema,
-    ExerciseSummarySchema,
     ExerciseTypeInputSchema,
     LearningModuleInputSchema,
     LoginInputSchema,
     LoginResponseSchema,
     ModuleDetailSchema,
     NavigatorResponseSchema,
-    ReviewChatInputSchema,
-    ReviewChatResponseSchema,
-    SubmissionInputSchema,
-    SubmissionSchema,
-    SubmissionSummarySchema,
-    TrackInputSchema,
     TrackDetailSchema,
+    TrackInputSchema,
     TrackUpdateSchema,
     UserSchema,
 )
-from .feedback import review_submission_chat
-from .selectors import (
-    get_active_exercise_by_slug,
-    get_exercise_for_track,
-    get_module_by_slug,
-    get_submission_for_user,
-    list_active_exercises,
-    list_navigator_modules,
-    list_user_submissions,
-)
+<<<<<<< HEAD
+from .selectors import get_active_exercise_by_slug, get_module_by_slug, get_track_by_slug, list_navigator_modules
 from .services import (
-    build_exercise_progress_payload,
     build_exercise_catalog_meta,
     build_module_progress_summary,
     build_track_progress_summary,
-    build_user_progress_summary,
     build_user_schema_payload,
-    create_exercise,
     ensure_exercise_explanation,
-    evaluate_submission,
     get_or_create_session,
     sync_exercise_explanation,
 )
@@ -52,6 +33,8 @@ from accounts.interface.api import router as accounts_router
 from learning.interface.api import router as learning_router
 from catalog.interface.api import catalog_admin_router as catalog_admin_app_router
 from catalog.interface.api import catalog_router as catalog_app_router
+from practice.interface.api import exercise_router as practice_exercise_router
+from practice.interface.api import submission_router as practice_submission_router
 
 
 api = NinjaAPI(
@@ -64,8 +47,6 @@ api = NinjaAPI(
 api.add_router('/catalog', learning_router)
 
 auth_router = Router(tags=['auth'])
-exercise_router = Router(tags=['exercises'])
-submission_router = Router(tags=['submissions'])
 catalog_router = Router(tags=['catalog'])
 catalog_admin_router = Router(tags=['catalog-admin'])
 system_router = Router(tags=['system'])
@@ -86,37 +67,6 @@ def require_catalog_admin(authorization: str | None) -> AuthSession:
     if not session.user.is_catalog_admin:
         raise PermissionError('Usuário não possui permissão para administrar o catálogo.')
     return session
-
-
-def serialize_submission(submission: Submission) -> dict:
-    progress = UserExerciseProgress.objects.filter(user=submission.user, exercise=submission.exercise).first()
-    return {
-        'id': submission.id,
-        'status': submission.status,
-        'passed_tests': submission.passed_tests,
-        'total_tests': submission.total_tests,
-        'source_code': submission.source_code,
-        'console_output': submission.console_output,
-        'feedback': submission.feedback,
-        'feedback_status': submission.feedback_status,
-        'feedback_source': submission.feedback_source,
-        'feedback_payload': submission.feedback_payload,
-        'review_chat_history': submission.review_chat_history,
-        'created_at': submission.created_at,
-        'results': submission.execution_results,
-        'xp_awarded': submission.xp_awarded,
-        'unlocked_progress_rewards': submission.unlocked_progress_rewards,
-        'exercise_progress': build_exercise_progress_payload(progress) if progress else {
-            'attempts_count': 0,
-            'best_passed_tests': 0,
-            'best_total_tests': 0,
-            'best_ratio': 0,
-            'xp_awarded_total': 0,
-            'first_passed_at': None,
-            'awarded_progress_markers': [],
-        },
-        'user_progress': build_user_progress_summary(submission.user),
-    }
 
 
 def serialize_exercise_summary(exercise: Exercise) -> dict:
@@ -168,32 +118,6 @@ def me(request, authorization: str | None = Header(default=None)):
     except PermissionError as error:
         return 401, {'message': str(error)}
     return 200, build_user_schema_payload(session.user)
-
-
-@exercise_router.get('/', response={200: list[ExerciseSummarySchema], 401: ErrorSchema}, summary='Lista exercícios ativos.')
-def list_exercises(request, authorization: str | None = Header(default=None)):
-    try:
-        require_session(authorization)
-    except PermissionError as error:
-        return 401, {'message': str(error)}
-    return 200, [serialize_exercise_summary(exercise) for exercise in list_active_exercises()]
-
-
-@exercise_router.get('/{slug}', response={200: ExerciseDetailSchema, 401: ErrorSchema}, summary='Detalha um exercício específico.')
-def get_exercise(request, slug: str, authorization: str | None = Header(default=None)):
-    try:
-        require_session(authorization)
-    except PermissionError as error:
-        return 401, {'message': str(error)}
-    exercise = get_object_or_404(list_active_exercises().prefetch_related('test_cases'), slug=slug, is_active=True)
-    return 200, {
-        **serialize_exercise_summary(exercise),
-        'statement': exercise.statement,
-        'starter_code': exercise.starter_code,
-        'sample_input': exercise.sample_input,
-        'sample_output': exercise.sample_output,
-        'test_cases': list(exercise.test_cases.filter(is_hidden=False)),
-    }
 
 
 @catalog_router.get('/navigator', response={200: NavigatorResponseSchema, 401: ErrorSchema}, summary='Retorna a visão autenticada do catálogo por módulo e trilha.')
@@ -641,111 +565,9 @@ def update_exercise_catalog(request, slug: str, payload: ExerciseCatalogUpdateSc
     }
 
 
-@exercise_router.post('/', response={201: ExerciseDetailSchema, 400: ErrorSchema, 401: ErrorSchema}, summary='Cadastra um exercício novo via API.')
-def post_exercise(request, payload: ExerciseCreateSchema, authorization: str | None = Header(default=None)):
-    try:
-        require_session(authorization)
-    except PermissionError as error:
-        return 401, {'message': str(error)}
-    if Exercise.objects.filter(slug=payload.slug).exists():
-        return 400, {'message': 'Já existe um exercício com esse slug.'}
-
-    exercise = create_exercise(payload)
-    return 201, {
-        **serialize_exercise_summary(exercise),
-        'statement': exercise.statement,
-        'starter_code': exercise.starter_code,
-        'sample_input': exercise.sample_input,
-        'sample_output': exercise.sample_output,
-        'test_cases': list(exercise.test_cases.all()),
-    }
-
-
-@submission_router.post('/exercises/{slug}/submit', response={200: SubmissionSchema, 401: ErrorSchema}, summary='Executa os testes, persiste a submissão e devolve o resultado.')
-def submit_exercise(request, slug: str, payload: SubmissionInputSchema, authorization: str | None = Header(default=None)):
-    try:
-        session = require_session(authorization)
-    except PermissionError as error:
-        return 401, {'message': str(error)}
-
-    exercise = get_object_or_404(Exercise.objects.prefetch_related('test_cases'), slug=slug, is_active=True)
-    submission, results = evaluate_submission(session.user, exercise, payload.source_code)
-    serialized = serialize_submission(submission)
-    serialized['results'] = results
-    return 200, serialized
-
-
-@submission_router.get('/me', response={200: list[SubmissionSummarySchema], 401: ErrorSchema}, summary='Lista as submissões do usuário autenticado.')
-def list_my_submissions(request, authorization: str | None = Header(default=None)):
-    try:
-        session = require_session(authorization)
-    except PermissionError as error:
-        return 401, {'message': str(error)}
-
-    return 200, [
-        {
-            'id': submission.id,
-            'exercise_slug': submission.exercise.slug,
-            'exercise_title': submission.exercise.title,
-            'status': submission.status,
-            'passed_tests': submission.passed_tests,
-            'total_tests': submission.total_tests,
-            'feedback_status': submission.feedback_status,
-            'feedback_source': submission.feedback_source,
-            'created_at': submission.created_at,
-        }
-        for submission in list_user_submissions(session.user)
-    ]
-
-
-@submission_router.get('/{submission_id}', response={200: SubmissionSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Retorna a submissão atualizada para polling do feedback.')
-def get_submission(request, submission_id: int, authorization: str | None = Header(default=None)):
-    try:
-        session = require_session(authorization)
-    except PermissionError as error:
-        return 401, {'message': str(error)}
-
-    submission = get_submission_for_user(session.user, submission_id)
-    if submission is None:
-        return 404, {'message': 'Submissão não encontrada.'}
-
-    return 200, serialize_submission(submission)
-
-
-@submission_router.post('/{submission_id}/review-chat', response={200: ReviewChatResponseSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Continua a revisão com IA sobre uma submissão específica.')
-def review_chat(request, submission_id: int, payload: ReviewChatInputSchema, authorization: str | None = Header(default=None)):
-    try:
-        session = require_session(authorization)
-    except PermissionError as error:
-        return 401, {'message': str(error)}
-
-    submission = get_submission_for_user(session.user, submission_id)
-    if submission is None:
-        return 404, {'message': 'Submissão não encontrada.'}
-
-    persisted_history = submission.review_chat_history or []
-    answer = review_submission_chat(
-        exercise_title=submission.exercise.title,
-        statement=submission.exercise.statement,
-        source_code=submission.source_code,
-        console_output=submission.console_output,
-        feedback_summary=submission.feedback,
-        user_message=payload.message,
-        history=persisted_history,
-    )
-    updated_history = [
-        *persisted_history,
-        {'role': 'user', 'content': payload.message},
-        {'role': 'assistant', 'content': answer},
-    ]
-    submission.review_chat_history = updated_history
-    submission.save(update_fields=['review_chat_history', 'updated_at'])
-    return 200, {'answer': answer}
-
-
 api.add_router('/auth', accounts_router)
-api.add_router('/exercises', exercise_router)
-api.add_router('/submissions', submission_router)
+api.add_router('/exercises', practice_exercise_router)
+api.add_router('/submissions', practice_submission_router)
 api.add_router('/catalog', catalog_app_router)
 api.add_router('/catalog-admin', catalog_admin_app_router)
 api.add_router('', system_router)
