@@ -4,9 +4,9 @@ import { useRouter } from 'vue-router'
 import { ArrowRight, LogOut, Map, Play, Sparkles, Target, UserRound } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
-import { catalogApi } from '@/lib/api/client'
-import { schemas } from '@/lib/api/generated'
-import { useSession } from '@/lib/session'
+import { catalogApi } from '@/entities/catalog/api/catalog.api'
+import { schemas } from '@/shared/api/generated'
+import { useSession } from '@/entities/session'
 import ProfileModal from '@/components/theme/ProfileModal.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -91,9 +91,7 @@ async function loadNavigator() {
   errorMessage.value = ''
 
   try {
-    navigatorData.value = await catalogApi.get('/api/catalog/navigator', {
-      headers: { authorization: session.authHeader() ?? undefined },
-    })
+    navigatorData.value = await catalogApi.getNavigator(session.authHeader() ?? undefined)
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Não foi possível carregar o Navegador agora.'

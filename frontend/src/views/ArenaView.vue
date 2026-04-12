@@ -4,8 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { BookOpenText, ChevronRight, FileText, FlaskConical, ListChecks, LogOut, MessageSquare, Play, UserRound } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/lib/api/generated'
-import { catalogApi, exercisesApi, submissionsApi } from '@/lib/api/client'
+import { schemas } from '@/shared/api/generated'
+import { submissionApi } from '@/entities/submission/api/submission.api'
 import ArenaResultsDialog from '@/components/arena/ArenaResultsDialog.vue'
 import ArenaSidebar from '@/components/arena/ArenaSidebar.vue'
 import MonacoEditor from '@/components/editor/MonacoEditor.vue'
@@ -16,48 +16,65 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useSession } from '@/lib/session'
+import { useSession } from '@/entities/session'
+import { useArenaExerciseWorkspace } from '@/features/arena/open-exercise/model/useArenaExerciseWorkspace'
 
-type ExerciseSummary = ZodInfer<typeof schemas.ExerciseSummarySchema>
-type ExerciseDetail = ZodInfer<typeof schemas.ExerciseDetailSchema>
 type Submission = ZodInfer<typeof schemas.SubmissionSchema>
 type SubmissionSummary = ZodInfer<typeof schemas.SubmissionSummarySchema>
-type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>
-type TrackDetail = ZodInfer<typeof schemas.TrackDetailSchema>
-type TrackExercise = ZodInfer<typeof schemas.TrackExerciseSchema>
 
 const router = useRouter()
 const route = useRoute()
 const session = useSession()
 
-const exercises = ref<ExerciseSummary[]>([])
-const activeExercise = ref<ExerciseDetail | null>(null)
-const submissions = ref<SubmissionSummary[]>([])
-const trackContext = ref<TrackDetail | null>(null)
-const code = ref('')
-const latestSubmission = ref<Submission | null>(null)
-const isBooting = ref(false)
 const isSubmitting = ref(false)
 const isChatBusy = ref(false)
-const errorMessage = ref('')
 const hintsOpen = ref(false)
 const chatInput = ref('')
-const chatMessages = ref<ReviewChatMessage[]>([])
 const confettiBurst = ref(false)
 const levelUpBurst = ref(false)
 const showProfile = ref(false)
 const resultsDialogOpen = ref(false)
 const resultsTab = ref<'saida' | 'testes' | 'revisao' | 'chat'>('saida')
 const specTab = ref<'descricao' | 'exemplos' | 'testes'>('descricao')
-const restoreDialogOpen = ref(false)
-const pendingRestoreSubmission = ref<SubmissionSummary | null>(null)
-const rememberRestoreChoice = ref(false)
-
-const RESTORE_CHOICE_STORAGE_KEY = 'logic-arena.restore-choice'
-type RestoreChoice = 'restore' | 'blank'
 
 let feedbackPollTimer: number | null = null
 let levelUpTimer: number | null = null
+
+const {
+  exercises,
+  activeExercise,
+  trackContext,
+  code,
+  latestSubmission,
+  chatMessages,
+  isBooting,
+  errorMessage,
+  restoreDialogOpen,
+  pendingRestoreSubmission,
+  rememberRestoreChoice,
+  routeTrackSlug,
+  groupedExercises,
+  trackExercises,
+  activeTrackIndex,
+  previousTrackExercise,
+  nextTrackExercise,
+  sidebarHistory,
+  bootstrapArena,
+  loadTrackContext,
+  loadSubmissions,
+  selectExercise: selectExerciseFromWorkspace,
+  navigateTrackExercise: navigateTrackExerciseFromWorkspace,
+  openSubmissionSession: openSubmissionSessionFromWorkspace,
+  setHydratedSubmission,
+  confirmRestoreSubmission: confirmRestoreSubmissionFromWorkspace,
+  declineRestoreSubmission: declineRestoreSubmissionFromWorkspace,
+  handleRestoreDialogOpen: handleRestoreDialogOpenFromWorkspace,
+} = useArenaExerciseWorkspace({
+  authHeader: () => session.authHeader(),
+  onSubmissionHydrated: applySubmissionProgress,
+  onStopFeedbackPolling: stopFeedbackPolling,
+  onStartFeedbackPolling: (submissionId) => startFeedbackPolling(submissionId),
+})
 
 const activeIndex = computed(() => {
   if (!activeExercise.value) return 0
@@ -69,7 +86,6 @@ const consoleLines = computed(() => {
 })
 const feedbackPayload = computed(() => latestSubmission.value?.feedback_payload ?? null)
 const visibleTestCases = computed(() => activeExercise.value?.test_cases ?? [])
-const sidebarHistory = computed(() => submissions.value.slice(0, 6))
 const isFeedbackPending = computed(() => latestSubmission.value?.feedback_status === 'pending')
 const canReviewWithAi = computed(() => Boolean(latestSubmission.value) && !isFeedbackPending.value)
 const level = computed(() => session.currentUser.value?.level ?? 1)
@@ -77,54 +93,6 @@ const xpIntoLevel = computed(() => session.currentUser.value?.xp_into_level ?? 0
 const xpProgress = computed(() => Math.min(100, Math.max(0, xpIntoLevel.value)))
 const xpToNextLevel = computed(() => session.currentUser.value?.xp_to_next_level ?? 100)
 const progressRewards = computed(() => latestSubmission.value?.unlocked_progress_rewards ?? [])
-const routeTrackSlug = computed(() => (typeof route.query.track === 'string' ? route.query.track : null))
-const groupedExercises = computed(() => {
-  const source = routeTrackSlug.value && trackContext.value?.slug === routeTrackSlug.value
-    ? trackContext.value.exercises
-    : routeTrackSlug.value
-      ? exercises.value.filter((exercise) => exercise.track_slug === routeTrackSlug.value)
-      : exercises.value
-  const groups = new Map<string, { key: string; label: string; exercises: Array<ExerciseSummary | TrackExercise> }>()
-  for (const exercise of source) {
-    const key = routeTrackSlug.value ? exercise.track_slug ?? 'trilha-livre' : exercise.module_slug ?? exercise.category_slug ?? 'sem-modulo'
-    const label = routeTrackSlug.value ? exercise.track_name ?? 'Trilha livre' : exercise.module_name ?? exercise.category_name ?? 'Sem módulo'
-    if (!groups.has(key)) {
-      groups.set(key, { key, label, exercises: [] })
-    }
-    groups.get(key)?.exercises.push(exercise)
-  }
-  return Array.from(groups.values()).map((group) => ({
-    ...group,
-    exercises: group.exercises.slice().sort((left, right) => {
-      const leftPosition = Number(('position' in left ? left.position : left.track_position) ?? 0)
-      const rightPosition = Number(('position' in right ? right.position : right.track_position) ?? 0)
-      if (routeTrackSlug.value) {
-        if (leftPosition !== rightPosition) return leftPosition - rightPosition
-      }
-      return left.title.localeCompare(right.title)
-    }),
-  }))
-})
-const trackExercises = computed<TrackExercise[]>(() => {
-  if (routeTrackSlug.value && trackContext.value?.slug === routeTrackSlug.value) {
-    return trackContext.value.exercises
-  }
-  return []
-})
-const activeTrackIndex = computed(() => {
-  if (!activeExercise.value || trackExercises.value.length === 0) return -1
-  return trackExercises.value.findIndex((exercise) => exercise.slug === activeExercise.value?.slug)
-})
-const previousTrackExercise = computed(() => {
-  const index = activeTrackIndex.value
-  if (index <= 0) return null
-  return trackExercises.value[index - 1]
-})
-const nextTrackExercise = computed(() => {
-  const index = activeTrackIndex.value
-  if (index < 0 || index >= trackExercises.value.length - 1) return null
-  return trackExercises.value[index + 1]
-})
 const submissionOutcomeTone = computed(() => {
   if (!latestSubmission.value) return 'idle'
   if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) return 'reward'
@@ -192,95 +160,6 @@ function formatSampleBlock(text: string) {
   return normalized.split('\n')
 }
 
-function findLatestSubmissionForExercise(slug: string) {
-  return submissions.value.find((submission) => submission.exercise_slug === slug) ?? null
-}
-
-async function fetchSubmission(submissionId: number) {
-  return submissionsApi.get('/api/submissions/:submission_id', {
-    params: { submission_id: submissionId },
-    headers: { authorization: session.authHeader() ?? undefined },
-  })
-}
-
-async function restoreSubmissionById(submissionId: number) {
-  const submission = await fetchSubmission(submissionId)
-  latestSubmission.value = submission
-  code.value = submission.source_code
-  chatMessages.value = submission.review_chat_history ?? []
-
-  if (submission.feedback_status === 'pending') {
-    startFeedbackPolling(submission.id)
-  } else {
-    stopFeedbackPolling()
-  }
-
-  return true
-}
-
-function promptRestoreLatestSubmissionForExercise(slug: string) {
-  const submissionSummary = findLatestSubmissionForExercise(slug)
-  if (!submissionSummary) {
-    pendingRestoreSubmission.value = null
-    restoreDialogOpen.value = false
-    return false
-  }
-
-  const storedChoice = globalThis.localStorage?.getItem(RESTORE_CHOICE_STORAGE_KEY) as RestoreChoice | null
-  if (storedChoice === 'restore') {
-    void restoreSubmissionById(submissionSummary.id)
-    return true
-  }
-
-  if (storedChoice === 'blank') {
-    clearDraftForExercise()
-    return true
-  }
-
-  rememberRestoreChoice.value = false
-  pendingRestoreSubmission.value = submissionSummary
-  restoreDialogOpen.value = true
-  return true
-}
-
-function clearDraftForExercise() {
-  stopFeedbackPolling()
-  latestSubmission.value = null
-  code.value = ''
-  chatMessages.value = []
-  resultsDialogOpen.value = false
-}
-
-async function confirmRestoreSubmission() {
-  const submissionSummary = pendingRestoreSubmission.value
-  restoreDialogOpen.value = false
-  pendingRestoreSubmission.value = null
-  if (rememberRestoreChoice.value) {
-    globalThis.localStorage?.setItem(RESTORE_CHOICE_STORAGE_KEY, 'restore')
-  }
-  rememberRestoreChoice.value = false
-  if (!submissionSummary) return
-  await restoreSubmissionById(submissionSummary.id)
-}
-
-function declineRestoreSubmission() {
-  restoreDialogOpen.value = false
-  pendingRestoreSubmission.value = null
-  if (rememberRestoreChoice.value) {
-    globalThis.localStorage?.setItem(RESTORE_CHOICE_STORAGE_KEY, 'blank')
-  }
-  rememberRestoreChoice.value = false
-  clearDraftForExercise()
-}
-
-function handleRestoreDialogOpen(nextOpen: boolean) {
-  restoreDialogOpen.value = nextOpen
-  if (!nextOpen) {
-    pendingRestoreSubmission.value = null
-    rememberRestoreChoice.value = false
-  }
-}
-
 function traduzirStatusExecucao(status?: string) {
   switch (status) {
     case 'passed':
@@ -307,134 +186,42 @@ function abrirCentralDeResultado(tab: 'saida' | 'testes' | 'revisao' | 'chat' = 
   resultsDialogOpen.value = true
 }
 
-async function loadExercises() {
-  exercises.value = await exercisesApi.get('/api/exercises/', {
-    headers: { authorization: session.authHeader() ?? undefined },
-  })
-  const requestedSlug = typeof route.query.exercise === 'string' ? route.query.exercise : null
-  const initialExercise = (requestedSlug && exercises.value.find((exercise) => exercise.slug === requestedSlug)) ?? exercises.value[0]
-  if (!activeExercise.value && initialExercise) {
-    await selectExercise(initialExercise.slug)
-  }
-}
-
-async function loadTrackContext(trackSlug: string | null) {
-  if (!trackSlug) {
-    trackContext.value = null
-    return
-  }
-
-  try {
-    trackContext.value = await catalogApi.get('/api/catalog/tracks/:track_slug', {
-      params: { track_slug: trackSlug },
-      headers: { authorization: session.authHeader() ?? undefined },
-    })
-  } catch (error) {
-    console.error(error)
-    trackContext.value = null
-  }
-}
-
-async function fetchExercise(slug: string) {
-  return exercisesApi.get('/api/exercises/:slug', {
-    params: { slug },
-    headers: { authorization: session.authHeader() ?? undefined },
-  })
-}
-
-async function loadSubmissions() {
-  submissions.value = await submissionsApi.get('/api/submissions/me', {
-    headers: { authorization: session.authHeader() ?? undefined },
-  })
-}
-
-async function bootstrapArena() {
-  errorMessage.value = ''
-  isBooting.value = true
-
-  try {
-    await Promise.all([loadTrackContext(routeTrackSlug.value), loadExercises(), loadSubmissions()])
-  } catch (error) {
-    console.error(error)
-    errorMessage.value = 'Não foi possível carregar a arena autenticada.'
-  } finally {
-    isBooting.value = false
-  }
-}
-
-async function selectExercise(slug: string) {
-  isBooting.value = true
-  errorMessage.value = ''
-  stopFeedbackPolling()
+function resetArenaPanels() {
   resultsDialogOpen.value = false
   hintsOpen.value = false
-  chatMessages.value = []
-  restoreDialogOpen.value = false
-  pendingRestoreSubmission.value = null
+}
 
-  try {
-    const exercise = await fetchExercise(slug)
-    activeExercise.value = exercise
-    clearDraftForExercise()
-    if (route.query.exercise !== slug) {
-      await router.replace({
-        name: 'arena',
-        query: {
-          ...route.query,
-          exercise: slug,
-        },
-      })
-    }
-    promptRestoreLatestSubmissionForExercise(slug)
-  } catch (error) {
-    console.error(error)
-    errorMessage.value = 'Falha ao carregar os detalhes do exercício.'
-  } finally {
-    isBooting.value = false
-  }
+async function handleSelectExercise(slug: string) {
+  resetArenaPanels()
+  await selectExerciseFromWorkspace(slug)
 }
 
 function navigateTrackExercise(direction: 'previous' | 'next') {
-  const target = direction === 'previous' ? previousTrackExercise.value : nextTrackExercise.value
-  if (!target) return
-  void selectExercise(target.slug)
+  resetArenaPanels()
+  navigateTrackExerciseFromWorkspace(direction)
 }
 
-async function openSubmissionSession(submissionSummary: SubmissionSummary) {
-  isBooting.value = true
-  errorMessage.value = ''
-  stopFeedbackPolling()
-  resultsDialogOpen.value = false
-  hintsOpen.value = false
-  restoreDialogOpen.value = false
-  pendingRestoreSubmission.value = null
+async function handleOpenSubmissionSession(submissionSummary: SubmissionSummary) {
+  resetArenaPanels()
+  await openSubmissionSessionFromWorkspace(submissionSummary)
+}
 
-  try {
-    const [exercise, submission] = await Promise.all([
-      fetchExercise(submissionSummary.exercise_slug),
-      fetchSubmission(submissionSummary.id),
-    ])
-    activeExercise.value = exercise
-    latestSubmission.value = submission
-    applySubmissionProgress(submission)
-    code.value = submission.source_code
-    chatMessages.value = submission.review_chat_history ?? []
-    if (submission.feedback_status === 'pending') {
-      startFeedbackPolling(submission.id)
-    }
-  } catch (error) {
-    console.error(error)
-    errorMessage.value = 'Não foi possível reabrir essa sessão do histórico.'
-  } finally {
-    isBooting.value = false
-  }
+async function confirmRestoreSubmission() {
+  await confirmRestoreSubmissionFromWorkspace()
+  resultsDialogOpen.value = false
+}
+
+function declineRestoreSubmission() {
+  declineRestoreSubmissionFromWorkspace()
+  resultsDialogOpen.value = false
+}
+
+function handleRestoreDialogOpen(nextOpen: boolean) {
+  handleRestoreDialogOpenFromWorkspace(nextOpen)
 }
 
 async function refreshSubmission(submissionId: number) {
-  const refreshed = await submissionsApi.get('/api/submissions/:submission_id', {
-    params: { submission_id: submissionId },
-    headers: { authorization: session.authHeader() ?? undefined },
-  })
+  const refreshed = await submissionApi.getById(submissionId, session.authHeader() ?? undefined)
   latestSubmission.value = {
     ...refreshed,
     results: refreshed.results.length ? refreshed.results : latestSubmission.value?.results ?? [],
@@ -474,20 +261,12 @@ async function submitSolution() {
   chatMessages.value = []
 
   try {
-    const submission = await submissionsApi.post(
-      '/api/submissions/exercises/:slug/submit',
-      { source_code: code.value },
-      { params: { slug: activeExercise.value.slug }, headers: { authorization: session.authHeader() ?? undefined } },
-    )
-    latestSubmission.value = submission
+    const submission = await submissionApi.submit(activeExercise.value.slug, code.value, session.authHeader() ?? undefined)
+    setHydratedSubmission(submission)
     pendingRestoreSubmission.value = null
     restoreDialogOpen.value = false
     applySubmissionProgress(submission)
-    chatMessages.value = submission.review_chat_history ?? []
     await loadSubmissions()
-    if (submission.feedback_status === 'pending') {
-      startFeedbackPolling(submission.id)
-    }
     if (submission.status === 'passed') {
       triggerConfetti()
     }
@@ -510,10 +289,11 @@ async function sendReviewChat() {
   isChatBusy.value = true
 
   try {
-    const response = await submissionsApi.post(
-      '/api/submissions/:submission_id/review-chat',
-      { message, history: chatMessages.value },
-      { params: { submission_id: submission.id }, headers: { authorization: session.authHeader() ?? undefined } },
+    const response = await submissionApi.sendReviewChat(
+      submission.id,
+      message,
+      chatMessages.value,
+      session.authHeader() ?? undefined,
     )
     chatMessages.value.push({ role: 'assistant', content: response.answer })
     if (latestSubmission.value) {
@@ -554,7 +334,7 @@ watch(
       return
     }
     if (exercises.value.some((exercise) => exercise.slug === exerciseSlug)) {
-      void selectExercise(exerciseSlug)
+      void handleSelectExercise(exerciseSlug)
     }
   },
 )
@@ -652,8 +432,8 @@ onBeforeUnmount(() => {
         :track-name="trackContext?.name ?? activeExercise?.track_name ?? activeExercise?.module_name ?? null"
         :can-go-previous="Boolean(previousTrackExercise)"
         :can-go-next="Boolean(nextTrackExercise)"
-        @select-exercise="selectExercise"
-        @open-history="openSubmissionSession"
+        @select-exercise="handleSelectExercise"
+        @open-history="handleOpenSubmissionSession"
         @go-track="router.push({ name: 'track', params: { trackSlug: routeTrackSlug } })"
         @go-navigator="router.push({ name: 'navigator' })"
         @navigate-track="navigateTrackExercise"

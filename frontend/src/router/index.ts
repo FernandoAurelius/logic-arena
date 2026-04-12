@@ -6,7 +6,7 @@ import NavigatorView from '@/views/NavigatorView.vue'
 import TrackView from '@/views/TrackView.vue'
 import ExplanationView from '@/views/ExplanationView.vue'
 import TutorialView from '@/views/TutorialView.vue'
-import { useSession } from '@/lib/session'
+import { useSession } from '@/entities/session'
 
 const router = createRouter({
   history: createWebHistory(),

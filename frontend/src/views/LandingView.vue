@@ -6,7 +6,7 @@ import { ArrowRight, Cpu, History, Moon, Play, Sparkles, Sun } from 'lucide-vue-
 import LoginModal from '@/components/auth/LoginModal.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useSession } from '@/lib/session'
+import { useSession } from '@/entities/session'
 import { useTheme } from '@/lib/theme'
 
 const router = useRouter()

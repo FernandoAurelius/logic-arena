@@ -5,7 +5,7 @@ import { LogOut, Route, UserRound } from 'lucide-vue-next'
 import ThemePicker from '@/components/theme/ThemePicker.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useSession } from '@/lib/session'
+import { useSession } from '@/entities/session'
 
 const router = useRouter()
 const session = useSession()

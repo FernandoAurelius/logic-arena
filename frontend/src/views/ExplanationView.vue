@@ -9,8 +9,9 @@ import json from 'highlight.js/lib/languages/json'
 import { ArrowLeft, BookOpenText, LogOut, Play, Route, UserRound } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/lib/api/generated'
-import { useSession } from '@/lib/session'
+import { schemas } from '@/shared/api/generated'
+import { explanationApi } from '@/entities/explanation/api/explanation.api'
+import { useSession } from '@/entities/session'
 import ProfileModal from '@/components/theme/ProfileModal.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -52,20 +53,11 @@ async function loadExplanation() {
   errorMessage.value = ''
 
   try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'}/api/catalog/tracks/${route.params.trackSlug}/explanations/${route.params.exerciseSlug}`,
-      {
-        headers: {
-          Authorization: session.authHeader() ?? '',
-        },
-      },
+    explanation.value = await explanationApi.getByTrackAndExercise(
+      String(route.params.trackSlug),
+      String(route.params.exerciseSlug),
+      session.authHeader() ?? undefined,
     )
-
-    if (!response.ok) {
-      throw new Error(`Falha ao carregar explanation: ${response.status}`)
-    }
-
-    explanation.value = (await response.json()) as ExerciseExplanation
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Não foi possível carregar a explanation deste módulo.'

@@ -4,9 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, BookOpenText, Lock, LogOut, Play, Route, ShieldCheck, UserRound } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
-import { catalogApi } from '@/lib/api/client'
-import { schemas } from '@/lib/api/generated'
-import { useSession } from '@/lib/session'
+import { catalogApi } from '@/entities/catalog/api/catalog.api'
+import { schemas } from '@/shared/api/generated'
+import { useSession } from '@/entities/session'
 import ProfileModal from '@/components/theme/ProfileModal.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -317,10 +317,7 @@ async function loadTrack() {
   errorMessage.value = ''
 
   try {
-    const response = await catalogApi.get('/api/catalog/tracks/:track_slug', {
-      params: { track_slug: route.params.trackSlug as string },
-      headers: { authorization: session.authHeader() ?? undefined },
-    })
+    const response = await catalogApi.getTrackDetail(route.params.trackSlug as string, session.authHeader() ?? undefined)
     track.value = response
     selectedExerciseSlug.value = response.current_target_slug ?? response.exercises[0]?.slug ?? ''
   } catch (error) {
