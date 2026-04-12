@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'accounts',
     'catalog',
+    'learning',
     'arena',
 ]
 
