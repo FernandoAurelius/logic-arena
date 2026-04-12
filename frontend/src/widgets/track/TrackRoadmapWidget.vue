@@ -142,7 +142,7 @@ function openArena(slug?: string) {
 
             <article
               class="track-map-milestone-card track-milestone-card"
-              :class="track.milestone.locked ? 'track-milestone-card--locked' : ''"
+              :class="!track.milestone.unlocked ? 'track-milestone-card--locked' : ''"
               :style="{
                 left: `${roadmap.milestoneLayout.value.cardX}px`,
                 top: `${roadmap.milestoneLayout.value.cardY}px`,
@@ -157,7 +157,7 @@ function openArena(slug?: string) {
                 <h3>{{ track.milestone.title }}</h3>
                 <p>{{ track.milestone.summary }}</p>
                 <small>
-                  {{ track.milestone.locked ? `${track.milestone.remaining_exercises} exercício(s) restantes.` : 'Pronto para tentativa.' }}
+                  {{ !track.milestone.unlocked ? `${track.milestone.remaining_exercises} exercício(s) restantes.` : 'Pronto para tentativa.' }}
                 </small>
               </div>
             </article>
