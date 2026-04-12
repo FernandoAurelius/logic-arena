@@ -17,7 +17,7 @@ from arena.schemas import (
     TrackUpdateSchema,
 )
 
-from arena.services import ensure_exercise_explanation
+from arena.services import ensure_exercise_explanation, sync_exercise_explanation
 
 from catalog.selectors import get_active_exercise_by_slug, get_module_by_slug, get_track_by_slug, list_navigator_modules
 from catalog.application.services import (

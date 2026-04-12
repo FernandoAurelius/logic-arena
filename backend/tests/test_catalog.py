@@ -89,3 +89,38 @@ def test_catalog_selectors_and_services_retain_track_context(catalog_graph, aren
     module_summary = build_module_progress_summary(catalog_graph['module'], arena_user)
     assert module_summary['total_tracks'] >= 1
     assert list_navigator_modules().count() >= 1
+
+
+def test_update_track_rejects_unknown_module_slug(client, auth_headers, arena_user, catalog_graph):
+    arena_user.is_catalog_admin = True
+    arena_user.save(update_fields=['is_catalog_admin'])
+
+    response = client.patch(
+        f"/api/catalog-admin/tracks/{catalog_graph['track'].slug}",
+        data='{"module_slug":"modulo-inexistente"}',
+        content_type='application/json',
+        **auth_headers,
+    )
+
+    assert response.status_code == 404
+    assert response.json()['message'] == 'Módulo não encontrado.'
+
+
+def test_update_exercise_catalog_updates_metadata_without_name_error(client, auth_headers, arena_user, catalog_graph):
+    arena_user.is_catalog_admin = True
+    arena_user.save(update_fields=['is_catalog_admin'])
+    exercise = catalog_graph['exercises'][0]
+
+    response = client.patch(
+        f'/api/catalog-admin/exercises/{exercise.slug}/catalog',
+        data='{"estimated_time_minutes":14,"concept_summary":"Resumo atualizado","pedagogical_brief":"Brief atualizado"}',
+        content_type='application/json',
+        **auth_headers,
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload['estimated_time_minutes'] == 14
+    assert payload['concept_summary'] == 'Resumo atualizado'
+    exercise.refresh_from_db()
+    assert exercise.pedagogical_brief == 'Brief atualizado'
