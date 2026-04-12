@@ -12,6 +12,7 @@ type TrackNodeLayout = {
 }
 
 type TrackTipLayout = {
+  id: string
   title: string
   copy: string
   x: number
@@ -145,8 +146,10 @@ export function useTrackRoadmap(track: Ref<TrackDetail>) {
 
     return source.map((tip, index) => {
       const current = trackNodeLayouts.value[index]
+      const tipId = `${current?.exercise.slug ?? track.value.slug}-tip-${index}`
       if (!current) {
         return {
+          id: tipId,
           ...tip,
           x: 88,
           y: MAP_TOP_PADDING + index * 200 + 80,
@@ -192,6 +195,7 @@ export function useTrackRoadmap(track: Ref<TrackDetail>) {
       placedTips.push(candidate)
 
       return {
+        id: tipId,
         ...tip,
         x: candidate.x,
         y: candidate.y,

@@ -81,7 +81,7 @@ function openArena(slug?: string) {
               <path class="track-map-path" :d="roadmap.roadmapPath.value" />
               <path
                 v-for="tip in roadmap.roadmapTips.value"
-                :key="`tip-path-${tip.title}`"
+                :key="`tip-path-${tip.id}`"
                 class="track-map-tip-path"
                 :d="tip.pathD"
               />
@@ -164,7 +164,7 @@ function openArena(slug?: string) {
 
             <article
               v-for="tip in roadmap.roadmapTips.value"
-              :key="`${tip.title}-${tip.y}`"
+              :key="tip.id"
               class="track-map-tip"
               :class="`track-map-tip--${tip.status}`"
               :style="roadmap.tipStyle(tip)"
