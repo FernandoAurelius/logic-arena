@@ -1,6 +1,7 @@
 import pytest
 
-from arena.models import ExerciseTrack
+from catalog.application.services import build_module_progress_summary, build_track_progress_summary
+from catalog.selectors import get_track_by_slug, list_active_exercises, list_navigator_modules
 
 
 pytestmark = pytest.mark.django_db
@@ -24,7 +25,6 @@ def test_navigator_returns_grouped_tracks_with_recommendation(client, auth_heade
     payload = response.json()
     assert payload['recommended_module_slug'] == catalog_graph['module'].slug
     assert payload['recommended_track_slug'] == catalog_graph['track'].slug
-    assert len(payload['modules']) >= 1
     module = next(module for module in payload['modules'] if module['slug'] == catalog_graph['module'].slug)
     track = next(track for track in module['tracks'] if track['slug'] == catalog_graph['track'].slug)
     assert track['progress_percent'] == 33
@@ -56,11 +56,7 @@ def test_track_detail_orders_exercises_and_marks_progress_state(client, auth_hea
     payload = response.json()
     assert payload['total_exercises'] == 3
     assert [exercise['position'] for exercise in payload['exercises']] == [1, 2, 3]
-    assert [exercise['slug'] for exercise in payload['exercises']] == [
-        first.slug,
-        second.slug,
-        third.slug,
-    ]
+    assert [exercise['slug'] for exercise in payload['exercises']] == [first.slug, second.slug, third.slug]
     assert payload['exercises'][0]['progress']['status'] == 'passed'
     assert payload['exercises'][1]['progress']['status'] == 'in_progress'
     assert payload['exercises'][2]['progress']['status'] == 'locked'
@@ -83,16 +79,13 @@ def test_explanation_endpoint_returns_persisted_content(client, auth_headers, ca
     assert any('if' in example['code'] or 'print' in example['code'] for example in payload['code_examples'])
 
 
-def test_update_track_rejects_unknown_module_slug(client, auth_headers, arena_user, catalog_graph):
-    arena_user.is_catalog_admin = True
-    arena_user.save(update_fields=['is_catalog_admin'])
+def test_catalog_selectors_and_services_retain_track_context(catalog_graph, arena_user):
+    track = get_track_by_slug(catalog_graph['track'].slug)
+    assert track is not None
+    assert list_active_exercises().filter(track=track).count() == 3
 
-    response = client.patch(
-        f"/api/catalog-admin/tracks/{catalog_graph['track'].slug}",
-        data='{"module_slug":"modulo-inexistente"}',
-        content_type='application/json',
-        **auth_headers,
-    )
-
-    assert response.status_code == 404
-    assert response.json()['message'] == 'Módulo não encontrado.'
+    summary = build_track_progress_summary(track, arena_user)
+    assert summary['total'] == 3
+    module_summary = build_module_progress_summary(catalog_graph['module'], arena_user)
+    assert module_summary['total_tracks'] >= 1
+    assert list_navigator_modules().count() >= 1

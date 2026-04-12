@@ -25,4 +25,4 @@ test = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["arena*", "config*"]
+include = ["accounts*", "arena*", "catalog*", "config*"]
