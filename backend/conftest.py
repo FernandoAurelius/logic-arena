@@ -13,6 +13,8 @@ from arena.models import (
     ExerciseExplanation,
     ExerciseTestCase,
     ExerciseTrack,
+    ExerciseTrackConcept,
+    ExerciseTrackPrerequisite,
     LearningModule,
 )
 
@@ -20,11 +22,13 @@ os.environ.setdefault('GEMINI_API_KEY', 'pytest-dummy-key')
 
 
 @pytest.fixture
+
 def client():
     return Client()
 
 
 @pytest.fixture
+
 def arena_user(db):
     return ArenaUser.objects.create(
         nickname='miguel.barreto',
@@ -33,16 +37,19 @@ def arena_user(db):
 
 
 @pytest.fixture
+
 def auth_session(arena_user):
     return AuthSession.objects.create(user=arena_user, token=uuid.uuid4().hex)
 
 
 @pytest.fixture
+
 def auth_headers(auth_session):
     return {'HTTP_AUTHORIZATION': f'Bearer {auth_session.token}'}
 
 
 @pytest.fixture
+
 def catalog_graph(db):
     module = LearningModule.objects.create(
         slug='fundamentos-python-teste',
@@ -73,21 +80,24 @@ def catalog_graph(db):
         milestone_requirement_label='Concluir os exercícios do bloco.',
         sort_order=1,
     )
-    track.concepts.create(
+    ExerciseTrackConcept.objects.create(
+        track=track,
         title='Comparação e prioridade',
         summary='Escolher o caminho certo a partir de critérios simples.',
         why_it_matters='É a base para validar o primeiro exercício condicional.',
         common_mistake='Testar o caso geral antes do específico.',
         sort_order=1,
     )
-    track.concepts.create(
+    ExerciseTrackConcept.objects.create(
+        track=track,
         title='Leitura e conversão',
         summary='Ler entrada e converter para o tipo certo antes de calcular.',
         why_it_matters='Evita operar string onde deveria haver número.',
         common_mistake='Esquecer o `float` ou `int` na entrada.',
         sort_order=2,
     )
-    track.prerequisites.create(
+    ExerciseTrackPrerequisite.objects.create(
+        track=track,
         label='Leitura atenta do enunciado',
         sort_order=1,
     )
@@ -166,7 +176,7 @@ def catalog_graph(db):
         expected_output='Pode votar.',
         is_hidden=False,
     )
-    explanation = ExerciseExplanation.objects.create(
+    ExerciseExplanation.objects.create(
         exercise=first,
         learning_goal='Compreender leitura de entrada, cálculo de média e decisão condicional.',
         concept_focus_markdown='Leitura, conversão e decisão condicional.',
@@ -176,6 +186,7 @@ def catalog_graph(db):
         common_mistakes=['Esquecer a conversão numérica', 'Trocar a ordem das mensagens de saída'],
         mastery_checklist=['Ler duas notas', 'Calcular a média', 'Decidir aprovação pela média'],
     )
+    explanation = first.explanation
     explanation.concepts.create(
         title='Leitura e conversão',
         explanation_text='Use `float(input())` quando o exercício pedir notas ou valores decimais.',
