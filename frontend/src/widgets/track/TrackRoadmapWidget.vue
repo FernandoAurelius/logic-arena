@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toRef } from 'vue'
-import { ArrowRight, BookOpenText, Play, ShieldCheck } from 'lucide-vue-next'
+import { ArrowRight, BookOpenText, Lock, Play, ShieldCheck } from 'lucide-vue-next'
 
 import type { TrackDetail } from '@/entities/track'
 import { useTrackRoadmap } from '@/features/track/roadmap/model/useTrackRoadmap'
@@ -97,7 +97,7 @@ function openArena(slug?: string) {
             </div>
 
             <div
-              v-for="(layout, index) in roadmap.trackNodeLayouts.value"
+              v-for="layout in roadmap.trackNodeLayouts.value"
               :key="layout.exercise.slug"
               class="track-map-stop"
               :class="[
@@ -110,7 +110,7 @@ function openArena(slug?: string) {
             >
               <span class="track-map-stop-ring"></span>
               <span class="track-map-stop-core"></span>
-              <span class="track-map-stop-label">{{ index + 1 }}</span>
+              <span class="track-map-stop-label">{{ layout.exercise.position }}</span>
             </div>
 
             <article
@@ -150,7 +150,8 @@ function openArena(slug?: string) {
               }"
             >
               <div class="track-milestone-icon">
-                <ShieldCheck :size="20" />
+                <Lock v-if="!track.milestone.unlocked" :size="20" />
+                <ShieldCheck v-else :size="20" />
               </div>
               <div class="track-milestone-copy">
                 <small class="eyebrow">Milestone checkpoint</small>
