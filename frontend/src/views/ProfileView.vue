@@ -22,9 +22,9 @@ async function logout() {
       <div class="topbar-left topbar-left--nav">
         <span class="brand-wordmark">LOGIC ARENA</span>
         <nav class="workspace-nav">
-          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'navigator' })">Navigator</button>
+          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'navigator' })">Navegador</button>
           <button class="workspace-nav-link" type="button" @click="router.push({ name: 'arena' })">Arena</button>
-          <button class="workspace-nav-link workspace-nav-link--active" type="button">Profile</button>
+          <button class="workspace-nav-link workspace-nav-link--active" type="button">Perfil</button>
         </nav>
       </div>
       <div class="topbar-right">
@@ -40,8 +40,8 @@ async function logout() {
         </div>
         <div class="topbar-status">
           <div class="level-box">
-            <strong>LEVEL {{ session.currentUser.value?.level ?? 1 }}</strong>
-            <span>{{ session.currentUser.value?.nickname ?? 'operator' }}</span>
+            <strong>NÍVEL {{ session.currentUser.value?.level ?? 1 }}</strong>
+            <span>{{ session.currentUser.value?.nickname ?? 'operador' }}</span>
             <small>{{ session.currentUser.value?.xp_total ?? 0 }} XP totais</small>
           </div>
         </div>
@@ -52,7 +52,7 @@ async function logout() {
       <section class="profile-grid">
         <Card class="profile-card">
           <CardHeader>
-            <p class="eyebrow">Operator Profile</p>
+            <p class="eyebrow">Perfil do operador</p>
             <CardTitle>Personalização</CardTitle>
             <CardDescription>
               Centralize aqui preferências visuais da sua estação, sem poluir as telas de prática.
@@ -64,7 +64,7 @@ async function logout() {
                 <UserRound :size="20" />
               </div>
               <div>
-                <strong>{{ session.currentUser.value?.nickname ?? 'operator' }}</strong>
+                <strong>{{ session.currentUser.value?.nickname ?? 'operador' }}</strong>
                 <p>Nível {{ session.currentUser.value?.level ?? 1 }} · {{ session.currentUser.value?.xp_total ?? 0 }} XP</p>
               </div>
             </div>

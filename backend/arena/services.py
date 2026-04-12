@@ -239,7 +239,7 @@ def build_exercise_catalog_meta(exercise: Exercise) -> dict:
             track_position = len(track_meta.exercise_order) + 1
     return {
         'exercise_type': exercise_type,
-        'exercise_type_label': EXERCISE_TYPE_LABELS.get(exercise_type, 'Core Drill'),
+        'exercise_type_label': EXERCISE_TYPE_LABELS.get(exercise_type, 'Exercício-base'),
         'estimated_time_minutes': exercise_meta.estimated_time_minutes if exercise_meta else 20,
         'concept_summary': exercise_meta.concept_summary if exercise_meta else exercise.professor_note,
         'pedagogical_brief': exercise_meta.pedagogical_brief if exercise_meta else exercise.professor_note,

@@ -78,11 +78,11 @@ def _get_track_meta(exercise: Exercise) -> TrackMeta | None:
 def _get_exercise_type_label(exercise: Exercise) -> str:
     track_meta = _get_track_meta(exercise)
     if not track_meta:
-        return 'Core Drill'
+        return 'Exercício-base'
     exercise_meta = track_meta.exercise_meta.get(exercise.slug)
     if not exercise_meta:
-        return 'Core Drill'
-    return EXERCISE_TYPE_LABELS.get(exercise_meta.exercise_type, 'Core Drill')
+        return 'Exercício-base'
+    return EXERCISE_TYPE_LABELS.get(exercise_meta.exercise_type, 'Exercício-base')
 
 
 def _build_code_examples(exercise: Exercise, track_meta: TrackMeta | None) -> list[ExplanationCodeExampleSeed]:

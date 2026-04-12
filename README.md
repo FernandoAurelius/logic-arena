@@ -34,6 +34,24 @@ O MVP já possui:
 - landing pública, arena autenticada e página de ajuda;
 - deploy contínuo para produção em [logic-arena.floresdev.com.br](https://logic-arena.floresdev.com.br).
 
+## Fechamento atual da M2
+
+Hoje a `M2` pode ser lida como **substancialmente concluída** no escopo de navegação/taxonomia inicial.
+
+Isso significa que o projeto já possui:
+
+- `Navigator` autenticado como superfície real de descoberta;
+- `Track Page` como navegação por trilha e progressão;
+- contexto de trilha refletido na `Arena`;
+- taxonomia mínima funcional com `categoria`, `trilha`, `status`, `exercise_type`, `estimated_time_minutes` e ordem;
+- explicações por módulo em superfície dedicada.
+
+### Decisão deliberada da M2
+
+Nesta milestone, `exercise_type`, `estimated_time_minutes` e `exercise_order` **não** são persistidos no banco como primeira classe. A fonte de verdade desses metadados continua sendo o catálogo curado em [`backend/arena/catalog.py`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/backend/arena/catalog.py).
+
+Essa decisão foi tomada para evitar inflar a `M2` com migrations, backfill e sincronização de múltiplas fontes de verdade antes da hora. A persistência editável desses metadados fica explicitamente para a próxima milestone em que o catálogo precisar ser alterado sem deploy.
+
 ## Para quem o projeto está sendo feito
 
 O recorte atual é deliberadamente pequeno: colegas e estudantes que querem praticar lógica de programação em um formato mais próximo da avaliação prática real. A plataforma ainda não tenta ser uma escola ampla, um judge online genérico ou um LMS completo.

@@ -197,7 +197,7 @@ const TrackExerciseSchema = z
     language: z.string(),
     professor_note: z.string(),
     exercise_type: z.string().optional().default("core_drill"),
-    exercise_type_label: z.string().optional().default("Core Drill"),
+    exercise_type_label: z.string().optional().default("Exercício-base"),
     estimated_time_minutes: z.number().int().optional().default(15),
     concept_summary: z.string().optional().default(""),
     track_position: z.number().int().optional().default(0),

@@ -18,7 +18,7 @@ const session = useSession()
     <Card class="modal-card profile-modal-card">
       <CardHeader class="profile-modal-header">
         <div>
-          <p class="eyebrow">Operator Profile</p>
+          <p class="eyebrow">Perfil do operador</p>
           <CardTitle>Preferências da Estação</CardTitle>
           <CardDescription>
             Ajuste tema e aparência sem sair da navegação principal.
@@ -34,7 +34,7 @@ const session = useSession()
             <UserRound :size="20" />
           </div>
           <div>
-            <strong>{{ session.currentUser.value?.nickname ?? 'operator' }}</strong>
+            <strong>{{ session.currentUser.value?.nickname ?? 'operador' }}</strong>
             <p>Nível {{ session.currentUser.value?.level ?? 1 }} · {{ session.currentUser.value?.xp_total ?? 0 }} XP</p>
           </div>
         </div>

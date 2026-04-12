@@ -130,7 +130,7 @@ watch(
       <div class="topbar-left topbar-left--nav">
         <span class="brand-wordmark">LOGIC ARENA</span>
         <nav class="workspace-nav">
-          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'navigator' })">Navigator</button>
+          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'navigator' })">Navegador</button>
           <button
             class="workspace-nav-link"
             type="button"
@@ -138,7 +138,7 @@ watch(
           >
             Arena
           </button>
-          <button class="workspace-nav-link workspace-nav-link--active" type="button">Explanation</button>
+          <button class="workspace-nav-link workspace-nav-link--active" type="button">Explicação</button>
         </nav>
       </div>
       <div class="topbar-right">
@@ -159,7 +159,7 @@ watch(
       <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
       <div v-else-if="loading" class="navigator-empty-state">
         <BookOpenText :size="18" />
-        <span>Carregando explanation do módulo...</span>
+        <span>Carregando explicação do módulo...</span>
       </div>
       <div v-else-if="explanation" class="explanation-layout">
         <aside class="explanation-sidebar">
@@ -192,19 +192,19 @@ watch(
             </CardHeader>
             <CardContent class="track-summary-body">
               <p class="track-summary-copy">{{ explanation.track_goal }}</p>
-              <Button variant="outline" class="w-full" @click="router.push({ name: 'navigator' })">
-                <Route :size="16" />
-                Voltar ao Navigator
-              </Button>
-            </CardContent>
-          </Card>
+                <Button variant="outline" class="w-full" @click="router.push({ name: 'navigator' })">
+                  <Route :size="16" />
+                  Voltar ao Navegador
+                </Button>
+              </CardContent>
+            </Card>
         </aside>
 
         <section class="explanation-article">
           <Card class="explanation-article-card">
             <CardContent class="explanation-article-body">
               <article class="explanation-markdown">
-                <p class="eyebrow">Documentation / Explanation</p>
+                <p class="eyebrow">Documentação / Explicação</p>
                 <h1>{{ explanation.exercise_title }}</h1>
                 <p class="track-summary-copy">{{ explanation.learning_goal }}</p>
 

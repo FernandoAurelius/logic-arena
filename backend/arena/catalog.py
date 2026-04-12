@@ -32,6 +32,9 @@ class TrackMeta:
     exercise_meta: dict[str, ExerciseMeta]
 
 TRACK_CATALOG: dict[str, TrackMeta] = {
+    # Na M2, a taxonomia canônica da navegação continua curada em código.
+    # exercise_type, estimated_time_minutes e exercise_order ficam aqui de forma deliberada
+    # até a milestone em que o catálogo precisar ser editável sem deploy.
     'entrada-saida-e-formulas': TrackMeta(
         level_label='Base Operacional',
         goal='Dominar leitura, conversão e fórmulas diretas sem ruído.',
@@ -163,8 +166,8 @@ TRACK_CATALOG: dict[str, TrackMeta] = {
 
 
 EXERCISE_TYPE_LABELS = {
-    'core_drill': 'Core Drill',
-    'exam_simulation': 'Exam Simulation',
-    'guided_build': 'Guided Build',
-    'integrative_case': 'Integrative Case',
+    'core_drill': 'Exercício-base',
+    'exam_simulation': 'Simulação de prova',
+    'guided_build': 'Construção guiada',
+    'integrative_case': 'Caso integrador',
 }

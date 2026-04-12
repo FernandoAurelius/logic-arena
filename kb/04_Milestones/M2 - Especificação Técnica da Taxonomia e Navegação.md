@@ -233,6 +233,54 @@ Para não inflar a milestone além do necessário, eu não colocaria aqui:
 
 Esses pontos dependem da `M2`, mas pertencem a outras milestones.
 
+## 7. Decisão final de fechamento
+
+### Fonte de verdade da taxonomia na M2
+
+Para fechar a `M2` sem inflar escopo indevidamente, a fonte de verdade de:
+
+- `exercise_type`
+- `estimated_time_minutes`
+- `exercise_order`
+
+permanece em `backend/arena/catalog.py`.
+
+### Justificativa
+
+- a taxonomia já funciona ponta a ponta no produto;
+- a API já expõe esses metadados ao frontend;
+- a `Track Page`, o `Navigator` e a `Arena` já dependem dessa camada curada;
+- persistir isso no banco agora aumentaria escopo com migration, backfill e risco de divergência sem entregar ganho proporcional de UX nesta milestone.
+
+### Leitura correta
+
+Isso não é uma lacuna acidental. É uma decisão deliberada de `M2`.
+
+A persistência editável desses metadados deve entrar apenas quando o catálogo precisar ser alterado por painel/API administrativa, sem depender de deploy.
+
+## 8. Leitura final do status
+
+Com a implementação atual, a `M2` pode ser considerada **fechada no escopo inicial**.
+
+### Fechamos de fato
+
+- navegação autenticada por catálogo;
+- `Navigator` como superfície dedicada;
+- `Track Page` como leitura de progressão;
+- contexto de trilha refletido na `Arena`;
+- filtros básicos e estado visual de progresso;
+- taxonomia mínima funcional exposta pela API;
+- documentação pedagógica por módulo.
+
+### Não entra mais nesta milestone
+
+- persistência em banco da taxonomia curada;
+- ranking;
+- achievements;
+- mastery scoring avançado;
+- gamificação mais pesada;
+- expansão full-stack do catálogo.
+
 ## Sequência recomendada para completar a M2
 
 1. adicionar metadados mínimos faltantes no domínio

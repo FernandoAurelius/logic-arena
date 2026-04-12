@@ -2420,6 +2420,42 @@ textarea {
   gap: 0.9rem;
 }
 
+.navigator-filter-group {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.navigator-status-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.navigator-filter-chip {
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  padding: 0.5rem 0.75rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.navigator-filter-chip:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--on-surface) 15%, transparent);
+}
+
+.navigator-filter-chip.active {
+  border-color: var(--primary);
+  color: var(--on-surface);
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface-container-high));
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
 .navigator-filter-button {
   width: 100%;
   border: 2px solid var(--on-surface);

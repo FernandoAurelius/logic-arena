@@ -354,9 +354,9 @@ watch(
       <div class="topbar-left topbar-left--nav">
         <span class="brand-wordmark">LOGIC ARENA</span>
         <nav class="workspace-nav">
-          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'navigator' })">Navigator</button>
+          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'navigator' })">Navegador</button>
           <button class="workspace-nav-link" type="button" @click="router.push({ name: 'arena' })">Arena</button>
-          <button class="workspace-nav-link workspace-nav-link--active" type="button">Track</button>
+          <button class="workspace-nav-link workspace-nav-link--active" type="button">Trilha</button>
         </nav>
       </div>
       <div class="topbar-right">
@@ -372,8 +372,8 @@ watch(
         </div>
         <div class="topbar-status">
           <div class="level-box">
-            <strong>LEVEL {{ session.currentUser.value?.level ?? 1 }}</strong>
-            <span>{{ session.currentUser.value?.nickname ?? 'operator' }}</span>
+            <strong>NÍVEL {{ session.currentUser.value?.level ?? 1 }}</strong>
+            <span>{{ session.currentUser.value?.nickname ?? 'operador' }}</span>
             <small>{{ session.currentUser.value?.xp_total ?? 0 }} XP totais</small>
           </div>
         </div>
@@ -385,7 +385,7 @@ watch(
         <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
         <div v-else-if="loading" class="navigator-empty-state">
           <BookOpenText :size="18" />
-          <span>Carregando roadmap da trilha...</span>
+          <span>Carregando mapa da trilha...</span>
         </div>
 
         <div v-else-if="track" class="track-content-grid">
@@ -416,14 +416,14 @@ watch(
                           <strong>{{ track.completed_exercises }}/{{ track.total_exercises }}</strong>
                         </div>
                         <div>
-                          <small class="eyebrow">Target</small>
+                          <small class="eyebrow">Alvo</small>
                           <strong>{{ track.current_target_title ?? 'Masterizado' }}</strong>
                         </div>
                       </div>
                       <div class="track-summary-actions">
                         <Button variant="outline" class="w-full" @click="router.push({ name: 'navigator' })">
                           <Route :size="16" />
-                          Voltar ao Navigator
+                          Voltar ao Navegador
                         </Button>
                         <Button class="w-full" @click="openArena(track?.current_target_slug ?? selectedExercise?.slug)">
                           <Play :size="16" />
@@ -495,7 +495,7 @@ watch(
                           <span class="track-status-badge" :class="`track-status-badge--${layout.exercise.progress.status}`">
                             {{ statusLabel(layout.exercise.progress.status) }}
                           </span>
-                          <span class="track-step-index">STEP {{ layout.exercise.position }}</span>
+                          <span class="track-step-index">ETAPA {{ layout.exercise.position }}</span>
                         </div>
                         <strong>{{ layout.exercise.title }}</strong>
                         <p>{{ layout.exercise.exercise_type_label }} · {{ layout.exercise.estimated_time_minutes }} min</p>
@@ -512,7 +512,7 @@ watch(
                         <Lock v-else :size="18" />
                       </div>
                       <div>
-                        <p class="eyebrow">Milestone checkpoint</p>
+                        <p class="eyebrow">Marco de progresso</p>
                         <h3>{{ track.milestone.title }}</h3>
                         <p>{{ track.milestone.summary }}</p>
                         <small>

@@ -59,7 +59,7 @@ class ExerciseSummarySchema(Schema):
     language: str
     professor_note: str
     exercise_type: str = 'core_drill'
-    exercise_type_label: str = 'Core Drill'
+    exercise_type_label: str = 'Exercício-base'
     estimated_time_minutes: int = 15
     concept_summary: str = ''
     track_position: int = 0

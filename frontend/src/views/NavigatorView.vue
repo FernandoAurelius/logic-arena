@@ -23,12 +23,25 @@ const navigatorData = ref<NavigatorResponse | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
 const activeCategory = ref<string>('all')
+const activeStatus = ref<'all' | 'available' | 'in_progress' | 'passed'>('all')
 const showProfile = ref(false)
 
 const categories = computed(() => navigatorData.value?.categories ?? [])
+function matchesStatus(track: TrackSummary) {
+  if (activeStatus.value === 'all') return true
+  return statusTone(track) === activeStatus.value
+}
 const visibleCategories = computed(() => {
-  if (activeCategory.value === 'all') return categories.value
-  return categories.value.filter((category) => category.slug === activeCategory.value)
+  const selectedCategories = activeCategory.value === 'all'
+    ? categories.value
+    : categories.value.filter((category) => category.slug === activeCategory.value)
+
+  return selectedCategories
+    .map((category) => ({
+      ...category,
+      tracks: category.tracks.filter(matchesStatus),
+    }))
+    .filter((category) => category.tracks.length > 0)
 })
 const visibleTrackCount = computed(() => visibleCategories.value.reduce((total, category) => total + category.tracks.length, 0))
 const recommendedTrack = computed(() => {
@@ -134,6 +147,43 @@ onMounted(() => {
             <CardDescription>Escolha a trilha certa antes de entrar na arena.</CardDescription>
           </CardHeader>
           <CardContent class="navigator-filter-stack">
+            <div class="navigator-filter-group">
+              <p class="section-label">Status</p>
+              <div class="navigator-status-filter-row">
+                <button
+                  class="navigator-filter-chip"
+                  :class="{ active: activeStatus === 'all' }"
+                  type="button"
+                  @click="activeStatus = 'all'"
+                >
+                  Todos
+                </button>
+                <button
+                  class="navigator-filter-chip"
+                  :class="{ active: activeStatus === 'available' }"
+                  type="button"
+                  @click="activeStatus = 'available'"
+                >
+                  Não iniciado
+                </button>
+                <button
+                  class="navigator-filter-chip"
+                  :class="{ active: activeStatus === 'in_progress' }"
+                  type="button"
+                  @click="activeStatus = 'in_progress'"
+                >
+                  Em progresso
+                </button>
+                <button
+                  class="navigator-filter-chip"
+                  :class="{ active: activeStatus === 'passed' }"
+                  type="button"
+                  @click="activeStatus = 'passed'"
+                >
+                  Masterizado
+                </button>
+              </div>
+            </div>
             <button
               class="navigator-filter-button"
               :class="{ active: activeCategory === 'all' }"
