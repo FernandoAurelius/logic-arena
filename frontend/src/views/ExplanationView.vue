@@ -7,48 +7,15 @@ import python from 'highlight.js/lib/languages/python'
 import javascript from 'highlight.js/lib/languages/javascript'
 import json from 'highlight.js/lib/languages/json'
 import { ArrowLeft, BookOpenText, LogOut, Play, Route, UserRound } from 'lucide-vue-next'
+import type { infer as ZodInfer } from 'zod'
 
+import { schemas } from '@/lib/api/generated'
 import { useSession } from '@/lib/session'
 import ProfileModal from '@/components/theme/ProfileModal.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
-type ExplanationConcept = {
-  title: string
-  explanation_text: string
-  why_it_matters: string
-  common_mistake: string
-}
-
-type ExplanationCodeExample = {
-  title: string
-  rationale: string
-  language: string
-  code: string
-}
-
-type ExerciseExplanation = {
-  track_slug: string
-  track_name: string
-  track_goal: string
-  level_label: string
-  exercise_slug: string
-  exercise_title: string
-  exercise_type_label: string
-  estimated_time_minutes: number
-  concept_summary: string
-  pedagogical_brief: string
-  learning_goal: string
-  concept_focus_markdown: string
-  reading_strategy_markdown: string
-  implementation_strategy_markdown: string
-  assessment_notes_markdown: string
-  common_mistakes: string[]
-  mastery_checklist: string[]
-  prerequisites: string[]
-  concepts: ExplanationConcept[]
-  code_examples: ExplanationCodeExample[]
-}
+type ExerciseExplanation = ZodInfer<typeof schemas.ExerciseExplanationSchema>
 
 hljs.registerLanguage('python', python)
 hljs.registerLanguage('javascript', javascript)
@@ -187,8 +154,8 @@ watch(
           <Card class="track-summary-card">
             <CardHeader>
               <p class="eyebrow">Contexto</p>
-              <CardTitle>{{ explanation.track_name }}</CardTitle>
-              <CardDescription>{{ explanation.level_label }}</CardDescription>
+              <CardTitle>{{ explanation.module_name ?? explanation.track_name }}</CardTitle>
+              <CardDescription>{{ explanation.track_name }} · {{ explanation.level_label }}</CardDescription>
             </CardHeader>
             <CardContent class="track-summary-body">
               <p class="track-summary-copy">{{ explanation.track_goal }}</p>

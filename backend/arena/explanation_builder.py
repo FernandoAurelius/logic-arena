@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .catalog import EXERCISE_TYPE_LABELS, TRACK_CATALOG, TrackMeta
-from .models import Exercise
+from .models import Exercise, ExerciseTrack
 
 
 @dataclass(frozen=True)
@@ -69,23 +68,13 @@ def _collapse_inline(value: str) -> str:
     return ' '.join(part.strip() for part in value.splitlines() if part.strip())
 
 
-def _get_track_meta(exercise: Exercise) -> TrackMeta | None:
-    if not exercise.track:
-        return None
-    return TRACK_CATALOG.get(exercise.track.slug)
-
-
 def _get_exercise_type_label(exercise: Exercise) -> str:
-    track_meta = _get_track_meta(exercise)
-    if not track_meta:
-        return 'Exercício-base'
-    exercise_meta = track_meta.exercise_meta.get(exercise.slug)
-    if not exercise_meta:
-        return 'Exercício-base'
-    return EXERCISE_TYPE_LABELS.get(exercise_meta.exercise_type, 'Exercício-base')
+    if exercise.exercise_type:
+        return exercise.exercise_type.name
+    return 'Drill de implementação'
 
 
-def _build_code_examples(exercise: Exercise, track_meta: TrackMeta | None) -> list[ExplanationCodeExampleSeed]:
+def _build_code_examples(exercise: Exercise, track: ExerciseTrack | None) -> list[ExplanationCodeExampleSeed]:
     topic = _normalize_topic(
         ' '.join(
             filter(
@@ -94,8 +83,8 @@ def _build_code_examples(exercise: Exercise, track_meta: TrackMeta | None) -> li
                     exercise.title,
                     exercise.statement,
                     exercise.professor_note,
-                    track_meta.description if track_meta else '',
-                    track_meta.goal if track_meta else '',
+                    track.description if track else '',
+                    track.goal if track else '',
                 ],
             )
         )
@@ -209,7 +198,7 @@ print(resultado)""",
 
 
 def build_explanation_blueprint(exercise: Exercise) -> ExplanationBlueprint:
-    track_meta = _get_track_meta(exercise)
+    track = exercise.track
     exercise_type_label = _get_exercise_type_label(exercise)
     statement_excerpt = _first_non_empty_line(exercise.statement) or exercise.title
     professor_note = _collapse_inline(exercise.professor_note)
@@ -222,10 +211,10 @@ def build_explanation_blueprint(exercise: Exercise) -> ExplanationBlueprint:
             why_it_matters=concept.why_it_matters,
             common_mistake=concept.common_mistake,
         )
-        for concept in (track_meta.concepts if track_meta else ())
+        for concept in (track.concepts.all() if track else ())
     ]
     concept_titles = ', '.join(concept.title for concept in concepts) if concepts else 'leitura precisa do enunciado'
-    prerequisites = list(track_meta.prerequisites) if track_meta else ['Leitura atenta do enunciado', 'Saída exata com `print`']
+    prerequisites = [prerequisite.label for prerequisite in track.prerequisites.all()] if track else ['Leitura atenta do enunciado', 'Saída exata com `print`']
     contextual_note = f' Observação do professor: {professor_note}.' if professor_note else ''
     io_contract = ''
     if sample_input or sample_output:
@@ -288,5 +277,5 @@ def build_explanation_blueprint(exercise: Exercise) -> ExplanationBlueprint:
             *prerequisites,
         ],
         concepts=concepts,
-        code_examples=_build_code_examples(exercise, track_meta),
+        code_examples=_build_code_examples(exercise, track),
     )

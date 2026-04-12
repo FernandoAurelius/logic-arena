@@ -13,6 +13,7 @@ class ArenaUser(TimestampedModel):
     nickname = models.CharField(max_length=40, unique=True)
     password_hash = models.CharField(max_length=255)
     xp_total = models.PositiveIntegerField(default=0)
+    is_catalog_admin = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.nickname
@@ -40,18 +41,90 @@ class ExerciseCategory(TimestampedModel):
         return self.name
 
 
-class ExerciseTrack(TimestampedModel):
-    category = models.ForeignKey(ExerciseCategory, on_delete=models.CASCADE, related_name='tracks')
+class LearningModule(TimestampedModel):
+    STATUS_DRAFT = 'draft'
+    STATUS_ACTIVE = 'active'
+    STATUS_ARCHIVED = 'archived'
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, 'Draft'),
+        (STATUS_ACTIVE, 'Active'),
+        (STATUS_ARCHIVED, 'Archived'),
+    ]
+
+    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    audience = models.CharField(max_length=120, blank=True)
+    source_kind = models.CharField(max_length=60, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'name']
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class ExerciseType(TimestampedModel):
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     sort_order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ['category__sort_order', 'sort_order', 'name']
+        ordering = ['sort_order', 'name']
 
     def __str__(self) -> str:
         return self.name
+
+
+class ExerciseTrack(TimestampedModel):
+    category = models.ForeignKey(ExerciseCategory, on_delete=models.CASCADE, related_name='tracks')
+    module = models.ForeignKey('LearningModule', null=True, blank=True, on_delete=models.SET_NULL, related_name='tracks')
+    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    goal = models.TextField(blank=True)
+    level_label = models.CharField(max_length=120, blank=True)
+    concept_kicker = models.CharField(max_length=120, blank=True)
+    milestone_title = models.CharField(max_length=140, blank=True)
+    milestone_summary = models.TextField(blank=True)
+    milestone_requirement_label = models.TextField(blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['module__sort_order', 'category__sort_order', 'sort_order', 'name']
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class ExerciseTrackConcept(TimestampedModel):
+    track = models.ForeignKey(ExerciseTrack, on_delete=models.CASCADE, related_name='concepts')
+    title = models.CharField(max_length=120)
+    summary = models.TextField()
+    why_it_matters = models.TextField(blank=True)
+    common_mistake = models.TextField(blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+    def __str__(self) -> str:
+        return f'{self.track.name}: {self.title}'
+
+
+class ExerciseTrackPrerequisite(TimestampedModel):
+    track = models.ForeignKey(ExerciseTrack, on_delete=models.CASCADE, related_name='prerequisites')
+    label = models.CharField(max_length=160)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+    def __str__(self) -> str:
+        return f'{self.track.name}: {self.label}'
 
 
 class Exercise(TimestampedModel):
@@ -62,6 +135,11 @@ class Exercise(TimestampedModel):
     language = models.CharField(max_length=20, default='python')
     category = models.ForeignKey(ExerciseCategory, null=True, blank=True, on_delete=models.SET_NULL, related_name='exercises')
     track = models.ForeignKey(ExerciseTrack, null=True, blank=True, on_delete=models.SET_NULL, related_name='exercises')
+    exercise_type = models.ForeignKey('ExerciseType', null=True, blank=True, on_delete=models.SET_NULL, related_name='exercises')
+    estimated_time_minutes = models.PositiveIntegerField(default=15)
+    track_position = models.PositiveIntegerField(default=0)
+    concept_summary = models.TextField(blank=True)
+    pedagogical_brief = models.TextField(blank=True)
     starter_code = models.TextField(blank=True)
     sample_input = models.TextField(blank=True)
     sample_output = models.TextField(blank=True)

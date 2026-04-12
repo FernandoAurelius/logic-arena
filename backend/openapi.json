@@ -3,13 +3,13 @@
   "info": {
     "title": "Logic Arena API",
     "version": "0.1.0",
-    "description": "API do MVP do Logic Arena com autentica\u00e7\u00e3o simples, exerc\u00edcios persistidos e submiss\u00f5es avaliadas."
+    "description": "API do MVP do Logic Arena com autenticação simples, exercícios persistidos e submissões avaliadas."
   },
   "paths": {
     "/api/auth/login": {
       "post": {
         "operationId": "arena_api_login",
-        "summary": "Faz login ou cria o usu\u00e1rio automaticamente.",
+        "summary": "Faz login ou cria o usuário automaticamente.",
         "parameters": [],
         "responses": {
           "200": {
@@ -51,7 +51,7 @@
     "/api/auth/me": {
       "get": {
         "operationId": "arena_api_me",
-        "summary": "Retorna o usu\u00e1rio autenticado.",
+        "summary": "Retorna o usuário autenticado.",
         "parameters": [
           {
             "in": "header",
@@ -100,7 +100,7 @@
     "/api/exercises/": {
       "get": {
         "operationId": "arena_api_list_exercises",
-        "summary": "Lista exerc\u00edcios ativos.",
+        "summary": "Lista exercícios ativos.",
         "parameters": [
           {
             "in": "header",
@@ -151,7 +151,7 @@
       },
       "post": {
         "operationId": "arena_api_post_exercise",
-        "summary": "Cadastra um exerc\u00edcio novo via API.",
+        "summary": "Cadastra um exercício novo via API.",
         "parameters": [
           {
             "in": "header",
@@ -220,7 +220,7 @@
     "/api/exercises/{slug}": {
       "get": {
         "operationId": "arena_api_get_exercise",
-        "summary": "Detalha um exerc\u00edcio espec\u00edfico.",
+        "summary": "Detalha um exercício específico.",
         "parameters": [
           {
             "in": "path",
@@ -278,7 +278,7 @@
     "/api/submissions/exercises/{slug}/submit": {
       "post": {
         "operationId": "arena_api_submit_exercise",
-        "summary": "Executa os testes, persiste a submiss\u00e3o e devolve o resultado.",
+        "summary": "Executa os testes, persiste a submissão e devolve o resultado.",
         "parameters": [
           {
             "in": "path",
@@ -346,7 +346,7 @@
     "/api/submissions/me": {
       "get": {
         "operationId": "arena_api_list_my_submissions",
-        "summary": "Lista as submiss\u00f5es do usu\u00e1rio autenticado.",
+        "summary": "Lista as submissões do usuário autenticado.",
         "parameters": [
           {
             "in": "header",
@@ -399,7 +399,7 @@
     "/api/submissions/{submission_id}": {
       "get": {
         "operationId": "arena_api_get_submission",
-        "summary": "Retorna a submiss\u00e3o atualizada para polling do feedback.",
+        "summary": "Retorna a submissão atualizada para polling do feedback.",
         "parameters": [
           {
             "in": "path",
@@ -467,7 +467,7 @@
     "/api/submissions/{submission_id}/review-chat": {
       "post": {
         "operationId": "arena_api_review_chat",
-        "summary": "Continua a revis\u00e3o com IA sobre uma submiss\u00e3o espec\u00edfica.",
+        "summary": "Continua a revisão com IA sobre uma submissão específica.",
         "parameters": [
           {
             "in": "path",
@@ -545,7 +545,7 @@
     "/api/catalog/navigator": {
       "get": {
         "operationId": "arena_api_get_navigator",
-        "summary": "Retorna a vis\u00e3o autenticada do cat\u00e1logo por categoria e trilha.",
+        "summary": "Retorna a visão autenticada do catálogo por módulo e trilha.",
         "parameters": [
           {
             "in": "header",
@@ -591,10 +591,78 @@
         ]
       }
     },
+    "/api/catalog/modules/{module_slug}": {
+      "get": {
+        "operationId": "arena_api_get_module_detail",
+        "summary": "Retorna o detalhe de um módulo com suas trilhas.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "module_slug",
+            "schema": {
+              "title": "Module Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleDetailSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
     "/api/catalog/tracks/{track_slug}": {
       "get": {
         "operationId": "arena_api_get_track_detail",
-        "summary": "Retorna a p\u00e1gina de trilha com progresso, conceitos e exerc\u00edcios.",
+        "summary": "Retorna a página de trilha com progresso, conceitos e exercícios.",
         "parameters": [
           {
             "in": "path",
@@ -662,7 +730,7 @@
     "/api/catalog/tracks/{track_slug}/explanations/{exercise_slug}": {
       "get": {
         "operationId": "arena_api_get_track_explanation",
-        "summary": "Retorna a documenta\u00e7\u00e3o t\u00e9cnica progressiva de um m\u00f3dulo espec\u00edfico da trilha.",
+        "summary": "Retorna a documentação técnica progressiva de um módulo específico da trilha.",
         "parameters": [
           {
             "in": "path",
@@ -736,10 +804,555 @@
         ]
       }
     },
+    "/api/catalog-admin/reference": {
+      "get": {
+        "operationId": "arena_api_get_catalog_reference",
+        "summary": "Retorna as referências básicas para administração do catálogo.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogAdminReferenceSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog-admin"
+        ]
+      }
+    },
+    "/api/catalog-admin/modules": {
+      "get": {
+        "operationId": "arena_api_list_modules",
+        "summary": "Lista módulos administráveis.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LearningModuleInputSchema"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog-admin"
+        ]
+      },
+      "post": {
+        "operationId": "arena_api_upsert_module",
+        "summary": "Cria ou atualiza um módulo.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningModuleInputSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog-admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearningModuleInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/catalog-admin/exercise-types": {
+      "get": {
+        "operationId": "arena_api_list_exercise_types",
+        "summary": "Lista tipos de exercício administráveis.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExerciseTypeInputSchema"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog-admin"
+        ]
+      },
+      "post": {
+        "operationId": "arena_api_upsert_exercise_type",
+        "summary": "Cria ou atualiza um tipo de exercício.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseTypeInputSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog-admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseTypeInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/catalog-admin/tracks": {
+      "get": {
+        "operationId": "arena_api_list_tracks",
+        "summary": "Lista trilhas administráveis.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TrackDetailSchema"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog-admin"
+        ]
+      },
+      "post": {
+        "operationId": "arena_api_create_track",
+        "summary": "Cria uma trilha e seus metadados editoriais.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackDetailSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog-admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/catalog-admin/tracks/{track_slug}": {
+      "patch": {
+        "operationId": "arena_api_update_track",
+        "summary": "Atualiza metadados de uma trilha.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "track_slug",
+            "schema": {
+              "title": "Track Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackDetailSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog-admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackUpdateSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/catalog-admin/exercises/{slug}/catalog": {
+      "patch": {
+        "operationId": "arena_api_update_exercise_catalog",
+        "summary": "Atualiza metadados catalogais de um exercício.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseDetailSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog-admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseCatalogUpdateSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "arena_api_health",
-        "summary": "Health check p\u00fablico da API.",
+        "summary": "Health check público da API.",
         "parameters": [],
         "responses": {
           "200": {
@@ -878,12 +1491,12 @@
             "type": "string"
           },
           "exercise_type": {
-            "default": "core_drill",
+            "default": "drill-de-implementacao",
             "title": "Exercise Type",
             "type": "string"
           },
           "exercise_type_label": {
-            "default": "Core Drill",
+            "default": "Drill de implementação",
             "title": "Exercise Type Label",
             "type": "string"
           },
@@ -901,6 +1514,28 @@
             "default": 0,
             "title": "Track Position",
             "type": "integer"
+          },
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Name"
           },
           "category_slug": {
             "anyOf": [
@@ -985,12 +1620,12 @@
             "type": "string"
           },
           "exercise_type": {
-            "default": "core_drill",
+            "default": "drill-de-implementacao",
             "title": "Exercise Type",
             "type": "string"
           },
           "exercise_type_label": {
-            "default": "Core Drill",
+            "default": "Drill de implementação",
             "title": "Exercise Type Label",
             "type": "string"
           },
@@ -1008,6 +1643,28 @@
             "default": 0,
             "title": "Track Position",
             "type": "integer"
+          },
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Name"
           },
           "category_slug": {
             "anyOf": [
@@ -1145,6 +1802,31 @@
             "title": "Language",
             "type": "string"
           },
+          "module_slug": {
+            "default": "",
+            "title": "Module Slug",
+            "type": "string"
+          },
+          "module_name": {
+            "default": "",
+            "title": "Module Name",
+            "type": "string"
+          },
+          "module_description": {
+            "default": "",
+            "title": "Module Description",
+            "type": "string"
+          },
+          "module_audience": {
+            "default": "",
+            "title": "Module Audience",
+            "type": "string"
+          },
+          "module_source_kind": {
+            "default": "",
+            "title": "Module Source Kind",
+            "type": "string"
+          },
           "category_slug": {
             "default": "",
             "title": "Category Slug",
@@ -1163,6 +1845,31 @@
           "track_name": {
             "default": "",
             "title": "Track Name",
+            "type": "string"
+          },
+          "exercise_type_slug": {
+            "default": "",
+            "title": "Exercise Type Slug",
+            "type": "string"
+          },
+          "estimated_time_minutes": {
+            "default": 15,
+            "title": "Estimated Time Minutes",
+            "type": "integer"
+          },
+          "track_position": {
+            "default": 0,
+            "title": "Track Position",
+            "type": "integer"
+          },
+          "concept_summary": {
+            "default": "",
+            "title": "Concept Summary",
+            "type": "string"
+          },
+          "pedagogical_brief": {
+            "default": "",
+            "title": "Pedagogical Brief",
             "type": "string"
           },
           "starter_code": {
@@ -1628,7 +2335,7 @@
         "title": "ReviewChatInputSchema",
         "type": "object"
       },
-      "NavigatorCategorySchema": {
+      "NavigatorModuleSchema": {
         "properties": {
           "slug": {
             "title": "Slug",
@@ -1640,6 +2347,18 @@
           },
           "description": {
             "title": "Description",
+            "type": "string"
+          },
+          "audience": {
+            "title": "Audience",
+            "type": "string"
+          },
+          "source_kind": {
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
             "type": "string"
           },
           "tracks": {
@@ -1654,13 +2373,38 @@
           "slug",
           "name",
           "description",
+          "audience",
+          "source_kind",
+          "status",
           "tracks"
         ],
-        "title": "NavigatorCategorySchema",
+        "title": "NavigatorModuleSchema",
         "type": "object"
       },
       "NavigatorResponseSchema": {
         "properties": {
+          "recommended_module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Module Slug"
+          },
+          "recommended_module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Module Name"
+          },
           "recommended_track_slug": {
             "anyOf": [
               {
@@ -1683,16 +2427,16 @@
             ],
             "title": "Recommended Track Name"
           },
-          "categories": {
+          "modules": {
             "items": {
-              "$ref": "#/components/schemas/NavigatorCategorySchema"
+              "$ref": "#/components/schemas/NavigatorModuleSchema"
             },
-            "title": "Categories",
+            "title": "Modules",
             "type": "array"
           }
         },
         "required": [
-          "categories"
+          "modules"
         ],
         "title": "NavigatorResponseSchema",
         "type": "object"
@@ -1706,6 +2450,28 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Name"
           },
           "category_slug": {
             "title": "Category Slug",
@@ -1777,6 +2543,111 @@
         "title": "TrackSummarySchema",
         "type": "object"
       },
+      "ModuleDetailSchema": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "audience": {
+            "title": "Audience",
+            "type": "string"
+          },
+          "source_kind": {
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "progress_percent": {
+            "title": "Progress Percent",
+            "type": "integer"
+          },
+          "completed_tracks": {
+            "title": "Completed Tracks",
+            "type": "integer"
+          },
+          "total_tracks": {
+            "title": "Total Tracks",
+            "type": "integer"
+          },
+          "current_target_track_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Track Slug"
+          },
+          "current_target_track_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Track Name"
+          },
+          "current_target_exercise_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Exercise Slug"
+          },
+          "current_target_exercise_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Exercise Title"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/TrackSummarySchema"
+            },
+            "title": "Tracks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "description",
+          "audience",
+          "source_kind",
+          "status",
+          "progress_percent",
+          "completed_tracks",
+          "total_tracks",
+          "tracks"
+        ],
+        "title": "ModuleDetailSchema",
+        "type": "object"
+      },
       "TrackConceptSchema": {
         "properties": {
           "title": {
@@ -1814,6 +2685,28 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Name"
           },
           "category_slug": {
             "title": "Category Slug",
@@ -1978,12 +2871,12 @@
             "type": "string"
           },
           "exercise_type": {
-            "default": "core_drill",
+            "default": "drill-de-implementacao",
             "title": "Exercise Type",
             "type": "string"
           },
           "exercise_type_label": {
-            "default": "Core Drill",
+            "default": "Drill de implementação",
             "title": "Exercise Type Label",
             "type": "string"
           },
@@ -2001,6 +2894,28 @@
             "default": 0,
             "title": "Track Position",
             "type": "integer"
+          },
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Name"
           },
           "category_slug": {
             "anyOf": [
@@ -2112,6 +3027,28 @@
       },
       "ExerciseExplanationSchema": {
         "properties": {
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Name"
+          },
           "track_slug": {
             "title": "Track Slug",
             "type": "string"
@@ -2287,6 +3224,481 @@
           "common_mistake"
         ],
         "title": "ExplanationConceptSchema",
+        "type": "object"
+      },
+      "CatalogAdminReferenceSchema": {
+        "properties": {
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/LearningModuleInputSchema"
+            },
+            "title": "Modules",
+            "type": "array"
+          },
+          "exercise_types": {
+            "items": {
+              "$ref": "#/components/schemas/ExerciseTypeInputSchema"
+            },
+            "title": "Exercise Types",
+            "type": "array"
+          },
+          "categories": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "tracks": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Tracks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "modules",
+          "exercise_types",
+          "categories",
+          "tracks"
+        ],
+        "title": "CatalogAdminReferenceSchema",
+        "type": "object"
+      },
+      "ExerciseTypeInputSchema": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "sort_order": {
+            "default": 0,
+            "title": "Sort Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slug",
+          "name"
+        ],
+        "title": "ExerciseTypeInputSchema",
+        "type": "object"
+      },
+      "LearningModuleInputSchema": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "audience": {
+            "default": "",
+            "title": "Audience",
+            "type": "string"
+          },
+          "source_kind": {
+            "default": "",
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "status": {
+            "default": "active",
+            "title": "Status",
+            "type": "string"
+          },
+          "sort_order": {
+            "default": 0,
+            "title": "Sort Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slug",
+          "name"
+        ],
+        "title": "LearningModuleInputSchema",
+        "type": "object"
+      },
+      "TrackConceptInputSchema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "why_it_matters": {
+            "default": "",
+            "title": "Why It Matters",
+            "type": "string"
+          },
+          "common_mistake": {
+            "default": "",
+            "title": "Common Mistake",
+            "type": "string"
+          },
+          "sort_order": {
+            "default": 0,
+            "title": "Sort Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "title",
+          "summary"
+        ],
+        "title": "TrackConceptInputSchema",
+        "type": "object"
+      },
+      "TrackInputSchema": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "module_slug": {
+            "title": "Module Slug",
+            "type": "string"
+          },
+          "category_slug": {
+            "title": "Category Slug",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "goal": {
+            "default": "",
+            "title": "Goal",
+            "type": "string"
+          },
+          "level_label": {
+            "default": "",
+            "title": "Level Label",
+            "type": "string"
+          },
+          "concept_kicker": {
+            "default": "",
+            "title": "Concept Kicker",
+            "type": "string"
+          },
+          "milestone_title": {
+            "default": "",
+            "title": "Milestone Title",
+            "type": "string"
+          },
+          "milestone_summary": {
+            "default": "",
+            "title": "Milestone Summary",
+            "type": "string"
+          },
+          "milestone_requirement_label": {
+            "default": "",
+            "title": "Milestone Requirement Label",
+            "type": "string"
+          },
+          "sort_order": {
+            "default": 0,
+            "title": "Sort Order",
+            "type": "integer"
+          },
+          "concepts": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TrackConceptInputSchema"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "prerequisites": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TrackPrerequisiteInputSchema"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "module_slug",
+          "category_slug"
+        ],
+        "title": "TrackInputSchema",
+        "type": "object"
+      },
+      "TrackPrerequisiteInputSchema": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "sort_order": {
+            "default": 0,
+            "title": "Sort Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "TrackPrerequisiteInputSchema",
+        "type": "object"
+      },
+      "TrackUpdateSchema": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "category_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Slug"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "level_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Label"
+          },
+          "concept_kicker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Kicker"
+          },
+          "milestone_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Milestone Title"
+          },
+          "milestone_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Milestone Summary"
+          },
+          "milestone_requirement_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Milestone Requirement Label"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "concepts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrackConceptInputSchema"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concepts"
+          },
+          "prerequisites": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrackPrerequisiteInputSchema"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prerequisites"
+          }
+        },
+        "title": "TrackUpdateSchema",
+        "type": "object"
+      },
+      "ExerciseCatalogUpdateSchema": {
+        "properties": {
+          "track_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Slug"
+          },
+          "exercise_type_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Type Slug"
+          },
+          "estimated_time_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Time Minutes"
+          },
+          "track_position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Position"
+          },
+          "concept_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Summary"
+          },
+          "pedagogical_brief": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pedagogical Brief"
+          }
+        },
+        "title": "ExerciseCatalogUpdateSchema",
         "type": "object"
       }
     }

@@ -86,8 +86,8 @@ const groupedExercises = computed(() => {
       : exercises.value
   const groups = new Map<string, { key: string; label: string; exercises: Array<ExerciseSummary | TrackExercise> }>()
   for (const exercise of source) {
-    const key = routeTrackSlug.value ? exercise.track_slug ?? 'trilha-livre' : exercise.category_slug ?? 'sem-categoria'
-    const label = routeTrackSlug.value ? exercise.track_name ?? 'Trilha livre' : exercise.category_name ?? 'Sem categoria'
+    const key = routeTrackSlug.value ? exercise.track_slug ?? 'trilha-livre' : exercise.module_slug ?? exercise.category_slug ?? 'sem-modulo'
+    const label = routeTrackSlug.value ? exercise.track_name ?? 'Trilha livre' : exercise.module_name ?? exercise.category_name ?? 'Sem módulo'
     if (!groups.has(key)) {
       groups.set(key, { key, label, exercises: [] })
     }
@@ -649,7 +649,7 @@ onBeforeUnmount(() => {
         :sidebar-history="sidebarHistory"
         :latest-submission-id="latestSubmission?.id ?? null"
         :route-track-slug="routeTrackSlug"
-        :track-name="trackContext?.name ?? activeExercise?.track_name ?? null"
+        :track-name="trackContext?.name ?? activeExercise?.track_name ?? activeExercise?.module_name ?? null"
         :can-go-previous="Boolean(previousTrackExercise)"
         :can-go-next="Boolean(nextTrackExercise)"
         @select-exercise="selectExercise"
@@ -733,11 +733,22 @@ onBeforeUnmount(() => {
                         <template v-if="routeTrackSlug">
                           <ChevronRight :size="14" />
                         </template>
+                        <button
+                          v-else-if="activeExercise?.module_name"
+                          class="breadcrumb-link"
+                          type="button"
+                          @click="router.push({ name: 'navigator' })"
+                        >
+                          {{ activeExercise.module_name }}
+                        </button>
+                        <template v-if="!routeTrackSlug && activeExercise?.module_name">
+                          <ChevronRight :size="14" />
+                        </template>
                         <span class="active">{{ activeExercise?.difficulty ?? 'Exercício' }}</span>
                       </div>
                       <h1 class="spec-heading-title">{{ activeExercise?.title ?? 'Aguardando exercício' }}</h1>
                       <div class="challenge-meta challenge-meta--compact">
-                        <Badge variant="outline">{{ activeExercise.category_name ?? 'Sem categoria' }}</Badge>
+                        <Badge variant="outline">{{ activeExercise.module_name ?? 'Sem módulo' }}</Badge>
                         <Badge variant="outline">{{ activeExercise.track_name ?? 'Sem trilha' }}</Badge>
                         <Badge variant="outline">{{ activeExercise.difficulty }}</Badge>
                         <Badge variant="outline">Questão {{ activeIndex }}/{{ exercises.length || 1 }}</Badge>

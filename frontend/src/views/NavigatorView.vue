@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowRight, LogOut, Sparkles, Target, UserRound } from 'lucide-vue-next'
+import { ArrowRight, LogOut, Map, Play, Sparkles, Target, UserRound } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
 import { catalogApi } from '@/lib/api/client'
@@ -15,6 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 type NavigatorResponse = ZodInfer<typeof schemas.NavigatorResponseSchema>
 type TrackSummary = ZodInfer<typeof schemas.TrackSummarySchema>
+type ModuleSummary = ZodInfer<typeof schemas.NavigatorModuleSchema>
 
 const router = useRouter()
 const session = useSession()
@@ -22,36 +23,41 @@ const session = useSession()
 const navigatorData = ref<NavigatorResponse | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
-const activeCategory = ref<string>('all')
+const activeModule = ref<string>('all')
 const activeStatus = ref<'all' | 'available' | 'in_progress' | 'passed'>('all')
 const showProfile = ref(false)
 
-const categories = computed(() => navigatorData.value?.categories ?? [])
+const modules = computed(() => navigatorData.value?.modules ?? [])
 function matchesStatus(track: TrackSummary) {
   if (activeStatus.value === 'all') return true
   return statusTone(track) === activeStatus.value
 }
-const visibleCategories = computed(() => {
-  const selectedCategories = activeCategory.value === 'all'
-    ? categories.value
-    : categories.value.filter((category) => category.slug === activeCategory.value)
+const visibleModules = computed(() => {
+  const selectedModules = activeModule.value === 'all'
+    ? modules.value
+    : modules.value.filter((module) => module.slug === activeModule.value)
 
-  return selectedCategories
-    .map((category) => ({
-      ...category,
-      tracks: category.tracks.filter(matchesStatus),
+  return selectedModules
+    .map((module) => ({
+      ...module,
+      tracks: module.tracks.filter(matchesStatus),
     }))
-    .filter((category) => category.tracks.length > 0)
+    .filter((module) => module.tracks.length > 0)
 })
-const visibleTrackCount = computed(() => visibleCategories.value.reduce((total, category) => total + category.tracks.length, 0))
+const visibleTrackCount = computed(() => visibleModules.value.reduce((total, module) => total + module.tracks.length, 0))
 const recommendedTrack = computed(() => {
   const slug = navigatorData.value?.recommended_track_slug
   if (!slug) return null
-  for (const category of categories.value) {
-    const track = category.tracks.find((candidate) => candidate.slug === slug)
+  for (const module of modules.value) {
+    const track = module.tracks.find((candidate) => candidate.slug === slug)
     if (track) return track
   }
   return null
+})
+const recommendedModule = computed<ModuleSummary | null>(() => {
+  const slug = navigatorData.value?.recommended_module_slug
+  if (!slug) return null
+  return modules.value.find((module) => module.slug === slug) ?? null
 })
 
 function progressLabel(track: TrackSummary) {
@@ -186,21 +192,21 @@ onMounted(() => {
             </div>
             <button
               class="navigator-filter-button"
-              :class="{ active: activeCategory === 'all' }"
-              type="button"
-              @click="activeCategory = 'all'"
-            >
-              Todas as categorias
-            </button>
-            <button
-              v-for="category in categories"
-              :key="category.slug"
+                  :class="{ active: activeModule === 'all' }"
+                  type="button"
+                  @click="activeModule = 'all'"
+                >
+                  Todos os módulos
+                </button>
+                <button
+              v-for="module in modules"
+              :key="module.slug"
               class="navigator-filter-button"
-              :class="{ active: activeCategory === category.slug }"
+              :class="{ active: activeModule === module.slug }"
               type="button"
-              @click="activeCategory = category.slug"
+              @click="activeModule = module.slug"
             >
-              {{ category.name }}
+              {{ module.name }}
             </button>
           </CardContent>
         </Card>
@@ -209,13 +215,13 @@ onMounted(() => {
       <section class="navigator-main">
         <div class="navigator-surface-header">
           <div class="navigator-surface-header__meta">
-            <p class="eyebrow">Catálogo autenticado</p>
-            <strong>{{ visibleCategories.length }} categorias · {{ visibleTrackCount }} trilhas</strong>
+            <p class="eyebrow">Catálogo autenticado por módulos</p>
+            <strong>{{ visibleModules.length }} módulos · {{ visibleTrackCount }} trilhas</strong>
           </div>
           <div class="navigator-hero-actions">
             <Button v-if="recommendedTrack" @click="openTrack(recommendedTrack.slug)">
               <Target :size="16" />
-              Abrir trilha atual
+              {{ recommendedModule ? `Seguir em ${recommendedModule.name}` : 'Abrir trilha atual' }}
             </Button>
             <Button variant="outline" @click="router.push({ name: 'arena' })">
               <ArrowRight :size="16" />
@@ -232,18 +238,19 @@ onMounted(() => {
           </div>
 
           <div v-else class="navigator-category-stack">
-            <section v-for="category in visibleCategories" :key="category.slug" class="navigator-category-section">
+            <section v-for="module in visibleModules" :key="module.slug" class="navigator-category-section">
               <div class="navigator-section-heading">
                 <div>
-                  <p class="eyebrow">{{ category.name }}</p>
-                  <h2>{{ category.description || 'Trilhas organizadas por domínio de prática.' }}</h2>
+                  <p class="eyebrow">{{ module.name }}</p>
+                  <h2>{{ module.description || 'Trilhas organizadas por módulo didático.' }}</h2>
+                  <small>{{ module.audience }}</small>
                 </div>
-                <Badge variant="outline">{{ category.tracks.length }} trilhas</Badge>
+                <Badge variant="outline">{{ module.tracks.length }} trilhas</Badge>
               </div>
 
               <div class="navigator-track-grid">
                 <Card
-                  v-for="track in category.tracks"
+                  v-for="track in module.tracks"
                   :key="track.slug"
                   class="navigator-track-card"
                   :data-status="statusTone(track)"
@@ -278,12 +285,18 @@ onMounted(() => {
                       <div class="navigator-progress-rail-fill" :style="{ width: `${track.progress_percent}%` }"></div>
                     </div>
                     <div class="navigator-track-actions">
-                      <Button class="w-full" @click="openTrack(track.slug)">
-                        <Target :size="16" />
-                        Ver mapa
+                      <Button class="w-full whitespace-normal text-center leading-tight" @click="openTrack(track.slug)">
+                        <Map :size="16" />
+                        Mapa
                       </Button>
-                      <Button variant="outline" class="w-full" :disabled="!track.current_target_slug" @click="openTrackInArena(track)">
-                        Abrir na arena
+                      <Button
+                        variant="outline"
+                        class="w-full whitespace-normal text-center leading-tight"
+                        :disabled="!track.current_target_slug"
+                        @click="openTrackInArena(track)"
+                      >
+                        <Play :size="16" />
+                        Abrir
                       </Button>
                     </div>
                   </CardContent>

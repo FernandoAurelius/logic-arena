@@ -2,7 +2,7 @@
 
 `Logic Arena` é uma plataforma de treino prático de lógica de programação orientada a simular avaliação real: o aluno escolhe um exercício, escreve código em um editor de verdade, executa contra testes automatizados, recebe console detalhado, feedback estruturado com IA e pode revisitar sessões anteriores para estudar o próprio raciocínio.
 
-Hoje o projeto está em uma fase de MVP operacional. Ele já resolve o ciclo central de prática, mas ainda está amadurecendo em quatro frentes: progressão anti-farm, navegação canônica do banco de exercícios, ranking/gamificação útil e expansão do catálogo para desafios mais integradores.
+Hoje o projeto está em uma fase de MVP operacional. Ele já resolve o ciclo central de prática, mas está amadurecendo em quatro frentes encadeadas: progressão anti-farm, navegação canônica do banco de exercícios, consolidação de um catálogo real e editável por módulos, e só depois ranking/gamificação útil apoiado nesse catálogo.
 
 ## Propósito
 
@@ -28,29 +28,43 @@ O MVP já possui:
 
 - login mínimo por `nickname + senha`, com criação automática do usuário no primeiro acesso;
 - catálogo persistido de exercícios no banco;
+- navegação principal por `Módulo -> Trilha -> Exercício`;
 - submissões persistidas por usuário e exercício;
 - execução assíncrona via runner isolado;
 - revisão com IA via `Agno + Gemini`;
 - landing pública, arena autenticada e página de ajuda;
 - deploy contínuo para produção em [logic-arena.floresdev.com.br](https://logic-arena.floresdev.com.br).
 
-## Fechamento atual da M2
+## Estado atual da M4
 
-Hoje a `M2` pode ser lida como **substancialmente concluída** no escopo de navegação/taxonomia inicial.
+Hoje a `M2` pode ser lida como **concluída no escopo inicial**, e a `M4` já começou de forma concreta no código.
 
-Isso significa que o projeto já possui:
+Isso significa que o projeto já possui, ao mesmo tempo:
 
 - `Navigator` autenticado como superfície real de descoberta;
 - `Track Page` como navegação por trilha e progressão;
 - contexto de trilha refletido na `Arena`;
-- taxonomia mínima funcional com `categoria`, `trilha`, `status`, `exercise_type`, `estimated_time_minutes` e ordem;
+- taxonomia mínima funcional com `módulo`, `trilha`, `status`, `exercise_type`, `estimated_time_minutes` e ordem;
 - explicações por módulo em superfície dedicada.
 
-### Decisão deliberada da M2
+E, na frente da `M4`, a base já foi materializada para:
 
-Nesta milestone, `exercise_type`, `estimated_time_minutes` e `exercise_order` **não** são persistidos no banco como primeira classe. A fonte de verdade desses metadados continua sendo o catálogo curado em [`backend/arena/catalog.py`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/backend/arena/catalog.py).
+- persistir `LearningModule` como entidade canônica acima de `ExerciseTrack`;
+- persistir `ExerciseType` como taxonomia real do formato cognitivo dos exercícios;
+- enriquecer trilhas com `goal`, `level_label`, `concept_kicker`, `milestone_*`, conceitos e pré-requisitos;
+- enriquecer exercícios com `exercise_type`, `estimated_time_minutes`, `track_position`, `concept_summary` e `pedagogical_brief`;
+- expor uma `API interna` de catálogo e manutenção correspondente no `Django admin`;
+- popular o primeiro módulo profundo, `Lógica de Programação com Python`, e scaffolds reais para `FastAPI`, `Vue`, `Integração Full-stack` e `OCP 17`.
 
-Essa decisão foi tomada para evitar inflar a `M2` com migrations, backfill e sincronização de múltiplas fontes de verdade antes da hora. A persistência editável desses metadados fica explicitamente para a próxima milestone em que o catálogo precisar ser alterado sem deploy.
+### Decisão deliberada da M4
+
+`ExerciseCategory` continua existindo no domínio, mas deixa de ser o eixo principal da navegação. Nesta fase, a leitura pública e pedagógica do produto passa a ser:
+
+- `Módulo`
+- `Trilha`
+- `Exercício`
+
+Categorias permanecem como taxonomia secundária e apoio editorial.
 
 ## Para quem o projeto está sendo feito
 
@@ -141,6 +155,22 @@ cd "/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/back
 
 O backend exige `GEMINI_API_KEY` em `backend/.env`. Sem essa chave, a aplicação falha na inicialização por design.
 
+### Sincronização editorial do módulo OCP 17
+
+O módulo `Preparatório OCP 17` pode ser reidratrado a partir de um JSON curado de contexto:
+
+```bash
+cd "/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/backend"
+.venv/bin/python manage.py sync_ocp17_catalog --source "/caminho/para/ocp17_course_context.json" --replace
+```
+
+Esse comando:
+
+- atualiza o `LearningModule` `preparatorio-ocp-17`;
+- recria as trilhas do módulo com base no JSON;
+- persiste conceitos e pré-requisitos por trilha;
+- substitui scaffolds antigos por uma estrutura mais fiel ao curso/exame.
+
 ### 3. Frontend
 
 ```bash
@@ -171,6 +201,10 @@ Os endpoints centrais do MVP hoje são:
 
 - `POST /api/auth/login`
 - `GET /api/auth/me`
+- `GET /api/catalog/navigator`
+- `GET /api/catalog/modules/{module_slug}`
+- `GET /api/catalog/tracks/{track_slug}`
+- `GET /api/catalog/tracks/{track_slug}/explanations/{exercise_slug}`
 - `GET /api/exercises/`
 - `GET /api/exercises/{slug}`
 - `POST /api/exercises/`
@@ -178,6 +212,12 @@ Os endpoints centrais do MVP hoje são:
 - `GET /api/submissions/me`
 - `GET /api/submissions/{id}`
 - `POST /api/submissions/{id}/review-chat`
+- `GET /api/catalog-admin/reference`
+- `GET/POST /api/catalog-admin/modules`
+- `GET/POST /api/catalog-admin/exercise-types`
+- `GET/POST /api/catalog-admin/tracks`
+- `PATCH /api/catalog-admin/tracks/{slug}`
+- `PATCH /api/catalog-admin/exercises/{slug}/catalog`
 - `GET /api/health`
 
 O contrato `OpenAPI` exportado pelo backend vive em [`backend/openapi.json`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/backend/openapi.json).
@@ -213,10 +253,11 @@ Mais detalhes estão em [`CONTRIBUTING.md`](/home/miguelbarreto/estudos/logica-d
 
 As próximas frentes priorizadas hoje são:
 
-- guardrails de XP para impedir farm infinito por reexecução;
-- taxonomia canônica de categorias, assuntos, trilhas e dificuldade;
-- ranking útil, separado de XP;
-- expansão do catálogo para exercícios mais complexos e integradores.
+- consolidação final da `M4`, removendo a dependência runtime de metadados editoriais hardcoded;
+- aprofundamento real do módulo `Lógica de Programação com Python` com base no livro do Nilo;
+- modelagem negocial dos módulos `FastAPI`, `Vue`, `Integração Full-stack` e `OCP 17`;
+- futura persistência editável e curadoria administrativa do catálogo sem deploy;
+- ranking útil, separado de XP, apoiado nesse catálogo já consolidado.
 
 Essas milestones estão detalhadas na KB, em [`kb/04_Milestones/Mapa de Milestones.md`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/kb/04_Milestones/Mapa%20de%20Milestones.md).
 

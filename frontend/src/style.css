@@ -2653,6 +2653,11 @@ textarea {
   gap: 0.7rem;
 }
 
+.navigator-track-actions .inline-flex {
+  width: 100%;
+  min-width: 0;
+}
+
 .navigator-progress-rail {
   position: relative;
   height: 0.7rem;
