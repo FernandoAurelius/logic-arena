@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BookOpenText, ChevronRight, FileText, FlaskConical, ListChecks, LogOut, MessageSquare, Play, UserRound } from 'lucide-vue-next'
+import { LogOut, UserRound } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
 import { schemas } from '@/shared/api/generated'
-import { submissionApi } from '@/entities/submission/api/submission.api'
 import ArenaResultsDialog from '@/components/arena/ArenaResultsDialog.vue'
 import ArenaSidebar from '@/components/arena/ArenaSidebar.vue'
 import MonacoEditor from '@/components/editor/MonacoEditor.vue'
 import ProfileModal from '@/components/theme/ProfileModal.vue'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSession } from '@/entities/session'
 import { useArenaExerciseWorkspace } from '@/features/arena/open-exercise/model/useArenaExerciseWorkspace'
+import { useArenaSubmissionFlow } from '@/features/arena/submission/model/useArenaSubmissionFlow'
+import ArenaToolbar from '@/widgets/arena/ArenaToolbar.vue'
+import ArenaSpecPanel from '@/widgets/arena/ArenaSpecPanel.vue'
 
 type Submission = ZodInfer<typeof schemas.SubmissionSchema>
 type SubmissionSummary = ZodInfer<typeof schemas.SubmissionSummarySchema>
@@ -26,19 +26,15 @@ const router = useRouter()
 const route = useRoute()
 const session = useSession()
 
-const isSubmitting = ref(false)
-const isChatBusy = ref(false)
 const hintsOpen = ref(false)
 const chatInput = ref('')
 const confettiBurst = ref(false)
 const levelUpBurst = ref(false)
 const showProfile = ref(false)
-const resultsDialogOpen = ref(false)
-const resultsTab = ref<'saida' | 'testes' | 'revisao' | 'chat'>('saida')
 const specTab = ref<'descricao' | 'exemplos' | 'testes'>('descricao')
 
-let feedbackPollTimer: number | null = null
 let levelUpTimer: number | null = null
+let submissionFlowRef: ReturnType<typeof useArenaSubmissionFlow> | null = null
 
 const {
   exercises,
@@ -72,61 +68,32 @@ const {
 } = useArenaExerciseWorkspace({
   authHeader: () => session.authHeader(),
   onSubmissionHydrated: applySubmissionProgress,
-  onStopFeedbackPolling: stopFeedbackPolling,
-  onStartFeedbackPolling: (submissionId) => startFeedbackPolling(submissionId),
+  onStopFeedbackPolling: () => submissionFlowRef?.stopFeedbackPolling(),
+  onStartFeedbackPolling: (submissionId) => submissionFlowRef?.startFeedbackPolling(submissionId),
 })
 
 const activeIndex = computed(() => {
   if (!activeExercise.value) return 0
   return exercises.value.findIndex((exercise) => exercise.slug === activeExercise.value?.slug) + 1
 })
-const consoleLines = computed(() => {
-  if (!latestSubmission.value?.console_output) return ['[INIT] Aguardando execução do módulo atual...']
-  return latestSubmission.value.console_output.split('\n').filter(Boolean)
-})
-const feedbackPayload = computed(() => latestSubmission.value?.feedback_payload ?? null)
 const visibleTestCases = computed(() => activeExercise.value?.test_cases ?? [])
-const isFeedbackPending = computed(() => latestSubmission.value?.feedback_status === 'pending')
-const canReviewWithAi = computed(() => Boolean(latestSubmission.value) && !isFeedbackPending.value)
 const level = computed(() => session.currentUser.value?.level ?? 1)
 const xpIntoLevel = computed(() => session.currentUser.value?.xp_into_level ?? 0)
 const xpProgress = computed(() => Math.min(100, Math.max(0, xpIntoLevel.value)))
 const xpToNextLevel = computed(() => session.currentUser.value?.xp_to_next_level ?? 100)
-const progressRewards = computed(() => latestSubmission.value?.unlocked_progress_rewards ?? [])
-const submissionOutcomeTone = computed(() => {
-  if (!latestSubmission.value) return 'idle'
-  if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) return 'reward'
-  if (latestSubmission.value.status === 'passed') return 'pass'
-  return 'fail'
+
+const submissionFlow = useArenaSubmissionFlow({
+  authHeader: () => session.authHeader(),
+  activeExerciseSlug: computed(() => activeExercise.value?.slug ?? null),
+  code,
+  latestSubmission,
+  chatMessages,
+  onSubmissionHydrated: setHydratedSubmission,
+  onSubmissionProgress: applySubmissionProgress,
+  onSubmissionPassed: () => triggerConfetti(),
+  onReloadSubmissions: loadSubmissions,
 })
-const submissionOutcomeTitle = computed(() => {
-  if (!latestSubmission.value) return 'Aguardando execução'
-  if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) return 'Passou e evoluiu'
-  if (latestSubmission.value.status === 'passed') return 'Passou, mas sem novo XP'
-  return 'Ainda não passou'
-})
-const submissionOutcomeCopy = computed(() => {
-  if (!latestSubmission.value) return 'Execute um exercício para receber o diagnóstico desta rodada.'
-  if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) {
-    return 'Você concluiu o exercício e desbloqueou um marco real de progresso.'
-  }
-  if (latestSubmission.value.status === 'passed') {
-    return 'A solução está correta, mas esta rodada não mudou seu estado estrutural de progresso.'
-  }
-  return 'A rodada ainda precisa de ajuste. Use o console e a revisão com IA para entender onde corrigir.'
-})
-const rewardSummary = computed(() => {
-  const submission = latestSubmission.value
-  if (!submission) return ''
-  if (submission.xp_awarded > 0 && progressRewards.value.length > 0) {
-    const labels = progressRewards.value.map((reward) => reward.label).join(', ')
-    return `${labels}: +${submission.xp_awarded} XP`
-  }
-  if (submission.xp_awarded > 0) {
-    return `+${submission.xp_awarded} XP nesta rodada`
-  }
-  return 'Sem ganho de XP nesta rodada'
-})
+submissionFlowRef = submissionFlow
 
 function triggerLevelUp() {
   levelUpBurst.value = true
@@ -147,47 +114,8 @@ function applySubmissionProgress(submission: Submission) {
   }
 }
 
-function stopFeedbackPolling() {
-  if (feedbackPollTimer !== null) {
-    window.clearInterval(feedbackPollTimer)
-    feedbackPollTimer = null
-  }
-}
-
-function formatSampleBlock(text: string) {
-  const normalized = text.replace(/\r/g, '').trim()
-  if (!normalized) return ['Sem exemplo disponível.']
-  return normalized.split('\n')
-}
-
-function traduzirStatusExecucao(status?: string) {
-  switch (status) {
-    case 'passed':
-      return 'Aprovada'
-    case 'failed':
-      return 'Reprovada'
-    case 'error':
-      return 'Erro'
-    case 'pending':
-      return 'Pendente'
-    default:
-      return 'Inativa'
-  }
-}
-
-function traduzirEstadoArena() {
-  if (isSubmitting.value) return 'Executando'
-  if (isBooting.value) return 'Carregando'
-  return 'Pronta'
-}
-
-function abrirCentralDeResultado(tab: 'saida' | 'testes' | 'revisao' | 'chat' = 'saida') {
-  resultsTab.value = tab
-  resultsDialogOpen.value = true
-}
-
 function resetArenaPanels() {
-  resultsDialogOpen.value = false
+  submissionFlow.resultsDialogOpen.value = false
   hintsOpen.value = false
 }
 
@@ -208,45 +136,16 @@ async function handleOpenSubmissionSession(submissionSummary: SubmissionSummary)
 
 async function confirmRestoreSubmission() {
   await confirmRestoreSubmissionFromWorkspace()
-  resultsDialogOpen.value = false
+  submissionFlow.resultsDialogOpen.value = false
 }
 
 function declineRestoreSubmission() {
   declineRestoreSubmissionFromWorkspace()
-  resultsDialogOpen.value = false
+  submissionFlow.resultsDialogOpen.value = false
 }
 
 function handleRestoreDialogOpen(nextOpen: boolean) {
   handleRestoreDialogOpenFromWorkspace(nextOpen)
-}
-
-async function refreshSubmission(submissionId: number) {
-  const refreshed = await submissionApi.getById(submissionId, session.authHeader() ?? undefined)
-  latestSubmission.value = {
-    ...refreshed,
-    results: refreshed.results.length ? refreshed.results : latestSubmission.value?.results ?? [],
-  }
-  applySubmissionProgress(refreshed)
-  if ((refreshed.review_chat_history?.length ?? 0) > 0) {
-    chatMessages.value = refreshed.review_chat_history
-  }
-  if (refreshed.feedback_status !== 'pending') {
-    stopFeedbackPolling()
-    await loadSubmissions()
-    if (refreshed.status === 'passed') {
-      triggerConfetti()
-    }
-  }
-}
-
-function startFeedbackPolling(submissionId: number) {
-  stopFeedbackPolling()
-  feedbackPollTimer = window.setInterval(() => {
-    void refreshSubmission(submissionId).catch((error) => {
-      console.error(error)
-      stopFeedbackPolling()
-    })
-  }, 1500)
 }
 
 async function submitSolution() {
@@ -255,59 +154,20 @@ async function submitSolution() {
     return
   }
 
-  isSubmitting.value = true
   errorMessage.value = ''
-  resultsDialogOpen.value = false
-  chatMessages.value = []
 
   try {
-    const submission = await submissionApi.submit(activeExercise.value.slug, code.value, session.authHeader() ?? undefined)
-    setHydratedSubmission(submission)
     pendingRestoreSubmission.value = null
     restoreDialogOpen.value = false
-    applySubmissionProgress(submission)
-    await loadSubmissions()
-    if (submission.status === 'passed') {
-      triggerConfetti()
-    }
-    abrirCentralDeResultado('saida')
+    await submissionFlow.submitSolution()
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Não foi possível processar a submissão.'
-  } finally {
-    isSubmitting.value = false
   }
 }
 
 async function sendReviewChat() {
-  const submission = latestSubmission.value
-  if (!submission || !chatInput.value.trim()) return
-
-  const message = chatInput.value.trim()
-  chatMessages.value.push({ role: 'user', content: message })
-  chatInput.value = ''
-  isChatBusy.value = true
-
-  try {
-    const response = await submissionApi.sendReviewChat(
-      submission.id,
-      message,
-      chatMessages.value,
-      session.authHeader() ?? undefined,
-    )
-    chatMessages.value.push({ role: 'assistant', content: response.answer })
-    if (latestSubmission.value) {
-      latestSubmission.value.review_chat_history = [...chatMessages.value]
-    }
-  } catch (error) {
-    console.error(error)
-    chatMessages.value.push({
-      role: 'assistant',
-      content: 'Não consegui revisar essa dúvida agora. Tente novamente em instantes.',
-    })
-  } finally {
-    isChatBusy.value = false
-  }
+  await submissionFlow.sendReviewChat(chatInput)
 }
 
 function triggerConfetti() {
@@ -340,15 +200,7 @@ watch(
 )
 
 function openReviewChat() {
-  if (chatMessages.value.length === 0 && latestSubmission.value) {
-    chatMessages.value = [
-      {
-        role: 'assistant',
-        content: `Vamos revisar essa submissão. Você passou ${latestSubmission.value.passed_tests} de ${latestSubmission.value.total_tests} testes. Me pergunte sobre um erro específico, uma melhoria de código ou o raciocínio esperado.`,
-      },
-    ]
-  }
-  abrirCentralDeResultado('chat')
+  submissionFlow.openReviewChat()
 }
 
 function toggleHints() {
@@ -356,7 +208,7 @@ function toggleHints() {
 }
 
 async function logout() {
-  stopFeedbackPolling()
+  submissionFlow.stopFeedbackPolling()
   session.clearSession()
   await router.push({ name: 'landing' })
 }
@@ -366,7 +218,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  stopFeedbackPolling()
+  submissionFlow.stopFeedbackPolling()
   if (levelUpTimer !== null) {
     window.clearTimeout(levelUpTimer)
   }
@@ -445,185 +297,44 @@ onBeforeUnmount(() => {
           <div class="workspace-stack">
             <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
 
-            <div v-if="activeExercise" class="arena-toolbar">
-              <div class="arena-toolbar__left">
-                <Button variant="outline" size="sm" @click="toggleHints">
-                  <BookOpenText :size="16" />
-                  Dicas
-                </Button>
-                <Button v-if="latestSubmission" variant="outline" size="sm" :disabled="!canReviewWithAi || isChatBusy" @click="openReviewChat">
-                  <MessageSquare :size="16" />
-                  Chat da revisão
-                </Button>
-              </div>
-              <div v-if="latestSubmission" class="arena-toolbar__center">
-                <div class="spec-outcome-banner spec-outcome-banner--toolbar" :data-tone="submissionOutcomeTone">
-                  <div class="spec-outcome-banner__status">
-                    <Badge>{{ traduzirStatusExecucao(latestSubmission.status) }}</Badge>
-                    <div class="spec-outcome-banner__copy">
-                      <strong>{{ submissionOutcomeTitle }}</strong>
-                      <span>{{ latestSubmission.passed_tests }}/{{ latestSubmission.total_tests }} testes · {{ rewardSummary }}</span>
-                    </div>
-                  </div>
-                  <div class="spec-outcome-banner__actions">
-                    <Button variant="outline" size="sm" @click="abrirCentralDeResultado('saida')">Abrir central</Button>
-                  </div>
-                </div>
-              </div>
-              <div class="arena-toolbar__right">
-                <Button size="sm" :disabled="isSubmitting || isBooting" @click="submitSolution">
-                  <Play :size="16" />
-                  {{ isSubmitting ? 'Executando...' : 'Executar' }}
-                </Button>
-              </div>
-            </div>
+            <ArenaToolbar
+              v-if="activeExercise"
+              :has-submission="Boolean(latestSubmission)"
+              :can-review-with-ai="submissionFlow.canReviewWithAi.value"
+              :is-chat-busy="submissionFlow.isChatBusy.value"
+              :is-submitting="submissionFlow.isSubmitting.value"
+              :is-booting="isBooting"
+              :latest-submission-status="latestSubmission?.status"
+              :latest-submission-passed-tests="latestSubmission?.passed_tests"
+              :latest-submission-total-tests="latestSubmission?.total_tests"
+              :submission-outcome-tone="submissionFlow.submissionOutcomeTone.value"
+              :submission-outcome-title="submissionFlow.submissionOutcomeTitle.value"
+              :reward-summary="submissionFlow.rewardSummary.value"
+              @toggle-hints="toggleHints"
+              @open-review-chat="openReviewChat"
+              @open-results="submissionFlow.openResultsCenter('saida')"
+              @submit="submitSolution"
+            />
 
             <section v-if="activeExercise" class="two-column">
               <div class="left-column">
-                <Card class="spec-card">
-                  <CardHeader class="spec-card-header">
-                    <Tabs v-model:model-value="specTab" class="spec-tabs">
-                      <TabsList class="spec-tabs-list">
-                        <TabsTrigger value="descricao" class="spec-tabs-trigger">
-                          <FileText :size="15" />
-                          Especificação
-                        </TabsTrigger>
-                        <TabsTrigger value="exemplos" class="spec-tabs-trigger">
-                          <FlaskConical :size="15" />
-                          Exemplos
-                        </TabsTrigger>
-                        <TabsTrigger value="testes" class="spec-tabs-trigger">
-                          <ListChecks :size="15" />
-                          Testes
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                    <div class="spec-heading-block">
-                      <div class="breadcrumb">
-                        <button class="breadcrumb-link" type="button" @click="router.push({ name: 'navigator' })">Navegador</button>
-                        <ChevronRight :size="14" />
-                        <button
-                          v-if="routeTrackSlug"
-                          class="breadcrumb-link"
-                          type="button"
-                          @click="router.push({ name: 'track', params: { trackSlug: routeTrackSlug } })"
-                        >
-                          {{ activeExercise?.track_name ?? 'Trilha' }}
-                        </button>
-                        <template v-if="routeTrackSlug">
-                          <ChevronRight :size="14" />
-                        </template>
-                        <button
-                          v-else-if="activeExercise?.module_name"
-                          class="breadcrumb-link"
-                          type="button"
-                          @click="router.push({ name: 'navigator' })"
-                        >
-                          {{ activeExercise.module_name }}
-                        </button>
-                        <template v-if="!routeTrackSlug && activeExercise?.module_name">
-                          <ChevronRight :size="14" />
-                        </template>
-                        <span class="active">{{ activeExercise?.difficulty ?? 'Exercício' }}</span>
-                      </div>
-                      <h1 class="spec-heading-title">{{ activeExercise?.title ?? 'Aguardando exercício' }}</h1>
-                      <div class="challenge-meta challenge-meta--compact">
-                        <Badge variant="outline">{{ activeExercise.module_name ?? 'Sem módulo' }}</Badge>
-                        <Badge variant="outline">{{ activeExercise.track_name ?? 'Sem trilha' }}</Badge>
-                        <Badge variant="outline">{{ activeExercise.difficulty }}</Badge>
-                        <Badge variant="outline">Questão {{ activeIndex }}/{{ exercises.length || 1 }}</Badge>
-                        <Badge :variant="isSubmitting || isBooting ? 'dark' : 'default'">
-                          {{ traduzirEstadoArena() }}
-                        </Badge>
-                      </div>
-                      <div v-if="routeTrackSlug && trackContext" class="workspace-track-inline">
-                        <span class="workspace-track-inline__label">
-                          {{ trackContext.name }}
-                          <small>
-                            {{
-                              activeTrackIndex >= 0
-                                ? `Etapa ${activeTrackIndex + 1} de ${trackExercises.length}`
-                                : 'Contexto de trilha ativo'
-                            }}
-                          </small>
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent class="spec-content">
-                    <Tabs v-model:model-value="specTab" class="spec-tabs-content">
-                      <TabsContent value="descricao" class="spec-pane">
-                        <div class="formula-box formula-box--statement">
-                          <p class="section-label">Enunciado</p>
-                          <p>{{ activeExercise.statement }}</p>
-                        </div>
-
-                        <div class="formula-box">
-                          <p class="section-label">Modo de prova</p>
-                          <strong>Resolva sem código inicial. Abra <em>dicas</em> apenas se quiser uma pista opcional.</strong>
-                        </div>
-
-                        <div v-if="routeTrackSlug && trackContext && activeTrackIndex >= 0" class="formula-box formula-box--track">
-                          <p class="section-label">Posição na trilha</p>
-                          <strong>{{ trackContext.name }} · etapa {{ activeTrackIndex + 1 }}</strong>
-                          <p>
-                            {{
-                              trackExercises[activeTrackIndex]?.pedagogical_brief ??
-                              'Este exercício faz parte de um percurso estruturado de progressão.'
-                            }}
-                          </p>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="exemplos" class="spec-pane spec-pane--examples">
-                        <div class="example-flow-grid">
-                          <div class="example-flow-card io-card">
-                            <p class="section-label">Exemplo de entrada</p>
-                            <div class="code-block">
-                              <span v-for="(line, index) in formatSampleBlock(activeExercise.sample_input)" :key="`input-${index}`">
-                                {{ line }}
-                              </span>
-                            </div>
-                          </div>
-                          <div class="example-flow-arrow" aria-hidden="true">
-                            <ChevronRight :size="18" />
-                          </div>
-                          <div class="example-flow-card io-card">
-                            <p class="section-label">Exemplo de saída</p>
-                            <div class="code-block">
-                              <span v-for="(line, index) in formatSampleBlock(activeExercise.sample_output)" :key="`output-${index}`">
-                                {{ line }}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="testes" class="spec-pane">
-                        <div v-if="visibleTestCases.length" class="visible-tests">
-                          <p class="section-label">Testes</p>
-                          <div class="test-grid">
-                            <div v-for="testCase in visibleTestCases" :key="testCase.id" class="test-card">
-                              <strong>Teste {{ testCase.id }}</strong>
-                              <div class="test-case-line">
-                                <span>Entrada</span>
-                                <code>{{ testCase.input_data }}</code>
-                              </div>
-                              <div class="test-case-line">
-                                <span>Saída</span>
-                                <code>{{ testCase.expected_output }}</code>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div v-else class="formula-box">
-                          <p class="section-label">Testes</p>
-                          <p>Este exercício não expõe testes visíveis nesta rodada.</p>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </CardContent>
-                </Card>
+                <ArenaSpecPanel
+                  :spec-tab="specTab"
+                  :route-track-slug="routeTrackSlug"
+                  :active-exercise="activeExercise"
+                  :active-index="activeIndex"
+                  :exercise-count="exercises.length"
+                  :is-submitting="submissionFlow.isSubmitting.value"
+                  :is-booting="isBooting"
+                  :track-name="trackContext?.name ?? null"
+                  :active-track-index="activeTrackIndex"
+                  :track-exercise-count="trackExercises.length"
+                  :active-track-brief="activeTrackIndex >= 0 ? trackExercises[activeTrackIndex]?.pedagogical_brief ?? null : null"
+                  :visible-test-cases="visibleTestCases"
+                  @update:spec-tab="specTab = $event"
+                  @go-navigator="router.push({ name: 'navigator' })"
+                  @go-track="router.push({ name: 'track', params: { trackSlug: routeTrackSlug } })"
+                />
               </div>
 
               <div class="right-column">
@@ -634,7 +345,7 @@ onBeforeUnmount(() => {
                       class="code-editor"
                       language="python"
                       height="calc(100vh - 15.5rem)"
-                      :read-only="isSubmitting"
+                      :read-only="submissionFlow.isSubmitting.value"
                       placeholder="# escreva sua solução aqui"
                     />
                   </CardContent>
@@ -646,22 +357,22 @@ onBeforeUnmount(() => {
       </main>
     </div>
     <ArenaResultsDialog
-      :open="resultsDialogOpen"
-      :tab="resultsTab"
+      :open="submissionFlow.resultsDialogOpen.value"
+      :tab="submissionFlow.resultsTab.value"
       :active-exercise-title="activeExercise?.title ?? ''"
       :submission="latestSubmission"
-      :console-lines="consoleLines"
-      :submission-outcome-tone="submissionOutcomeTone"
-      :submission-outcome-title="submissionOutcomeTitle"
-      :submission-outcome-copy="submissionOutcomeCopy"
-      :reward-summary="rewardSummary"
-      :progress-rewards="progressRewards"
-      :feedback-payload="feedbackPayload"
+      :console-lines="submissionFlow.consoleLines.value"
+      :submission-outcome-tone="submissionFlow.submissionOutcomeTone.value"
+      :submission-outcome-title="submissionFlow.submissionOutcomeTitle.value"
+      :submission-outcome-copy="submissionFlow.submissionOutcomeCopy.value"
+      :reward-summary="submissionFlow.rewardSummary.value"
+      :progress-rewards="submissionFlow.progressRewards.value"
+      :feedback-payload="submissionFlow.feedbackPayload.value"
       :chat-messages="chatMessages"
       :chat-input="chatInput"
-      :is-chat-busy="isChatBusy"
-      @update:open="resultsDialogOpen = $event"
-      @update:tab="resultsTab = $event"
+      :is-chat-busy="submissionFlow.isChatBusy.value"
+      @update:open="submissionFlow.resultsDialogOpen.value = $event"
+      @update:tab="submissionFlow.resultsTab.value = $event"
       @update:chat-input="chatInput = $event"
       @send-chat="sendReviewChat"
     />
