@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from ninja import Header, Router
 
 from accounts.application.services import require_session
@@ -137,7 +136,9 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
     if track is None:
         return 404, {'message': 'Trilha não encontrada.'}
 
-    exercise = get_object_or_404(Exercise.objects.select_related('track'), slug=exercise_slug, track=track, is_active=True)
+    exercise = Exercise.objects.select_related('track').filter(slug=exercise_slug, track=track, is_active=True).first()
+    if exercise is None:
+        return 404, {'message': 'Módulo não encontrado para essa trilha.'}
 
     explanation = ensure_exercise_explanation(exercise)
     explanation = type(explanation).objects.prefetch_related('concepts', 'code_examples').get(pk=explanation.pk)
