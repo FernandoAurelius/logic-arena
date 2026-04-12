@@ -275,7 +275,7 @@ function consoleTagLabel(line: string) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="revisao" class="results-tab-panel">
+        <TabsContent value="revisao" class="results-tab-panel results-tab-panel--scrollable">
           <Card v-if="isFeedbackLoading" class="feedback-card feedback-card--loading">
             <CardHeader>
               <div class="feedback-header">

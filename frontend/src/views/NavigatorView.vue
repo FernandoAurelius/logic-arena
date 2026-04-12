@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowRight, Compass, LogOut, Route, Sparkles, Target, UserRound } from 'lucide-vue-next'
+import { ArrowRight, LogOut, Sparkles, Target, UserRound } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
 import { catalogApi } from '@/lib/api/client'
@@ -11,6 +11,7 @@ import ProfileModal from '@/components/theme/ProfileModal.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 type NavigatorResponse = ZodInfer<typeof schemas.NavigatorResponseSchema>
 type TrackSummary = ZodInfer<typeof schemas.TrackSummarySchema>
@@ -29,6 +30,7 @@ const visibleCategories = computed(() => {
   if (activeCategory.value === 'all') return categories.value
   return categories.value.filter((category) => category.slug === activeCategory.value)
 })
+const visibleTrackCount = computed(() => visibleCategories.value.reduce((total, category) => total + category.tracks.length, 0))
 const recommendedTrack = computed(() => {
   const slug = navigatorData.value?.recommended_track_slug
   if (!slug) return null
@@ -43,6 +45,12 @@ function progressLabel(track: TrackSummary) {
   if (track.progress_percent >= 100) return 'Masterizado'
   if (track.progress_percent > 0) return 'Em progresso'
   return 'Não iniciado'
+}
+
+function statusTone(track: TrackSummary) {
+  if (track.progress_percent >= 100) return 'passed'
+  if (track.progress_percent > 0) return 'in_progress'
+  return 'available'
 }
 
 function openTrack(trackSlug: string) {
@@ -69,7 +77,7 @@ async function loadNavigator() {
     })
   } catch (error) {
     console.error(error)
-    errorMessage.value = 'Não foi possível carregar o Navigator agora.'
+    errorMessage.value = 'Não foi possível carregar o Navegador agora.'
   } finally {
     loading.value = false
   }
@@ -91,9 +99,9 @@ onMounted(() => {
       <div class="topbar-left topbar-left--nav">
         <span class="brand-wordmark">LOGIC ARENA</span>
         <nav class="workspace-nav">
-          <button class="workspace-nav-link workspace-nav-link--active" type="button">Navigator</button>
+          <button class="workspace-nav-link workspace-nav-link--active" type="button">Navegador</button>
           <button class="workspace-nav-link" type="button" @click="router.push({ name: 'arena' })">Arena</button>
-          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'tutorial' })">Documentation</button>
+          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'tutorial' })">Documentação</button>
         </nav>
       </div>
       <div class="topbar-right">
@@ -109,8 +117,8 @@ onMounted(() => {
         </div>
         <div class="topbar-status">
           <div class="level-box">
-            <strong>LEVEL {{ session.currentUser.value?.level ?? 1 }}</strong>
-            <span>{{ session.currentUser.value?.nickname ?? 'operator' }}</span>
+            <strong>NÍVEL {{ session.currentUser.value?.level ?? 1 }}</strong>
+            <span>{{ session.currentUser.value?.nickname ?? 'operador' }}</span>
             <small>{{ session.currentUser.value?.xp_total ?? 0 }} XP totais</small>
           </div>
         </div>
@@ -121,8 +129,8 @@ onMounted(() => {
       <aside class="navigator-sidebar">
         <Card class="navigator-sidebar-card">
           <CardHeader>
-            <p class="eyebrow">Control Stack</p>
-            <CardTitle>Navigator</CardTitle>
+            <p class="eyebrow">Controle</p>
+            <CardTitle>Navegador</CardTitle>
             <CardDescription>Escolha a trilha certa antes de entrar na arena.</CardDescription>
           </CardHeader>
           <CardContent class="navigator-filter-stack">
@@ -146,120 +154,94 @@ onMounted(() => {
             </button>
           </CardContent>
         </Card>
-
-        <Card class="navigator-sidebar-card">
-          <CardHeader>
-            <p class="eyebrow">Recommended Path</p>
-            <CardTitle>{{ recommendedTrack?.name ?? 'Sem recomendação ainda' }}</CardTitle>
-            <CardDescription>
-              {{ recommendedTrack?.goal ?? 'Quando o catálogo carregar, o próximo passo recomendado aparece aqui.' }}
-            </CardDescription>
-          </CardHeader>
-          <CardContent class="navigator-recommendation-body">
-            <div class="navigator-kpi-row">
-              <div>
-                <small class="eyebrow">Progresso</small>
-                <strong>{{ recommendedTrack?.progress_percent ?? 0 }}%</strong>
-              </div>
-              <div>
-                <small class="eyebrow">Target</small>
-                <strong>{{ recommendedTrack?.current_target_title ?? 'A definir' }}</strong>
-              </div>
-            </div>
-            <div class="navigator-hero-actions">
-              <Button v-if="recommendedTrack" class="w-full" @click="openTrack(recommendedTrack.slug)">
-                Ver Mapa
-                <ArrowRight :size="16" />
-              </Button>
-              <Button v-if="recommendedTrack" variant="outline" class="w-full" @click="openTrackInArena(recommendedTrack)">
-                Abrir Na Arena
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </aside>
 
       <section class="navigator-main">
-        <div class="navigator-hero">
-          <div>
-            <p class="eyebrow">Architectural Registry</p>
-            <h1 class="navigator-title">Navigator</h1>
-            <p class="navigator-copy">
-              Navegue por categorias e trilhas reais do catálogo. Aqui o foco é escolher o próximo bloco de prática com contexto,
-              não apenas abrir qualquer exercício.
-            </p>
+        <div class="navigator-surface-header">
+          <div class="navigator-surface-header__meta">
+            <p class="eyebrow">Catálogo autenticado</p>
+            <strong>{{ visibleCategories.length }} categorias · {{ visibleTrackCount }} trilhas</strong>
           </div>
           <div class="navigator-hero-actions">
             <Button v-if="recommendedTrack" @click="openTrack(recommendedTrack.slug)">
-              <Route :size="16" />
-              Abrir Trilha Atual
+              <Target :size="16" />
+              Abrir trilha atual
             </Button>
             <Button variant="outline" @click="router.push({ name: 'arena' })">
-              <Compass :size="16" />
-              Ir Para Arena
+              <ArrowRight :size="16" />
+              Ir para a arena
             </Button>
           </div>
         </div>
 
-        <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
-        <div v-else-if="loading" class="navigator-empty-state">
-          <Sparkles :size="18" />
-          <span>Sincronizando catálogo autenticado...</span>
-        </div>
+        <ScrollArea class="navigator-main-scroll" viewport-class="navigator-main-viewport">
+          <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
+          <div v-else-if="loading" class="navigator-empty-state">
+            <Sparkles :size="18" />
+            <span>Sincronizando catálogo autenticado...</span>
+          </div>
 
-        <div v-else class="navigator-category-stack">
-          <section v-for="category in visibleCategories" :key="category.slug" class="navigator-category-section">
-            <div class="navigator-section-heading">
-              <div>
-                <p class="eyebrow">{{ category.name }}</p>
-                <h2>{{ category.description || 'Trilhas organizadas por domínio de prática.' }}</h2>
+          <div v-else class="navigator-category-stack">
+            <section v-for="category in visibleCategories" :key="category.slug" class="navigator-category-section">
+              <div class="navigator-section-heading">
+                <div>
+                  <p class="eyebrow">{{ category.name }}</p>
+                  <h2>{{ category.description || 'Trilhas organizadas por domínio de prática.' }}</h2>
+                </div>
+                <Badge variant="outline">{{ category.tracks.length }} trilhas</Badge>
               </div>
-              <Badge variant="outline">{{ category.tracks.length }} trilhas</Badge>
-            </div>
 
-            <div class="navigator-track-grid">
-              <Card v-for="track in category.tracks" :key="track.slug" class="navigator-track-card">
-                <CardHeader>
-                  <div class="navigator-card-topline">
-                    <Badge variant="outline">{{ track.level_label }}</Badge>
-                    <Badge variant="outline">{{ progressLabel(track) }}</Badge>
-                  </div>
-                  <CardTitle>{{ track.name }}</CardTitle>
-                  <CardDescription>{{ track.goal }}</CardDescription>
-                </CardHeader>
-                <CardContent class="navigator-track-body">
-                  <p class="navigator-track-description">{{ track.description }}</p>
-                  <div class="navigator-track-stats">
-                    <div>
-                      <small class="eyebrow">Progresso</small>
-                      <strong>{{ track.progress_percent }}%</strong>
+              <div class="navigator-track-grid">
+                <Card
+                  v-for="track in category.tracks"
+                  :key="track.slug"
+                  class="navigator-track-card"
+                  :data-status="statusTone(track)"
+                >
+                  <CardHeader>
+                    <div class="navigator-card-topline">
+                      <Badge variant="outline">{{ track.level_label }}</Badge>
+                      <Badge variant="outline" :class="`navigator-status-badge navigator-status-badge--${statusTone(track)}`">
+                        {{ progressLabel(track) }}
+                      </Badge>
                     </div>
-                    <div>
-                      <small class="eyebrow">Módulos</small>
-                      <strong>{{ track.completed_exercises }}/{{ track.total_exercises }}</strong>
+                    <CardTitle>{{ track.name }}</CardTitle>
+                    <CardDescription>{{ track.goal }}</CardDescription>
+                  </CardHeader>
+                  <CardContent class="navigator-track-body">
+                    <p class="navigator-track-description">{{ track.description }}</p>
+                    <div class="navigator-track-stats">
+                      <div class="navigator-stat-row navigator-stat-row--compact">
+                        <small class="eyebrow">Progresso</small>
+                        <strong>{{ track.progress_percent }}%</strong>
+                      </div>
+                      <div class="navigator-stat-row navigator-stat-row--compact">
+                        <small class="eyebrow">Módulos</small>
+                        <strong>{{ track.completed_exercises }}/{{ track.total_exercises }}</strong>
+                      </div>
+                      <div class="navigator-stat-row navigator-stat-row--stack">
+                        <small class="eyebrow">Alvo</small>
+                        <strong>{{ track.current_target_title ?? 'Masterizado' }}</strong>
+                      </div>
                     </div>
-                    <div>
-                      <small class="eyebrow">Target</small>
-                      <strong>{{ track.current_target_title ?? 'Masterizado' }}</strong>
+                    <div class="navigator-progress-rail">
+                      <div class="navigator-progress-rail-fill" :style="{ width: `${track.progress_percent}%` }"></div>
                     </div>
-                  </div>
-                  <div class="navigator-progress-rail">
-                    <div class="navigator-progress-rail-fill" :style="{ width: `${track.progress_percent}%` }"></div>
-                  </div>
-                  <div class="navigator-track-actions">
-                    <Button class="w-full" @click="openTrack(track.slug)">
-                      <Target :size="16" />
-                      Ver Mapa
-                    </Button>
-                    <Button variant="outline" class="w-full" :disabled="!track.current_target_slug" @click="openTrackInArena(track)">
-                      Abrir Na Arena
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-        </div>
+                    <div class="navigator-track-actions">
+                      <Button class="w-full" @click="openTrack(track.slug)">
+                        <Target :size="16" />
+                        Ver mapa
+                      </Button>
+                      <Button variant="outline" class="w-full" :disabled="!track.current_target_slug" @click="openTrackInArena(track)">
+                        Abrir na arena
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+          </div>
+        </ScrollArea>
       </section>
     </main>
     <ProfileModal v-if="showProfile" @close="showProfile = false" />

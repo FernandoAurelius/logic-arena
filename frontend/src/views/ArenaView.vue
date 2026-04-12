@@ -49,6 +49,12 @@ const showProfile = ref(false)
 const resultsDialogOpen = ref(false)
 const resultsTab = ref<'saida' | 'testes' | 'revisao' | 'chat'>('saida')
 const specTab = ref<'descricao' | 'exemplos' | 'testes'>('descricao')
+const restoreDialogOpen = ref(false)
+const pendingRestoreSubmission = ref<SubmissionSummary | null>(null)
+const rememberRestoreChoice = ref(false)
+
+const RESTORE_CHOICE_STORAGE_KEY = 'logic-arena.restore-choice'
+type RestoreChoice = 'restore' | 'blank'
 
 let feedbackPollTimer: number | null = null
 let levelUpTimer: number | null = null
@@ -186,6 +192,95 @@ function formatSampleBlock(text: string) {
   return normalized.split('\n')
 }
 
+function findLatestSubmissionForExercise(slug: string) {
+  return submissions.value.find((submission) => submission.exercise_slug === slug) ?? null
+}
+
+async function fetchSubmission(submissionId: number) {
+  return submissionsApi.get('/api/submissions/:submission_id', {
+    params: { submission_id: submissionId },
+    headers: { authorization: session.authHeader() ?? undefined },
+  })
+}
+
+async function restoreSubmissionById(submissionId: number) {
+  const submission = await fetchSubmission(submissionId)
+  latestSubmission.value = submission
+  code.value = submission.source_code
+  chatMessages.value = submission.review_chat_history ?? []
+
+  if (submission.feedback_status === 'pending') {
+    startFeedbackPolling(submission.id)
+  } else {
+    stopFeedbackPolling()
+  }
+
+  return true
+}
+
+function promptRestoreLatestSubmissionForExercise(slug: string) {
+  const submissionSummary = findLatestSubmissionForExercise(slug)
+  if (!submissionSummary) {
+    pendingRestoreSubmission.value = null
+    restoreDialogOpen.value = false
+    return false
+  }
+
+  const storedChoice = globalThis.localStorage?.getItem(RESTORE_CHOICE_STORAGE_KEY) as RestoreChoice | null
+  if (storedChoice === 'restore') {
+    void restoreSubmissionById(submissionSummary.id)
+    return true
+  }
+
+  if (storedChoice === 'blank') {
+    clearDraftForExercise()
+    return true
+  }
+
+  rememberRestoreChoice.value = false
+  pendingRestoreSubmission.value = submissionSummary
+  restoreDialogOpen.value = true
+  return true
+}
+
+function clearDraftForExercise() {
+  stopFeedbackPolling()
+  latestSubmission.value = null
+  code.value = ''
+  chatMessages.value = []
+  resultsDialogOpen.value = false
+}
+
+async function confirmRestoreSubmission() {
+  const submissionSummary = pendingRestoreSubmission.value
+  restoreDialogOpen.value = false
+  pendingRestoreSubmission.value = null
+  if (rememberRestoreChoice.value) {
+    globalThis.localStorage?.setItem(RESTORE_CHOICE_STORAGE_KEY, 'restore')
+  }
+  rememberRestoreChoice.value = false
+  if (!submissionSummary) return
+  await restoreSubmissionById(submissionSummary.id)
+}
+
+function declineRestoreSubmission() {
+  restoreDialogOpen.value = false
+  pendingRestoreSubmission.value = null
+  if (rememberRestoreChoice.value) {
+    globalThis.localStorage?.setItem(RESTORE_CHOICE_STORAGE_KEY, 'blank')
+  }
+  rememberRestoreChoice.value = false
+  clearDraftForExercise()
+}
+
+function handleRestoreDialogOpen(nextOpen: boolean) {
+  restoreDialogOpen.value = nextOpen
+  if (!nextOpen) {
+    pendingRestoreSubmission.value = null
+    rememberRestoreChoice.value = false
+  }
+}
+
 function traduzirStatusExecucao(status?: string) {
   switch (status) {
     case 'passed':
@@ -274,12 +369,13 @@ async function selectExercise(slug: string) {
   resultsDialogOpen.value = false
   hintsOpen.value = false
   chatMessages.value = []
+  restoreDialogOpen.value = false
+  pendingRestoreSubmission.value = null
 
   try {
     const exercise = await fetchExercise(slug)
     activeExercise.value = exercise
-    code.value = ''
-    latestSubmission.value = null
+    clearDraftForExercise()
     if (route.query.exercise !== slug) {
       await router.replace({
         name: 'arena',
@@ -289,6 +385,7 @@ async function selectExercise(slug: string) {
         },
       })
     }
+    promptRestoreLatestSubmissionForExercise(slug)
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Falha ao carregar os detalhes do exercício.'
@@ -309,14 +406,13 @@ async function openSubmissionSession(submissionSummary: SubmissionSummary) {
   stopFeedbackPolling()
   resultsDialogOpen.value = false
   hintsOpen.value = false
+  restoreDialogOpen.value = false
+  pendingRestoreSubmission.value = null
 
   try {
     const [exercise, submission] = await Promise.all([
       fetchExercise(submissionSummary.exercise_slug),
-      submissionsApi.get('/api/submissions/:submission_id', {
-        params: { submission_id: submissionSummary.id },
-        headers: { authorization: session.authHeader() ?? undefined },
-      }),
+      fetchSubmission(submissionSummary.id),
     ])
     activeExercise.value = exercise
     latestSubmission.value = submission
@@ -384,6 +480,8 @@ async function submitSolution() {
       { params: { slug: activeExercise.value.slug }, headers: { authorization: session.authHeader() ?? undefined } },
     )
     latestSubmission.value = submission
+    pendingRestoreSubmission.value = null
+    restoreDialogOpen.value = false
     applySubmissionProgress(submission)
     chatMessages.value = submission.review_chat_history ?? []
     await loadSubmissions()
@@ -776,6 +874,31 @@ onBeforeUnmount(() => {
       @update:chat-input="chatInput = $event"
       @send-chat="sendReviewChat"
     />
+    <Dialog :open="restoreDialogOpen" @update:open="handleRestoreDialogOpen">
+      <DialogContent class="arena-confirm-dialog" :show-close="true">
+        <DialogHeader>
+          <DialogTitle>Restaurar última submissão?</DialogTitle>
+          <DialogDescription>
+            Encontramos uma tentativa anterior sua para
+            <strong>{{ pendingRestoreSubmission?.exercise_title ?? activeExercise?.title ?? 'este exercício' }}</strong>.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="hint-content">
+          <div class="hint-block">
+            <p class="section-label">Escolha como abrir</p>
+            <p>Você pode continuar da sua última submissão salva ou começar com o editor totalmente em branco.</p>
+          </div>
+          <label class="remember-choice-row">
+            <input v-model="rememberRestoreChoice" type="checkbox" />
+            <span>Lembrar minha resposta</span>
+          </label>
+        </div>
+        <div class="arena-confirm-dialog__actions">
+          <Button variant="outline" @click="declineRestoreSubmission">Começar em branco</Button>
+          <Button @click="confirmRestoreSubmission">Abrir última submissão</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
     <Dialog :open="hintsOpen" @update:open="hintsOpen = $event">
       <DialogContent class="hint-dialog" :show-close="true">
         <DialogHeader>

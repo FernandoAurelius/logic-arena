@@ -24,7 +24,7 @@ monacoEnvironment.MonacoEnvironment = {
 }
 
 interface Props {
-  modelValue: string
+  modelValue?: string
   language?: string
   height?: string
   readOnly?: boolean
@@ -32,6 +32,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  modelValue: '',
   language: 'python',
   height: '30rem',
   readOnly: false,
@@ -43,7 +44,8 @@ const emit = defineEmits<{
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
-const showPlaceholder = computed(() => !props.readOnly && !props.modelValue.trim() && !!props.placeholder.trim())
+const normalizedModelValue = computed(() => props.modelValue ?? '')
+const showPlaceholder = computed(() => !props.readOnly && !normalizedModelValue.value.trim() && !!props.placeholder.trim())
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
 let isSyncingFromModel = false
 
@@ -90,7 +92,7 @@ onMounted(() => {
 
   ensureTypewriterTheme()
   editor = monaco.editor.create(containerRef.value, {
-    value: props.modelValue,
+    value: normalizedModelValue.value,
     language: props.language,
     theme: 'typewriter',
     automaticLayout: true,
@@ -124,7 +126,7 @@ onMounted(() => {
 })
 
 watch(
-  () => props.modelValue,
+  () => normalizedModelValue.value,
   (value) => {
     if (!editor || editor.getValue() === value) return
     isSyncingFromModel = true
