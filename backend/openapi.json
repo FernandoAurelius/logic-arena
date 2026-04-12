@@ -3,13 +3,13 @@
   "info": {
     "title": "Logic Arena API",
     "version": "0.1.0",
-    "description": "API do MVP do Logic Arena com autenticação simples, exercícios persistidos e submissões avaliadas."
+    "description": "API do MVP do Logic Arena com autentica\u00e7\u00e3o simples, exerc\u00edcios persistidos e submiss\u00f5es avaliadas."
   },
   "paths": {
     "/api/auth/login": {
       "post": {
         "operationId": "arena_api_login",
-        "summary": "Faz login ou cria o usuário automaticamente.",
+        "summary": "Faz login ou cria o usu\u00e1rio automaticamente.",
         "parameters": [],
         "responses": {
           "200": {
@@ -51,7 +51,7 @@
     "/api/auth/me": {
       "get": {
         "operationId": "arena_api_me",
-        "summary": "Retorna o usuário autenticado.",
+        "summary": "Retorna o usu\u00e1rio autenticado.",
         "parameters": [
           {
             "in": "header",
@@ -100,7 +100,7 @@
     "/api/exercises/": {
       "get": {
         "operationId": "arena_api_list_exercises",
-        "summary": "Lista exercícios ativos.",
+        "summary": "Lista exerc\u00edcios ativos.",
         "parameters": [
           {
             "in": "header",
@@ -151,7 +151,7 @@
       },
       "post": {
         "operationId": "arena_api_post_exercise",
-        "summary": "Cadastra um exercício novo via API.",
+        "summary": "Cadastra um exerc\u00edcio novo via API.",
         "parameters": [
           {
             "in": "header",
@@ -220,7 +220,7 @@
     "/api/exercises/{slug}": {
       "get": {
         "operationId": "arena_api_get_exercise",
-        "summary": "Detalha um exercício específico.",
+        "summary": "Detalha um exerc\u00edcio espec\u00edfico.",
         "parameters": [
           {
             "in": "path",
@@ -278,7 +278,7 @@
     "/api/submissions/exercises/{slug}/submit": {
       "post": {
         "operationId": "arena_api_submit_exercise",
-        "summary": "Executa os testes, persiste a submissão e devolve o resultado.",
+        "summary": "Executa os testes, persiste a submiss\u00e3o e devolve o resultado.",
         "parameters": [
           {
             "in": "path",
@@ -346,7 +346,7 @@
     "/api/submissions/me": {
       "get": {
         "operationId": "arena_api_list_my_submissions",
-        "summary": "Lista as submissões do usuário autenticado.",
+        "summary": "Lista as submiss\u00f5es do usu\u00e1rio autenticado.",
         "parameters": [
           {
             "in": "header",
@@ -399,7 +399,7 @@
     "/api/submissions/{submission_id}": {
       "get": {
         "operationId": "arena_api_get_submission",
-        "summary": "Retorna a submissão atualizada para polling do feedback.",
+        "summary": "Retorna a submiss\u00e3o atualizada para polling do feedback.",
         "parameters": [
           {
             "in": "path",
@@ -467,7 +467,7 @@
     "/api/submissions/{submission_id}/review-chat": {
       "post": {
         "operationId": "arena_api_review_chat",
-        "summary": "Continua a revisão com IA sobre uma submissão específica.",
+        "summary": "Continua a revis\u00e3o com IA sobre uma submiss\u00e3o espec\u00edfica.",
         "parameters": [
           {
             "in": "path",
@@ -542,10 +542,204 @@
         }
       }
     },
+    "/api/catalog/navigator": {
+      "get": {
+        "operationId": "arena_api_get_navigator",
+        "summary": "Retorna a vis\u00e3o autenticada do cat\u00e1logo por categoria e trilha.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NavigatorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/catalog/tracks/{track_slug}": {
+      "get": {
+        "operationId": "arena_api_get_track_detail",
+        "summary": "Retorna a p\u00e1gina de trilha com progresso, conceitos e exerc\u00edcios.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "track_slug",
+            "schema": {
+              "title": "Track Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackDetailSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/catalog/tracks/{track_slug}/explanations/{exercise_slug}": {
+      "get": {
+        "operationId": "arena_api_get_track_explanation",
+        "summary": "Retorna a documenta\u00e7\u00e3o t\u00e9cnica progressiva de um m\u00f3dulo espec\u00edfico da trilha.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "track_slug",
+            "schema": {
+              "title": "Track Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "exercise_slug",
+            "schema": {
+              "title": "Exercise Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseExplanationSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "arena_api_health",
-        "summary": "Health check público da API.",
+        "summary": "Health check p\u00fablico da API.",
         "parameters": [],
         "responses": {
           "200": {
@@ -683,6 +877,31 @@
             "title": "Professor Note",
             "type": "string"
           },
+          "exercise_type": {
+            "default": "core_drill",
+            "title": "Exercise Type",
+            "type": "string"
+          },
+          "exercise_type_label": {
+            "default": "Core Drill",
+            "title": "Exercise Type Label",
+            "type": "string"
+          },
+          "estimated_time_minutes": {
+            "default": 15,
+            "title": "Estimated Time Minutes",
+            "type": "integer"
+          },
+          "concept_summary": {
+            "default": "",
+            "title": "Concept Summary",
+            "type": "string"
+          },
+          "track_position": {
+            "default": 0,
+            "title": "Track Position",
+            "type": "integer"
+          },
           "category_slug": {
             "anyOf": [
               {
@@ -764,6 +983,31 @@
           "professor_note": {
             "title": "Professor Note",
             "type": "string"
+          },
+          "exercise_type": {
+            "default": "core_drill",
+            "title": "Exercise Type",
+            "type": "string"
+          },
+          "exercise_type_label": {
+            "default": "Core Drill",
+            "title": "Exercise Type Label",
+            "type": "string"
+          },
+          "estimated_time_minutes": {
+            "default": 15,
+            "title": "Estimated Time Minutes",
+            "type": "integer"
+          },
+          "concept_summary": {
+            "default": "",
+            "title": "Concept Summary",
+            "type": "string"
+          },
+          "track_position": {
+            "default": 0,
+            "title": "Track Position",
+            "type": "integer"
           },
           "category_slug": {
             "anyOf": [
@@ -1382,6 +1626,667 @@
           "message"
         ],
         "title": "ReviewChatInputSchema",
+        "type": "object"
+      },
+      "NavigatorCategorySchema": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/TrackSummarySchema"
+            },
+            "title": "Tracks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "description",
+          "tracks"
+        ],
+        "title": "NavigatorCategorySchema",
+        "type": "object"
+      },
+      "NavigatorResponseSchema": {
+        "properties": {
+          "recommended_track_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Track Slug"
+          },
+          "recommended_track_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Track Name"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/NavigatorCategorySchema"
+            },
+            "title": "Categories",
+            "type": "array"
+          }
+        },
+        "required": [
+          "categories"
+        ],
+        "title": "NavigatorResponseSchema",
+        "type": "object"
+      },
+      "TrackSummarySchema": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "category_slug": {
+            "title": "Category Slug",
+            "type": "string"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "level_label": {
+            "title": "Level Label",
+            "type": "string"
+          },
+          "progress_percent": {
+            "title": "Progress Percent",
+            "type": "integer"
+          },
+          "completed_exercises": {
+            "title": "Completed Exercises",
+            "type": "integer"
+          },
+          "total_exercises": {
+            "title": "Total Exercises",
+            "type": "integer"
+          },
+          "current_target_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Slug"
+          },
+          "current_target_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Title"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "category_slug",
+          "category_name",
+          "description",
+          "goal",
+          "level_label",
+          "progress_percent",
+          "completed_exercises",
+          "total_exercises"
+        ],
+        "title": "TrackSummarySchema",
+        "type": "object"
+      },
+      "TrackConceptSchema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "why_it_matters": {
+            "title": "Why It Matters",
+            "type": "string"
+          },
+          "common_mistake": {
+            "title": "Common Mistake",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "why_it_matters",
+          "common_mistake"
+        ],
+        "title": "TrackConceptSchema",
+        "type": "object"
+      },
+      "TrackDetailSchema": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "category_slug": {
+            "title": "Category Slug",
+            "type": "string"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "level_label": {
+            "title": "Level Label",
+            "type": "string"
+          },
+          "progress_percent": {
+            "title": "Progress Percent",
+            "type": "integer"
+          },
+          "completed_exercises": {
+            "title": "Completed Exercises",
+            "type": "integer"
+          },
+          "total_exercises": {
+            "title": "Total Exercises",
+            "type": "integer"
+          },
+          "current_target_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Slug"
+          },
+          "current_target_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Title"
+          },
+          "concept_kicker": {
+            "title": "Concept Kicker",
+            "type": "string"
+          },
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/TrackConceptSchema"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "exercises": {
+            "items": {
+              "$ref": "#/components/schemas/TrackExerciseSchema"
+            },
+            "title": "Exercises",
+            "type": "array"
+          },
+          "milestone": {
+            "$ref": "#/components/schemas/TrackMilestoneSchema"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "category_slug",
+          "category_name",
+          "description",
+          "goal",
+          "level_label",
+          "progress_percent",
+          "completed_exercises",
+          "total_exercises",
+          "concept_kicker",
+          "concepts",
+          "prerequisites",
+          "exercises",
+          "milestone"
+        ],
+        "title": "TrackDetailSchema",
+        "type": "object"
+      },
+      "TrackExerciseProgressSchema": {
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "attempts_count": {
+            "title": "Attempts Count",
+            "type": "integer"
+          },
+          "best_passed_tests": {
+            "title": "Best Passed Tests",
+            "type": "integer"
+          },
+          "best_total_tests": {
+            "title": "Best Total Tests",
+            "type": "integer"
+          },
+          "passed_once": {
+            "title": "Passed Once",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status",
+          "attempts_count",
+          "best_passed_tests",
+          "best_total_tests",
+          "passed_once"
+        ],
+        "title": "TrackExerciseProgressSchema",
+        "type": "object"
+      },
+      "TrackExerciseSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "professor_note": {
+            "title": "Professor Note",
+            "type": "string"
+          },
+          "exercise_type": {
+            "default": "core_drill",
+            "title": "Exercise Type",
+            "type": "string"
+          },
+          "exercise_type_label": {
+            "default": "Core Drill",
+            "title": "Exercise Type Label",
+            "type": "string"
+          },
+          "estimated_time_minutes": {
+            "default": 15,
+            "title": "Estimated Time Minutes",
+            "type": "integer"
+          },
+          "concept_summary": {
+            "default": "",
+            "title": "Concept Summary",
+            "type": "string"
+          },
+          "track_position": {
+            "default": 0,
+            "title": "Track Position",
+            "type": "integer"
+          },
+          "category_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Slug"
+          },
+          "category_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Name"
+          },
+          "track_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Slug"
+          },
+          "track_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Name"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "pedagogical_brief": {
+            "title": "Pedagogical Brief",
+            "type": "string"
+          },
+          "is_current_target": {
+            "title": "Is Current Target",
+            "type": "boolean"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/TrackExerciseProgressSchema"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "difficulty",
+          "language",
+          "professor_note",
+          "position",
+          "pedagogical_brief",
+          "is_current_target",
+          "progress"
+        ],
+        "title": "TrackExerciseSchema",
+        "type": "object"
+      },
+      "TrackMilestoneSchema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "requirement_label": {
+            "title": "Requirement Label",
+            "type": "string"
+          },
+          "unlocked": {
+            "title": "Unlocked",
+            "type": "boolean"
+          },
+          "remaining_exercises": {
+            "title": "Remaining Exercises",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "requirement_label",
+          "unlocked",
+          "remaining_exercises"
+        ],
+        "title": "TrackMilestoneSchema",
+        "type": "object"
+      },
+      "ExerciseExplanationSchema": {
+        "properties": {
+          "track_slug": {
+            "title": "Track Slug",
+            "type": "string"
+          },
+          "track_name": {
+            "title": "Track Name",
+            "type": "string"
+          },
+          "track_goal": {
+            "title": "Track Goal",
+            "type": "string"
+          },
+          "level_label": {
+            "title": "Level Label",
+            "type": "string"
+          },
+          "exercise_slug": {
+            "title": "Exercise Slug",
+            "type": "string"
+          },
+          "exercise_title": {
+            "title": "Exercise Title",
+            "type": "string"
+          },
+          "exercise_type_label": {
+            "title": "Exercise Type Label",
+            "type": "string"
+          },
+          "estimated_time_minutes": {
+            "title": "Estimated Time Minutes",
+            "type": "integer"
+          },
+          "concept_summary": {
+            "title": "Concept Summary",
+            "type": "string"
+          },
+          "pedagogical_brief": {
+            "title": "Pedagogical Brief",
+            "type": "string"
+          },
+          "learning_goal": {
+            "title": "Learning Goal",
+            "type": "string"
+          },
+          "concept_focus_markdown": {
+            "title": "Concept Focus Markdown",
+            "type": "string"
+          },
+          "reading_strategy_markdown": {
+            "title": "Reading Strategy Markdown",
+            "type": "string"
+          },
+          "implementation_strategy_markdown": {
+            "title": "Implementation Strategy Markdown",
+            "type": "string"
+          },
+          "assessment_notes_markdown": {
+            "title": "Assessment Notes Markdown",
+            "type": "string"
+          },
+          "common_mistakes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Common Mistakes",
+            "type": "array"
+          },
+          "mastery_checklist": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mastery Checklist",
+            "type": "array"
+          },
+          "prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationConceptSchema"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "code_examples": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationCodeExampleSchema"
+            },
+            "title": "Code Examples",
+            "type": "array"
+          }
+        },
+        "required": [
+          "track_slug",
+          "track_name",
+          "track_goal",
+          "level_label",
+          "exercise_slug",
+          "exercise_title",
+          "exercise_type_label",
+          "estimated_time_minutes",
+          "concept_summary",
+          "pedagogical_brief",
+          "learning_goal",
+          "concept_focus_markdown",
+          "reading_strategy_markdown",
+          "implementation_strategy_markdown",
+          "assessment_notes_markdown",
+          "common_mistakes",
+          "mastery_checklist",
+          "prerequisites",
+          "concepts",
+          "code_examples"
+        ],
+        "title": "ExerciseExplanationSchema",
+        "type": "object"
+      },
+      "ExplanationCodeExampleSchema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "rationale",
+          "language",
+          "code"
+        ],
+        "title": "ExplanationCodeExampleSchema",
+        "type": "object"
+      },
+      "ExplanationConceptSchema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "explanation_text": {
+            "title": "Explanation Text",
+            "type": "string"
+          },
+          "why_it_matters": {
+            "title": "Why It Matters",
+            "type": "string"
+          },
+          "common_mistake": {
+            "title": "Common Mistake",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "explanation_text",
+          "why_it_matters",
+          "common_mistake"
+        ],
+        "title": "ExplanationConceptSchema",
         "type": "object"
       }
     }

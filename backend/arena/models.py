@@ -75,6 +75,44 @@ class Exercise(TimestampedModel):
         return self.title
 
 
+class ExerciseExplanation(TimestampedModel):
+    exercise = models.OneToOneField(Exercise, on_delete=models.CASCADE, related_name='explanation')
+    learning_goal = models.TextField(blank=True)
+    concept_focus_markdown = models.TextField(blank=True)
+    reading_strategy_markdown = models.TextField(blank=True)
+    implementation_strategy_markdown = models.TextField(blank=True)
+    assessment_notes_markdown = models.TextField(blank=True)
+    common_mistakes = models.JSONField(default=list, blank=True)
+    mastery_checklist = models.JSONField(default=list, blank=True)
+
+    def __str__(self) -> str:
+        return f'Explanation: {self.exercise.title}'
+
+
+class ExerciseExplanationConcept(TimestampedModel):
+    explanation = models.ForeignKey(ExerciseExplanation, on_delete=models.CASCADE, related_name='concepts')
+    title = models.CharField(max_length=120)
+    explanation_text = models.TextField()
+    why_it_matters = models.TextField(blank=True)
+    common_mistake = models.TextField(blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+
+class ExerciseExplanationCodeExample(TimestampedModel):
+    explanation = models.ForeignKey(ExerciseExplanation, on_delete=models.CASCADE, related_name='code_examples')
+    title = models.CharField(max_length=140)
+    rationale = models.TextField(blank=True)
+    language = models.CharField(max_length=30, default='python')
+    code = models.TextField()
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+
 class ExerciseTestCase(TimestampedModel):
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='test_cases')
     input_data = models.TextField()

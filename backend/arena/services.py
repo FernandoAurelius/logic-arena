@@ -11,11 +11,16 @@ from django.conf import settings
 from django.db import close_old_connections, transaction
 from django.utils import timezone
 
+from .catalog import EXERCISE_TYPE_LABELS, TRACK_CATALOG
+from .explanation_builder import build_explanation_blueprint
 from .models import (
     ArenaUser,
     AuthSession,
     Exercise,
     ExerciseCategory,
+    ExerciseExplanation,
+    ExerciseExplanationCodeExample,
+    ExerciseExplanationConcept,
     ExerciseTestCase,
     ExerciseTrack,
     Submission,
@@ -137,6 +142,7 @@ def create_exercise(payload) -> Exercise:
             for test_case in payload.test_cases
         ]
     )
+    sync_exercise_explanation(exercise)
     return exercise
 
 
@@ -219,6 +225,124 @@ def build_exercise_progress_payload(progress: UserExerciseProgress) -> dict:
         'first_passed_at': progress.first_passed_at,
         'awarded_progress_markers': progress.awarded_progress_markers,
     }
+
+
+def build_exercise_catalog_meta(exercise: Exercise) -> dict:
+    track_meta = TRACK_CATALOG.get(exercise.track.slug) if exercise.track else None
+    exercise_meta = track_meta.exercise_meta.get(exercise.slug) if track_meta else None
+    exercise_type = exercise_meta.exercise_type if exercise_meta else 'core_drill'
+    track_position = 0
+    if track_meta and track_meta.exercise_order:
+        try:
+            track_position = track_meta.exercise_order.index(exercise.slug) + 1
+        except ValueError:
+            track_position = len(track_meta.exercise_order) + 1
+    return {
+        'exercise_type': exercise_type,
+        'exercise_type_label': EXERCISE_TYPE_LABELS.get(exercise_type, 'Core Drill'),
+        'estimated_time_minutes': exercise_meta.estimated_time_minutes if exercise_meta else 20,
+        'concept_summary': exercise_meta.concept_summary if exercise_meta else exercise.professor_note,
+        'pedagogical_brief': exercise_meta.pedagogical_brief if exercise_meta else exercise.professor_note,
+        'track_position': track_position,
+    }
+
+
+def build_track_progress_index(user: ArenaUser, exercises: list[Exercise]) -> dict[int, UserExerciseProgress]:
+    progress_entries = UserExerciseProgress.objects.filter(
+        user=user,
+        exercise__in=exercises,
+    ).select_related('exercise')
+    return {entry.exercise_id: entry for entry in progress_entries}
+
+
+def build_track_progress_summary(track: ExerciseTrack, user: ArenaUser) -> dict:
+    track_meta = TRACK_CATALOG.get(track.slug)
+    exercises = list(track.exercises.filter(is_active=True).select_related('category', 'track'))
+    if track_meta and track_meta.exercise_order:
+        order_index = {slug: index for index, slug in enumerate(track_meta.exercise_order)}
+        exercises.sort(key=lambda exercise: (order_index.get(exercise.slug, 999), exercise.title))
+    else:
+        exercises.sort(key=lambda exercise: (exercise.id, exercise.title))
+    progress_index = build_track_progress_index(user, exercises)
+    completed = 0
+    current_target = None
+
+    for exercise in exercises:
+        progress = progress_index.get(exercise.id)
+        passed_once = bool(progress and PASSED_ONCE_MARKER in (progress.awarded_progress_markers or []))
+        if passed_once:
+            completed += 1
+            continue
+        if current_target is None:
+            current_target = exercise
+
+    progress_percent = round((completed / len(exercises)) * 100) if exercises else 0
+
+    return {
+        'track': track,
+        'exercises': exercises,
+        'progress_index': progress_index,
+        'completed': completed,
+        'total': len(exercises),
+        'progress_percent': progress_percent,
+        'current_target': current_target,
+    }
+
+
+def sync_exercise_explanation(exercise: Exercise) -> ExerciseExplanation:
+    blueprint = build_explanation_blueprint(exercise)
+    explanation, _ = ExerciseExplanation.objects.update_or_create(
+        exercise=exercise,
+        defaults={
+            'learning_goal': blueprint.learning_goal,
+            'concept_focus_markdown': blueprint.concept_focus_markdown,
+            'reading_strategy_markdown': blueprint.reading_strategy_markdown,
+            'implementation_strategy_markdown': blueprint.implementation_strategy_markdown,
+            'assessment_notes_markdown': blueprint.assessment_notes_markdown,
+            'common_mistakes': blueprint.common_mistakes,
+            'mastery_checklist': blueprint.mastery_checklist,
+        },
+    )
+
+    explanation.concepts.all().delete()
+    explanation.code_examples.all().delete()
+
+    ExerciseExplanationConcept.objects.bulk_create(
+        [
+            ExerciseExplanationConcept(
+                explanation=explanation,
+                title=concept.title,
+                explanation_text=concept.explanation_text,
+                why_it_matters=concept.why_it_matters,
+                common_mistake=concept.common_mistake,
+                sort_order=index,
+            )
+            for index, concept in enumerate(blueprint.concepts, start=1)
+        ]
+    )
+
+    ExerciseExplanationCodeExample.objects.bulk_create(
+        [
+            ExerciseExplanationCodeExample(
+                explanation=explanation,
+                title=example.title,
+                rationale=example.rationale,
+                language=example.language,
+                code=example.code,
+                sort_order=index,
+            )
+            for index, example in enumerate(blueprint.code_examples, start=1)
+        ]
+    )
+
+    return explanation
+
+
+def ensure_exercise_explanation(exercise: Exercise) -> ExerciseExplanation:
+    explanation = ExerciseExplanation.objects.filter(exercise=exercise).first()
+    if explanation is not None:
+        return explanation
+    return sync_exercise_explanation(exercise)
 
 
 def apply_submission_progress(user: ArenaUser, exercise: Exercise, submission: Submission) -> tuple[UserExerciseProgress, list[ProgressReward], int]:

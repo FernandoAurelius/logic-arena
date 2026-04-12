@@ -1,5 +1,4 @@
-import { makeApi, Zodios } from "@zodios/core";
-import type { ZodiosOptions } from "@zodios/core";
+import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
 import { z } from "zod";
 
 const LoginInputSchema = z
@@ -172,6 +171,147 @@ const SubmissionSummarySchema = z
     created_at: z.string().datetime({ offset: true }),
   })
   .passthrough();
+const TrackConceptSchema = z
+  .object({
+    title: z.string(),
+    summary: z.string(),
+    why_it_matters: z.string(),
+    common_mistake: z.string(),
+  })
+  .passthrough();
+const TrackExerciseProgressSchema = z
+  .object({
+    status: z.string(),
+    attempts_count: z.number().int(),
+    best_passed_tests: z.number().int(),
+    best_total_tests: z.number().int(),
+    passed_once: z.boolean(),
+  })
+  .passthrough();
+const TrackExerciseSchema = z
+  .object({
+    id: z.number().int(),
+    slug: z.string(),
+    title: z.string(),
+    difficulty: z.string(),
+    language: z.string(),
+    professor_note: z.string(),
+    exercise_type: z.string().optional().default("core_drill"),
+    exercise_type_label: z.string().optional().default("Core Drill"),
+    estimated_time_minutes: z.number().int().optional().default(15),
+    concept_summary: z.string().optional().default(""),
+    track_position: z.number().int().optional().default(0),
+    category_slug: z.union([z.string(), z.null()]).optional(),
+    category_name: z.union([z.string(), z.null()]).optional(),
+    track_slug: z.union([z.string(), z.null()]).optional(),
+    track_name: z.union([z.string(), z.null()]).optional(),
+    position: z.number().int(),
+    pedagogical_brief: z.string(),
+    is_current_target: z.boolean(),
+    progress: TrackExerciseProgressSchema,
+  })
+  .passthrough();
+const TrackSummarySchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    category_slug: z.string(),
+    category_name: z.string(),
+    description: z.string(),
+    goal: z.string(),
+    level_label: z.string(),
+    progress_percent: z.number().int(),
+    completed_exercises: z.number().int(),
+    total_exercises: z.number().int(),
+    current_target_slug: z.union([z.string(), z.null()]).optional(),
+    current_target_title: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const NavigatorCategorySchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    description: z.string(),
+    tracks: z.array(TrackSummarySchema),
+  })
+  .passthrough();
+const NavigatorResponseSchema = z
+  .object({
+    recommended_track_slug: z.union([z.string(), z.null()]).optional(),
+    recommended_track_name: z.union([z.string(), z.null()]).optional(),
+    categories: z.array(NavigatorCategorySchema),
+  })
+  .passthrough();
+const TrackMilestoneSchema = z
+  .object({
+    title: z.string(),
+    summary: z.string(),
+    requirement_label: z.string(),
+    unlocked: z.boolean(),
+    remaining_exercises: z.number().int(),
+  })
+  .passthrough();
+const TrackDetailSchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    category_slug: z.string(),
+    category_name: z.string(),
+    description: z.string(),
+    goal: z.string(),
+    level_label: z.string(),
+    progress_percent: z.number().int(),
+    completed_exercises: z.number().int(),
+    total_exercises: z.number().int(),
+    current_target_slug: z.union([z.string(), z.null()]).optional(),
+    current_target_title: z.union([z.string(), z.null()]).optional(),
+    concept_kicker: z.string(),
+    concepts: z.array(TrackConceptSchema),
+    prerequisites: z.array(z.string()),
+    exercises: z.array(TrackExerciseSchema),
+    milestone: TrackMilestoneSchema,
+  })
+  .passthrough();
+const ExplanationConceptSchema = z
+  .object({
+    title: z.string(),
+    explanation_text: z.string(),
+    why_it_matters: z.string(),
+    common_mistake: z.string(),
+  })
+  .passthrough();
+const ExplanationCodeExampleSchema = z
+  .object({
+    title: z.string(),
+    rationale: z.string(),
+    language: z.string(),
+    code: z.string(),
+  })
+  .passthrough();
+const ExerciseExplanationSchema = z
+  .object({
+    track_slug: z.string(),
+    track_name: z.string(),
+    track_goal: z.string(),
+    level_label: z.string(),
+    exercise_slug: z.string(),
+    exercise_title: z.string(),
+    exercise_type_label: z.string(),
+    estimated_time_minutes: z.number().int(),
+    concept_summary: z.string(),
+    pedagogical_brief: z.string(),
+    learning_goal: z.string(),
+    concept_focus_markdown: z.string(),
+    reading_strategy_markdown: z.string(),
+    implementation_strategy_markdown: z.string(),
+    assessment_notes_markdown: z.string(),
+    common_mistakes: z.array(z.string()),
+    mastery_checklist: z.array(z.string()),
+    prerequisites: z.array(z.string()),
+    concepts: z.array(ExplanationConceptSchema),
+    code_examples: z.array(ExplanationCodeExampleSchema),
+  })
+  .passthrough();
 const ReviewChatInputSchema = z
   .object({
     message: z.string(),
@@ -200,6 +340,17 @@ export const schemas = {
   UserProgressSummarySchema,
   SubmissionSchema,
   SubmissionSummarySchema,
+  TrackConceptSchema,
+  TrackExerciseProgressSchema,
+  TrackExerciseSchema,
+  TrackSummarySchema,
+  NavigatorCategorySchema,
+  NavigatorResponseSchema,
+  TrackMilestoneSchema,
+  TrackDetailSchema,
+  ExplanationConceptSchema,
+  ExplanationCodeExampleSchema,
+  ExerciseExplanationSchema,
   ReviewChatInputSchema,
   ReviewChatResponseSchema,
 };
@@ -458,6 +609,99 @@ export const submissionsEndpoints = makeApi([
 
 export const submissionsApi = new Zodios(submissionsEndpoints);
 
+export const catalogEndpoints = makeApi([
+  {
+    method: "get",
+    path: "/api/catalog/navigator",
+    alias: "arena_api_get_navigator",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: NavigatorResponseSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/catalog/tracks/:track_slug",
+    alias: "arena_api_get_track_detail",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "track_slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: TrackDetailSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/catalog/tracks/:track_slug/explanations/:exercise_slug",
+    alias: "arena_api_get_track_explanation",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "track_slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "exercise_slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: ExerciseExplanationSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+]);
+
+export const catalogApi = new Zodios(catalogEndpoints);
+
 export const systemEndpoints = makeApi([
   {
     method: "get",
@@ -470,12 +714,13 @@ export const systemEndpoints = makeApi([
 
 export const systemApi = new Zodios(systemEndpoints);
 
-export const endpoints = makeApi([
+const endpoints = [
   ...authEndpoints,
+  ...catalogEndpoints,
   ...exercisesEndpoints,
   ...submissionsEndpoints,
   ...systemEndpoints,
-]);
+];
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options);

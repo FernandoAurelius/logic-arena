@@ -1,0 +1,261 @@
+:root {
+  --micro-glow: color-mix(in srgb, var(--primary) 22%, transparent);
+  --micro-glow-strong: color-mix(in srgb, var(--primary-container) 28%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .navigator-track-card,
+  .track-step-card,
+  .track-milestone-card,
+  .navigator-sidebar-card,
+  .track-summary-card,
+  .track-detail-card,
+  .landing-feature-card,
+  .module-link,
+  .module-panel,
+  .history-panel,
+  .operator-card,
+  .workspace-header-card,
+  .topbar,
+  .navigator-filter-button,
+  .workspace-nav-link,
+  .landing-action-button,
+  .landing-cta-row .btn,
+  .topbar button,
+  .track-heading-actions .btn,
+  .navigator-hero-actions .btn,
+  .track-detail-actions .btn {
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease,
+      color 180ms ease,
+      filter 180ms ease,
+      opacity 180ms ease;
+  }
+
+  .navigator-track-card,
+  .track-step-card,
+  .track-milestone-card,
+  .navigator-sidebar-card,
+  .track-summary-card,
+  .track-detail-card,
+  .landing-feature-card,
+  .module-panel,
+  .history-panel,
+  .operator-card,
+  .workspace-header-card {
+    will-change: transform, box-shadow, filter;
+    animation: micro-enter 320ms ease both;
+  }
+
+  .navigator-track-card:nth-child(2n),
+  .track-step-card:nth-child(2n),
+  .landing-feature-card:nth-child(2n) {
+    animation-delay: 35ms;
+  }
+
+  .navigator-track-card:nth-child(3n),
+  .track-step-card:nth-child(3n),
+  .landing-feature-card:nth-child(3n) {
+    animation-delay: 70ms;
+  }
+
+  .navigator-track-card:hover,
+  .track-step-card:hover,
+  .track-milestone-card:hover,
+  .navigator-sidebar-card:hover,
+  .track-summary-card:hover,
+  .track-detail-card:hover,
+  .landing-feature-card:hover,
+  .module-link:hover,
+  .navigator-filter-button:hover,
+  .workspace-nav-link:hover,
+  .landing-action-button:hover,
+  .topbar button:hover,
+  .btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow:
+      8px 8px 0 var(--on-surface),
+      0 0 0 1px var(--micro-glow);
+    filter: saturate(1.03);
+  }
+
+  .navigator-track-card:active,
+  .track-step-card:active,
+  .track-milestone-card:active,
+  .navigator-sidebar-card:active,
+  .track-summary-card:active,
+  .track-detail-card:active,
+  .landing-feature-card:active,
+  .module-link:active,
+  .navigator-filter-button:active,
+  .workspace-nav-link:active,
+  .landing-action-button:active,
+  .topbar button:active,
+  .btn:active {
+    transform: translate(1px, 1px);
+    box-shadow:
+      2px 2px 0 var(--on-surface),
+      0 0 0 1px var(--micro-glow-strong);
+  }
+
+  .navigator-filter-button.active,
+  .workspace-nav-link--active,
+  .module-link.active {
+    box-shadow:
+      6px 6px 0 var(--on-surface),
+      0 0 0 1px var(--micro-glow);
+  }
+
+  .navigator-track-card:hover .navigator-progress-rail-fill,
+  .track-summary-card:hover .navigator-progress-rail-fill,
+  .track-step-card:hover::before,
+  .track-milestone-card:hover::before {
+    filter: brightness(1.08);
+  }
+
+  .navigator-track-card::after,
+  .track-step-card::after,
+  .track-milestone-card::after,
+  .navigator-sidebar-card::after,
+  .track-summary-card::after,
+  .track-detail-card::after,
+  .landing-feature-card::after,
+  .module-panel::after,
+  .history-panel::after,
+  .operator-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(120deg, transparent 0%, color-mix(in srgb, var(--primary) 10%, transparent) 50%, transparent 100%);
+    opacity: 0;
+    transform: translateX(-14%);
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
+
+  .navigator-track-card:hover::after,
+  .track-step-card:hover::after,
+  .track-milestone-card:hover::after,
+  .navigator-sidebar-card:hover::after,
+  .track-summary-card:hover::after,
+  .track-detail-card:hover::after,
+  .landing-feature-card:hover::after,
+  .module-panel:hover::after,
+  .history-panel:hover::after,
+  .operator-card:hover::after {
+    opacity: 1;
+    transform: translateX(14%);
+  }
+
+  .navigator-filter-button:focus-visible,
+  .workspace-nav-link:focus-visible,
+  .landing-action-button:focus-visible,
+  .topbar button:focus-visible,
+  .btn:focus-visible,
+  .module-link:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  .navigator-progress-rail-fill,
+  .level-track-fill {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .navigator-progress-rail-fill::after,
+  .level-track-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.32) 45%,
+      rgba(255, 255, 255, 0.6) 50%,
+      rgba(255, 255, 255, 0.32) 55%,
+      transparent 100%
+    );
+    transform: translateX(-120%);
+    animation: micro-shimmer 2.9s ease-in-out infinite;
+    mix-blend-mode: soft-light;
+  }
+
+  .track-step-card--selected,
+  .track-step-card--in_progress,
+  .navigator-filter-button.active,
+  .workspace-nav-link--active {
+    animation: micro-pulse 1.8s ease-in-out infinite;
+  }
+
+  .navigator-track-card:nth-child(1),
+  .track-step-card:nth-child(1),
+  .landing-feature-card:nth-child(1) {
+    animation-delay: 20ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navigator-track-card,
+  .track-step-card,
+  .track-milestone-card,
+  .navigator-sidebar-card,
+  .track-summary-card,
+  .track-detail-card,
+  .landing-feature-card,
+  .module-link,
+  .module-panel,
+  .history-panel,
+  .operator-card,
+  .workspace-header-card,
+  .topbar,
+  .navigator-filter-button,
+  .workspace-nav-link,
+  .landing-action-button,
+  .topbar button,
+  .btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes micro-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes micro-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  45% {
+    transform: translateX(120%);
+  }
+
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes micro-pulse {
+  0%,
+  100% {
+    filter: saturate(1);
+  }
+
+  50% {
+    filter: saturate(1.08);
+  }
+}

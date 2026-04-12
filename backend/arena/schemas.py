@@ -58,6 +58,11 @@ class ExerciseSummarySchema(Schema):
     difficulty: str
     language: str
     professor_note: str
+    exercise_type: str = 'core_drill'
+    exercise_type_label: str = 'Core Drill'
+    estimated_time_minutes: int = 15
+    concept_summary: str = ''
+    track_position: int = 0
     category_slug: str | None = None
     category_name: str | None = None
     track_slug: str | None = None
@@ -167,3 +172,118 @@ class SubmissionSummarySchema(Schema):
     feedback_status: str
     feedback_source: str
     created_at: datetime
+
+
+class TrackConceptSchema(Schema):
+    title: str
+    summary: str
+    why_it_matters: str
+    common_mistake: str
+
+
+class ExplanationConceptSchema(Schema):
+    title: str
+    explanation_text: str
+    why_it_matters: str
+    common_mistake: str
+
+
+class ExplanationCodeExampleSchema(Schema):
+    title: str
+    rationale: str
+    language: str
+    code: str
+
+
+class TrackExerciseProgressSchema(Schema):
+    status: str
+    attempts_count: int
+    best_passed_tests: int
+    best_total_tests: int
+    passed_once: bool
+
+
+class TrackExerciseSchema(ExerciseSummarySchema):
+    position: int
+    pedagogical_brief: str
+    is_current_target: bool
+    progress: TrackExerciseProgressSchema
+
+
+class TrackSummarySchema(Schema):
+    slug: str
+    name: str
+    category_slug: str
+    category_name: str
+    description: str
+    goal: str
+    level_label: str
+    progress_percent: int
+    completed_exercises: int
+    total_exercises: int
+    current_target_slug: str | None = None
+    current_target_title: str | None = None
+
+
+class NavigatorCategorySchema(Schema):
+    slug: str
+    name: str
+    description: str
+    tracks: list[TrackSummarySchema]
+
+
+class NavigatorResponseSchema(Schema):
+    recommended_track_slug: str | None = None
+    recommended_track_name: str | None = None
+    categories: list[NavigatorCategorySchema]
+
+
+class TrackMilestoneSchema(Schema):
+    title: str
+    summary: str
+    requirement_label: str
+    unlocked: bool
+    remaining_exercises: int
+
+
+class TrackDetailSchema(Schema):
+    slug: str
+    name: str
+    category_slug: str
+    category_name: str
+    description: str
+    goal: str
+    level_label: str
+    progress_percent: int
+    completed_exercises: int
+    total_exercises: int
+    current_target_slug: str | None = None
+    current_target_title: str | None = None
+    concept_kicker: str
+    concepts: list[TrackConceptSchema]
+    prerequisites: list[str]
+    exercises: list[TrackExerciseSchema]
+    milestone: TrackMilestoneSchema
+
+
+class ExerciseExplanationSchema(Schema):
+    track_slug: str
+    track_name: str
+    track_goal: str
+    level_label: str
+    exercise_slug: str
+    exercise_title: str
+    exercise_type_label: str
+    estimated_time_minutes: int
+    concept_summary: str
+    pedagogical_brief: str
+    learning_goal: str
+    concept_focus_markdown: str
+    reading_strategy_markdown: str
+    implementation_strategy_markdown: str
+    assessment_notes_markdown: str
+    common_mistakes: list[str]
+    mastery_checklist: list[str]
+    prerequisites: list[str]
+    concepts: list[ExplanationConceptSchema]
+    code_examples: list[ExplanationCodeExampleSchema]

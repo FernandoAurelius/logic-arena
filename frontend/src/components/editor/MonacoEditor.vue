@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
@@ -28,12 +28,14 @@ interface Props {
   language?: string
   height?: string
   readOnly?: boolean
+  placeholder?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   language: 'python',
   height: '30rem',
   readOnly: false,
+  placeholder: '',
 })
 
 const emit = defineEmits<{
@@ -41,6 +43,7 @@ const emit = defineEmits<{
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
+const showPlaceholder = computed(() => !props.readOnly && !props.modelValue.trim() && !!props.placeholder.trim())
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
 let isSyncingFromModel = false
 
@@ -96,7 +99,7 @@ onMounted(() => {
     fontSize: 17,
     lineHeight: 28,
     lineNumbersMinChars: 3,
-    padding: { top: 20, bottom: 20 },
+    padding: { top: 10, bottom: 14 },
     scrollBeyondLastLine: false,
     renderLineHighlight: 'all',
     smoothScrolling: true,
@@ -143,5 +146,32 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="containerRef" class="monaco-shell" :style="{ height }"></div>
+  <div class="monaco-shell" :style="{ height }">
+    <div ref="containerRef" class="monaco-shell__editor"></div>
+    <div v-if="showPlaceholder" class="monaco-placeholder">{{ placeholder }}</div>
+  </div>
 </template>
+
+<style scoped>
+.monaco-shell {
+  position: relative;
+}
+
+.monaco-shell__editor {
+  width: 100%;
+  height: 100%;
+}
+
+.monaco-placeholder {
+  position: absolute;
+  top: 10px;
+  left: 58px;
+  pointer-events: none;
+  color: rgba(125, 135, 112, 0.9);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 17px;
+  line-height: 28px;
+  font-style: italic;
+  white-space: pre;
+}
+</style>

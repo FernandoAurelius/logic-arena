@@ -10,6 +10,7 @@
     "generate:api": "openapi-zod-client ../backend/openapi.json -o ./src/lib/api/generated.ts --export-schemas --with-docs --with-description --implicit-required --group-strategy tag --api-client-name logicArenaApi"
   },
   "dependencies": {
+    "@vueuse/core": "^14.2.1",
     "@zodios/core": "^10.9.6",
     "axios": "^1.14.0",
     "highlight.js": "^11.11.1",
@@ -18,6 +19,7 @@
     "reka-ui": "^2.9.5",
     "tailwind-variants": "^3.2.2",
     "tailwindcss-animate": "^1.0.7",
+    "vaul-vue": "^0.4.1",
     "vue": "^3.5.32",
     "vue-router": "^5.0.4",
     "zod": "^3.25.76"
@@ -32,6 +34,7 @@
     "clsx": "^2.1.1",
     "lucide-vue-next": "^1.0.0",
     "openapi-zod-client": "^1.18.3",
+    "playwright": "^1.59.1",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.2",
     "typescript": "~6.0.2",

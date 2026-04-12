@@ -23,7 +23,7 @@ async function handleLogin() {
   try {
     await session.login(nickname.value, password.value)
     emit('close')
-    await router.push({ name: 'arena' })
+    await router.push({ name: 'navigator' })
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Não foi possível autenticar com esse nickname e senha.'

@@ -1,27 +1,34 @@
 from django.shortcuts import get_object_or_404
 from ninja import Header, NinjaAPI, Router
 
-from .models import AuthSession, Exercise, Submission, UserExerciseProgress
+from .catalog import TRACK_CATALOG
+from .models import AuthSession, Exercise, ExerciseCategory, ExerciseTrack, Submission, UserExerciseProgress
 from .schemas import (
+    ExerciseExplanationSchema,
     ErrorSchema,
     ExerciseCreateSchema,
     ExerciseDetailSchema,
     ExerciseSummarySchema,
-    ReviewChatInputSchema,
-    ReviewChatResponseSchema,
     LoginInputSchema,
     LoginResponseSchema,
+    NavigatorResponseSchema,
+    ReviewChatInputSchema,
+    ReviewChatResponseSchema,
     SubmissionInputSchema,
     SubmissionSchema,
     SubmissionSummarySchema,
+    TrackDetailSchema,
     UserSchema,
 )
 from .feedback import review_submission_chat
 from .services import (
     build_exercise_progress_payload,
+    build_exercise_catalog_meta,
+    build_track_progress_summary,
     build_user_progress_summary,
     build_user_schema_payload,
     create_exercise,
+    ensure_exercise_explanation,
     evaluate_submission,
     get_or_create_session,
 )
@@ -37,6 +44,7 @@ api = NinjaAPI(
 auth_router = Router(tags=['auth'])
 exercise_router = Router(tags=['exercises'])
 submission_router = Router(tags=['submissions'])
+catalog_router = Router(tags=['catalog'])
 system_router = Router(tags=['system'])
 
 
@@ -82,6 +90,7 @@ def serialize_submission(submission: Submission) -> dict:
 
 
 def serialize_exercise_summary(exercise: Exercise) -> dict:
+    meta = build_exercise_catalog_meta(exercise)
     return {
         'id': exercise.id,
         'slug': exercise.slug,
@@ -89,6 +98,11 @@ def serialize_exercise_summary(exercise: Exercise) -> dict:
         'difficulty': exercise.difficulty,
         'language': exercise.language,
         'professor_note': exercise.professor_note,
+        'exercise_type': meta['exercise_type'],
+        'exercise_type_label': meta['exercise_type_label'],
+        'estimated_time_minutes': meta['estimated_time_minutes'],
+        'concept_summary': meta['concept_summary'],
+        'track_position': meta['track_position'],
         'category_slug': exercise.category.slug if exercise.category else None,
         'category_name': exercise.category.name if exercise.category else None,
         'track_slug': exercise.track.slug if exercise.track else None,
@@ -148,6 +162,207 @@ def get_exercise(request, slug: str, authorization: str | None = Header(default=
         'sample_input': exercise.sample_input,
         'sample_output': exercise.sample_output,
         'test_cases': list(exercise.test_cases.filter(is_hidden=False)),
+    }
+
+
+@catalog_router.get('/navigator', response={200: NavigatorResponseSchema, 401: ErrorSchema}, summary='Retorna a visão autenticada do catálogo por categoria e trilha.')
+def get_navigator(request, authorization: str | None = Header(default=None)):
+    try:
+        session = require_session(authorization)
+    except PermissionError as error:
+        return 401, {'message': str(error)}
+
+    categories = ExerciseCategory.objects.prefetch_related('tracks__exercises').all()
+    serialized_categories = []
+    recommended_track_slug = None
+    recommended_track_name = None
+
+    for category in categories:
+        serialized_tracks = []
+        for track in category.tracks.all():
+            summary = build_track_progress_summary(track, session.user)
+            current_target = summary['current_target']
+            if recommended_track_slug is None and current_target is not None:
+                recommended_track_slug = track.slug
+                recommended_track_name = track.name
+            serialized_tracks.append(
+                {
+                    'slug': track.slug,
+                    'name': track.name,
+                    'category_slug': category.slug,
+                    'category_name': category.name,
+                    'description': TRACK_CATALOG.get(track.slug).description if track.slug in TRACK_CATALOG else track.description,
+                    'goal': TRACK_CATALOG.get(track.slug).goal if track.slug in TRACK_CATALOG else track.description,
+                    'level_label': TRACK_CATALOG.get(track.slug).level_label if track.slug in TRACK_CATALOG else 'Trilha ativa',
+                    'progress_percent': summary['progress_percent'],
+                    'completed_exercises': summary['completed'],
+                    'total_exercises': summary['total'],
+                    'current_target_slug': current_target.slug if current_target else None,
+                    'current_target_title': current_target.title if current_target else None,
+                }
+            )
+        serialized_categories.append(
+            {
+                'slug': category.slug,
+                'name': category.name,
+                'description': category.description,
+                'tracks': serialized_tracks,
+            }
+        )
+
+    return 200, {
+        'recommended_track_slug': recommended_track_slug,
+        'recommended_track_name': recommended_track_name,
+        'categories': serialized_categories,
+    }
+
+
+@catalog_router.get('/tracks/{track_slug}', response={200: TrackDetailSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Retorna a página de trilha com progresso, conceitos e exercícios.')
+def get_track_detail(request, track_slug: str, authorization: str | None = Header(default=None)):
+    try:
+        session = require_session(authorization)
+    except PermissionError as error:
+        return 401, {'message': str(error)}
+
+    track = ExerciseTrack.objects.select_related('category').filter(slug=track_slug).first()
+    if track is None:
+        return 404, {'message': 'Trilha não encontrada.'}
+
+    track_meta = TRACK_CATALOG.get(track.slug)
+    summary = build_track_progress_summary(track, session.user)
+    current_target = summary['current_target']
+    exercises = []
+    first_unfinished_seen = False
+
+    for index, exercise in enumerate(summary['exercises'], start=1):
+        progress = summary['progress_index'].get(exercise.id)
+        meta = build_exercise_catalog_meta(exercise)
+        passed_once = bool(progress and 'passed_once' in (progress.awarded_progress_markers or []))
+        attempts_count = progress.attempts_count if progress else 0
+
+        if passed_once:
+            status = 'passed'
+        elif not first_unfinished_seen:
+            status = 'in_progress' if attempts_count > 0 else 'available'
+            first_unfinished_seen = True
+        else:
+            status = 'locked'
+
+        exercises.append(
+            {
+                **serialize_exercise_summary(exercise),
+                'position': index,
+                'pedagogical_brief': meta['pedagogical_brief'],
+                'is_current_target': current_target is not None and exercise.slug == current_target.slug,
+                'progress': {
+                    'status': status,
+                    'attempts_count': attempts_count,
+                    'best_passed_tests': progress.best_passed_tests if progress else 0,
+                    'best_total_tests': progress.best_total_tests if progress else 0,
+                    'passed_once': passed_once,
+                },
+            }
+        )
+
+    remaining_exercises = max(0, summary['total'] - summary['completed'])
+    milestone_unlocked = remaining_exercises <= 1 and summary['total'] > 0
+
+    return 200, {
+        'slug': track.slug,
+        'name': track.name,
+        'category_slug': track.category.slug,
+        'category_name': track.category.name,
+        'description': track_meta.description if track_meta else track.description,
+        'goal': track_meta.goal if track_meta else track.description,
+        'level_label': track_meta.level_label if track_meta else 'Trilha ativa',
+        'progress_percent': summary['progress_percent'],
+        'completed_exercises': summary['completed'],
+        'total_exercises': summary['total'],
+        'current_target_slug': current_target.slug if current_target else None,
+        'current_target_title': current_target.title if current_target else None,
+        'concept_kicker': track_meta.concept_kicker if track_meta else 'Conceitos trabalhados',
+        'concepts': [
+            {
+                'title': concept.title,
+                'summary': concept.summary,
+                'why_it_matters': concept.why_it_matters,
+                'common_mistake': concept.common_mistake,
+            }
+            for concept in (track_meta.concepts if track_meta else ())
+        ],
+        'prerequisites': list(track_meta.prerequisites) if track_meta else [],
+        'exercises': exercises,
+        'milestone': {
+            'title': track_meta.milestone_title if track_meta else 'Checkpoint da trilha',
+            'summary': track_meta.milestone_summary if track_meta else 'Marco especial de consolidação desta trilha.',
+            'requirement_label': track_meta.milestone_requirement_label if track_meta else 'Concluir os módulos principais da trilha.',
+            'unlocked': milestone_unlocked,
+            'remaining_exercises': remaining_exercises,
+        },
+    }
+
+
+@catalog_router.get(
+    '/tracks/{track_slug}/explanations/{exercise_slug}',
+    response={200: ExerciseExplanationSchema, 401: ErrorSchema, 404: ErrorSchema},
+    summary='Retorna a documentação técnica progressiva de um módulo específico da trilha.',
+)
+def get_track_explanation(request, track_slug: str, exercise_slug: str, authorization: str | None = Header(default=None)):
+    try:
+        require_session(authorization)
+    except PermissionError as error:
+        return 401, {'message': str(error)}
+
+    track = ExerciseTrack.objects.select_related('category').filter(slug=track_slug).first()
+    if track is None:
+        return 404, {'message': 'Trilha não encontrada.'}
+
+    exercise = Exercise.objects.select_related('track').filter(slug=exercise_slug, track=track, is_active=True).first()
+    if exercise is None:
+        return 404, {'message': 'Módulo não encontrado para essa trilha.'}
+
+    explanation = ensure_exercise_explanation(exercise)
+    explanation = type(explanation).objects.prefetch_related('concepts', 'code_examples').get(pk=explanation.pk)
+    track_meta = TRACK_CATALOG.get(track.slug)
+    meta = build_exercise_catalog_meta(exercise)
+
+    return 200, {
+        'track_slug': track.slug,
+        'track_name': track.name,
+        'track_goal': track_meta.goal if track_meta else track.description,
+        'level_label': track_meta.level_label if track_meta else 'Trilha ativa',
+        'exercise_slug': exercise.slug,
+        'exercise_title': exercise.title,
+        'exercise_type_label': meta['exercise_type_label'],
+        'estimated_time_minutes': meta['estimated_time_minutes'],
+        'concept_summary': meta['concept_summary'],
+        'pedagogical_brief': meta['pedagogical_brief'],
+        'learning_goal': explanation.learning_goal,
+        'concept_focus_markdown': explanation.concept_focus_markdown,
+        'reading_strategy_markdown': explanation.reading_strategy_markdown,
+        'implementation_strategy_markdown': explanation.implementation_strategy_markdown,
+        'assessment_notes_markdown': explanation.assessment_notes_markdown,
+        'common_mistakes': list(explanation.common_mistakes or []),
+        'mastery_checklist': list(explanation.mastery_checklist or []),
+        'prerequisites': list(track_meta.prerequisites) if track_meta else [],
+        'concepts': [
+            {
+                'title': concept.title,
+                'explanation_text': concept.explanation_text,
+                'why_it_matters': concept.why_it_matters,
+                'common_mistake': concept.common_mistake,
+            }
+            for concept in explanation.concepts.all()
+        ],
+        'code_examples': [
+            {
+                'title': example.title,
+                'rationale': example.rationale,
+                'language': example.language,
+                'code': example.code,
+            }
+            for example in explanation.code_examples.all()
+        ],
     }
 
 
@@ -256,4 +471,5 @@ def review_chat(request, submission_id: int, payload: ReviewChatInputSchema, aut
 api.add_router('/auth', auth_router)
 api.add_router('/exercises', exercise_router)
 api.add_router('/submissions', submission_router)
+api.add_router('/catalog', catalog_router)
 api.add_router('', system_router)
