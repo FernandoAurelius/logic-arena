@@ -1,5 +1,4 @@
 import { makeApi, Zodios } from "@zodios/core";
-import type { ZodiosOptions } from "@zodios/core";
 import { z } from "zod";
 
 const LoginInputSchema = z
@@ -29,6 +28,16 @@ const ExerciseSummarySchema = z
     difficulty: z.string(),
     language: z.string(),
     professor_note: z.string(),
+    exercise_type: z.string().optional().default("drill-de-implementacao"),
+    exercise_type_label: z
+      .string()
+      .optional()
+      .default("Drill de implementação"),
+    estimated_time_minutes: z.number().int().optional().default(15),
+    concept_summary: z.string().optional().default(""),
+    track_position: z.number().int().optional().default(0),
+    module_slug: z.union([z.string(), z.null()]).optional(),
+    module_name: z.union([z.string(), z.null()]).optional(),
     category_slug: z.union([z.string(), z.null()]).optional(),
     category_name: z.union([z.string(), z.null()]).optional(),
     track_slug: z.union([z.string(), z.null()]).optional(),
@@ -49,10 +58,20 @@ const ExerciseCreateSchema = z
     statement: z.string(),
     difficulty: z.string().optional().default("iniciante"),
     language: z.string().optional().default("python"),
+    module_slug: z.string().optional().default(""),
+    module_name: z.string().optional().default(""),
+    module_description: z.string().optional().default(""),
+    module_audience: z.string().optional().default(""),
+    module_source_kind: z.string().optional().default(""),
     category_slug: z.string().optional().default(""),
     category_name: z.string().optional().default(""),
     track_slug: z.string().optional().default(""),
     track_name: z.string().optional().default(""),
+    exercise_type_slug: z.string().optional().default(""),
+    estimated_time_minutes: z.number().int().optional().default(15),
+    track_position: z.number().int().optional().default(0),
+    concept_summary: z.string().optional().default(""),
+    pedagogical_brief: z.string().optional().default(""),
     starter_code: z.string().optional().default(""),
     sample_input: z.string().optional().default(""),
     sample_output: z.string().optional().default(""),
@@ -76,6 +95,16 @@ const ExerciseDetailSchema = z
     difficulty: z.string(),
     language: z.string(),
     professor_note: z.string(),
+    exercise_type: z.string().optional().default("drill-de-implementacao"),
+    exercise_type_label: z
+      .string()
+      .optional()
+      .default("Drill de implementação"),
+    estimated_time_minutes: z.number().int().optional().default(15),
+    concept_summary: z.string().optional().default(""),
+    track_position: z.number().int().optional().default(0),
+    module_slug: z.union([z.string(), z.null()]).optional(),
+    module_name: z.union([z.string(), z.null()]).optional(),
     category_slug: z.union([z.string(), z.null()]).optional(),
     category_name: z.union([z.string(), z.null()]).optional(),
     track_slug: z.union([z.string(), z.null()]).optional(),
@@ -179,6 +208,268 @@ const ReviewChatInputSchema = z
   })
   .passthrough();
 const ReviewChatResponseSchema = z.object({ answer: z.string() }).passthrough();
+const TrackSummarySchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    module_slug: z.union([z.string(), z.null()]).optional(),
+    module_name: z.union([z.string(), z.null()]).optional(),
+    category_slug: z.string(),
+    category_name: z.string(),
+    description: z.string(),
+    goal: z.string(),
+    level_label: z.string(),
+    progress_percent: z.number().int(),
+    completed_exercises: z.number().int(),
+    total_exercises: z.number().int(),
+    current_target_slug: z.union([z.string(), z.null()]).optional(),
+    current_target_title: z.union([z.string(), z.null()]).optional(),
+  })
+  .passthrough();
+const NavigatorModuleSchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    description: z.string(),
+    audience: z.string(),
+    source_kind: z.string(),
+    status: z.string(),
+    tracks: z.array(TrackSummarySchema),
+  })
+  .passthrough();
+const NavigatorResponseSchema = z
+  .object({
+    recommended_module_slug: z.union([z.string(), z.null()]).optional(),
+    recommended_module_name: z.union([z.string(), z.null()]).optional(),
+    recommended_track_slug: z.union([z.string(), z.null()]).optional(),
+    recommended_track_name: z.union([z.string(), z.null()]).optional(),
+    modules: z.array(NavigatorModuleSchema),
+  })
+  .passthrough();
+const ModuleDetailSchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    description: z.string(),
+    audience: z.string(),
+    source_kind: z.string(),
+    status: z.string(),
+    progress_percent: z.number().int(),
+    completed_tracks: z.number().int(),
+    total_tracks: z.number().int(),
+    current_target_track_slug: z.union([z.string(), z.null()]).optional(),
+    current_target_track_name: z.union([z.string(), z.null()]).optional(),
+    current_target_exercise_slug: z.union([z.string(), z.null()]).optional(),
+    current_target_exercise_title: z.union([z.string(), z.null()]).optional(),
+    tracks: z.array(TrackSummarySchema),
+  })
+  .passthrough();
+const TrackConceptSchema = z
+  .object({
+    title: z.string(),
+    summary: z.string(),
+    why_it_matters: z.string(),
+    common_mistake: z.string(),
+  })
+  .passthrough();
+const TrackExerciseProgressSchema = z
+  .object({
+    status: z.string(),
+    attempts_count: z.number().int(),
+    best_passed_tests: z.number().int(),
+    best_total_tests: z.number().int(),
+    passed_once: z.boolean(),
+  })
+  .passthrough();
+const TrackExerciseSchema = z
+  .object({
+    id: z.number().int(),
+    slug: z.string(),
+    title: z.string(),
+    difficulty: z.string(),
+    language: z.string(),
+    professor_note: z.string(),
+    exercise_type: z.string().optional().default("drill-de-implementacao"),
+    exercise_type_label: z
+      .string()
+      .optional()
+      .default("Drill de implementação"),
+    estimated_time_minutes: z.number().int().optional().default(15),
+    concept_summary: z.string().optional().default(""),
+    track_position: z.number().int().optional().default(0),
+    module_slug: z.union([z.string(), z.null()]).optional(),
+    module_name: z.union([z.string(), z.null()]).optional(),
+    category_slug: z.union([z.string(), z.null()]).optional(),
+    category_name: z.union([z.string(), z.null()]).optional(),
+    track_slug: z.union([z.string(), z.null()]).optional(),
+    track_name: z.union([z.string(), z.null()]).optional(),
+    position: z.number().int(),
+    pedagogical_brief: z.string(),
+    is_current_target: z.boolean(),
+    progress: TrackExerciseProgressSchema,
+  })
+  .passthrough();
+const TrackMilestoneSchema = z
+  .object({
+    title: z.string(),
+    summary: z.string(),
+    requirement_label: z.string(),
+    unlocked: z.boolean(),
+    remaining_exercises: z.number().int(),
+  })
+  .passthrough();
+const TrackDetailSchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    module_slug: z.union([z.string(), z.null()]).optional(),
+    module_name: z.union([z.string(), z.null()]).optional(),
+    category_slug: z.string(),
+    category_name: z.string(),
+    description: z.string(),
+    goal: z.string(),
+    level_label: z.string(),
+    progress_percent: z.number().int(),
+    completed_exercises: z.number().int(),
+    total_exercises: z.number().int(),
+    current_target_slug: z.union([z.string(), z.null()]).optional(),
+    current_target_title: z.union([z.string(), z.null()]).optional(),
+    concept_kicker: z.string(),
+    concepts: z.array(TrackConceptSchema),
+    prerequisites: z.array(z.string()),
+    exercises: z.array(TrackExerciseSchema),
+    milestone: TrackMilestoneSchema,
+  })
+  .passthrough();
+const ExplanationConceptSchema = z
+  .object({
+    title: z.string(),
+    explanation_text: z.string(),
+    why_it_matters: z.string(),
+    common_mistake: z.string(),
+  })
+  .passthrough();
+const ExplanationCodeExampleSchema = z
+  .object({
+    title: z.string(),
+    rationale: z.string(),
+    language: z.string(),
+    code: z.string(),
+  })
+  .passthrough();
+const ExerciseExplanationSchema = z
+  .object({
+    module_slug: z.union([z.string(), z.null()]).optional(),
+    module_name: z.union([z.string(), z.null()]).optional(),
+    track_slug: z.string(),
+    track_name: z.string(),
+    track_goal: z.string(),
+    level_label: z.string(),
+    exercise_slug: z.string(),
+    exercise_title: z.string(),
+    exercise_type_label: z.string(),
+    estimated_time_minutes: z.number().int(),
+    concept_summary: z.string(),
+    pedagogical_brief: z.string(),
+    learning_goal: z.string(),
+    concept_focus_markdown: z.string(),
+    reading_strategy_markdown: z.string(),
+    implementation_strategy_markdown: z.string(),
+    assessment_notes_markdown: z.string(),
+    common_mistakes: z.array(z.string()),
+    mastery_checklist: z.array(z.string()),
+    prerequisites: z.array(z.string()),
+    concepts: z.array(ExplanationConceptSchema),
+    code_examples: z.array(ExplanationCodeExampleSchema),
+  })
+  .passthrough();
+const LearningModuleInputSchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    description: z.string().optional().default(""),
+    audience: z.string().optional().default(""),
+    source_kind: z.string().optional().default(""),
+    status: z.string().optional().default("active"),
+    sort_order: z.number().int().optional().default(0),
+  })
+  .passthrough();
+const ExerciseTypeInputSchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    description: z.string().optional().default(""),
+    sort_order: z.number().int().optional().default(0),
+  })
+  .passthrough();
+const CatalogAdminReferenceSchema = z
+  .object({
+    modules: z.array(LearningModuleInputSchema),
+    exercise_types: z.array(ExerciseTypeInputSchema),
+    categories: z.array(z.object({}).passthrough()),
+    tracks: z.array(z.object({}).passthrough()),
+  })
+  .passthrough();
+const TrackConceptInputSchema = z
+  .object({
+    title: z.string(),
+    summary: z.string(),
+    why_it_matters: z.string().optional().default(""),
+    common_mistake: z.string().optional().default(""),
+    sort_order: z.number().int().optional().default(0),
+  })
+  .passthrough();
+const TrackPrerequisiteInputSchema = z
+  .object({
+    label: z.string(),
+    sort_order: z.number().int().optional().default(0),
+  })
+  .passthrough();
+const TrackInputSchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    module_slug: z.string(),
+    category_slug: z.string(),
+    description: z.string().optional().default(""),
+    goal: z.string().optional().default(""),
+    level_label: z.string().optional().default(""),
+    concept_kicker: z.string().optional().default(""),
+    milestone_title: z.string().optional().default(""),
+    milestone_summary: z.string().optional().default(""),
+    milestone_requirement_label: z.string().optional().default(""),
+    sort_order: z.number().int().optional().default(0),
+    concepts: z.array(TrackConceptInputSchema).optional().default([]),
+    prerequisites: z.array(TrackPrerequisiteInputSchema).optional().default([]),
+  })
+  .passthrough();
+const TrackUpdateSchema = z
+  .object({
+    name: z.union([z.string(), z.null()]),
+    module_slug: z.union([z.string(), z.null()]),
+    category_slug: z.union([z.string(), z.null()]),
+    description: z.union([z.string(), z.null()]),
+    goal: z.union([z.string(), z.null()]),
+    level_label: z.union([z.string(), z.null()]),
+    concept_kicker: z.union([z.string(), z.null()]),
+    milestone_title: z.union([z.string(), z.null()]),
+    milestone_summary: z.union([z.string(), z.null()]),
+    milestone_requirement_label: z.union([z.string(), z.null()]),
+    sort_order: z.union([z.number(), z.null()]),
+    concepts: z.union([z.array(TrackConceptInputSchema), z.null()]),
+    prerequisites: z.union([z.array(TrackPrerequisiteInputSchema), z.null()]),
+  })
+  .passthrough();
+const ExerciseCatalogUpdateSchema = z
+  .object({
+    track_slug: z.union([z.string(), z.null()]),
+    exercise_type_slug: z.union([z.string(), z.null()]),
+    estimated_time_minutes: z.union([z.number(), z.null()]),
+    track_position: z.union([z.number(), z.null()]),
+    concept_summary: z.union([z.string(), z.null()]),
+    pedagogical_brief: z.union([z.string(), z.null()]),
+  })
+  .passthrough();
 
 export const schemas = {
   LoginInputSchema,
@@ -202,6 +493,26 @@ export const schemas = {
   SubmissionSummarySchema,
   ReviewChatInputSchema,
   ReviewChatResponseSchema,
+  TrackSummarySchema,
+  NavigatorModuleSchema,
+  NavigatorResponseSchema,
+  ModuleDetailSchema,
+  TrackConceptSchema,
+  TrackExerciseProgressSchema,
+  TrackExerciseSchema,
+  TrackMilestoneSchema,
+  TrackDetailSchema,
+  ExplanationConceptSchema,
+  ExplanationCodeExampleSchema,
+  ExerciseExplanationSchema,
+  LearningModuleInputSchema,
+  ExerciseTypeInputSchema,
+  CatalogAdminReferenceSchema,
+  TrackConceptInputSchema,
+  TrackPrerequisiteInputSchema,
+  TrackInputSchema,
+  TrackUpdateSchema,
+  ExerciseCatalogUpdateSchema,
 };
 
 export const authEndpoints = makeApi([
@@ -458,6 +769,374 @@ export const submissionsEndpoints = makeApi([
 
 export const submissionsApi = new Zodios(submissionsEndpoints);
 
+export const catalogEndpoints = makeApi([
+  {
+    method: "get",
+    path: "/api/catalog/navigator",
+    alias: "arena_api_get_navigator",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: NavigatorResponseSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/catalog/modules/:module_slug",
+    alias: "arena_api_get_module_detail",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "module_slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: ModuleDetailSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/catalog/tracks/:track_slug",
+    alias: "arena_api_get_track_detail",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "track_slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: TrackDetailSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/catalog/tracks/:track_slug/explanations/:exercise_slug",
+    alias: "arena_api_get_track_explanation",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "track_slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "exercise_slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: ExerciseExplanationSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+]);
+
+export const catalogApi = new Zodios(catalogEndpoints);
+
+export const catalog_adminEndpoints = makeApi([
+  {
+    method: "get",
+    path: "/api/catalog-admin/reference",
+    alias: "arena_api_get_catalog_reference",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: CatalogAdminReferenceSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/catalog-admin/modules",
+    alias: "arena_api_list_modules",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: z.array(LearningModuleInputSchema),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/catalog-admin/modules",
+    alias: "arena_api_upsert_module",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: LearningModuleInputSchema,
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: LearningModuleInputSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/catalog-admin/exercise-types",
+    alias: "arena_api_list_exercise_types",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: z.array(ExerciseTypeInputSchema),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/catalog-admin/exercise-types",
+    alias: "arena_api_upsert_exercise_type",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: ExerciseTypeInputSchema,
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: ExerciseTypeInputSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/catalog-admin/tracks",
+    alias: "arena_api_list_tracks",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: z.array(TrackDetailSchema),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/catalog-admin/tracks",
+    alias: "arena_api_create_track",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: TrackInputSchema,
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: TrackDetailSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/catalog-admin/tracks/:track_slug",
+    alias: "arena_api_update_track",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: TrackUpdateSchema,
+      },
+      {
+        name: "track_slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: TrackDetailSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/catalog-admin/exercises/:slug/catalog",
+    alias: "arena_api_update_exercise_catalog",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: ExerciseCatalogUpdateSchema,
+      },
+      {
+        name: "slug",
+        type: "Path",
+        schema: z.string(),
+      },
+      {
+        name: "authorization",
+        type: "Header",
+        schema: authorization,
+      },
+    ],
+    response: ExerciseDetailSchema,
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not Found`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+]);
+
+export const catalog_adminApi = new Zodios(catalog_adminEndpoints);
+
 export const systemEndpoints = makeApi([
   {
     method: "get",
@@ -470,13 +1149,3 @@ export const systemEndpoints = makeApi([
 
 export const systemApi = new Zodios(systemEndpoints);
 
-export const endpoints = makeApi([
-  ...authEndpoints,
-  ...exercisesEndpoints,
-  ...submissionsEndpoints,
-  ...systemEndpoints,
-]);
-
-export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
-  return new Zodios(baseUrl, endpoints, options);
-}

@@ -41,8 +41,8 @@ Essas notas são o coração da KB. Cada uma tenta explicar o módulo como códi
 - [[../04_Milestones/Mapa de Milestones]]
 - [[../04_Milestones/M1 - Integridade da Progressão]]
 - [[../04_Milestones/M2 - Taxonomia e Navegação Canônica]]
-- [[../04_Milestones/M3 - Ranking e Gamificação Útil]]
 - [[../04_Milestones/M4 - Catálogo Avançado e Projetos Integradores]]
+- [[../04_Milestones/M3 - Ranking e Gamificação Útil]]
 
 Essas notas conectam o estado atual com o que ainda precisa ser construído.
 

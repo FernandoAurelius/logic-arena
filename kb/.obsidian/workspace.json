@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "04_Milestones/M1 - Especificação Técnica da Progressão.md",
+                "file": "04_Milestones/M3 - Ranking e Gamificação Útil.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "M1 - Especificação Técnica da Progressão"
+              "title": "M3 - Ranking e Gamificação Útil"
             }
           }
         ],
@@ -93,8 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "a028c0428f2e4f3f",
@@ -110,7 +109,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "04_Milestones/M1 - Especificação Técnica da Progressão.md",
+                "file": "04_Milestones/M3 - Ranking e Gamificação Útil.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -120,7 +119,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Links inversos para M1 - Especificação Técnica da Progressão"
+              "title": "Links inversos para M3 - Ranking e Gamificação Útil"
             }
           },
           {
@@ -129,12 +128,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "04_Milestones/M1 - Especificação Técnica da Progressão.md",
+                "file": "04_Milestones/M3 - Ranking e Gamificação Útil.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Links de saída para M1 - Especificação Técnica da Progressão"
+              "title": "Links de saída para M3 - Ranking e Gamificação Útil"
             }
           },
           {
@@ -172,13 +171,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "04_Milestones/M1 - Especificação Técnica da Progressão.md",
+                "file": "04_Milestones/M3 - Ranking e Gamificação Útil.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Sumário de M1 - Especificação Técnica da Progressão"
+              "title": "Sumário de M3 - Ranking e Gamificação Útil"
             }
           }
         ]
@@ -201,11 +200,12 @@
   },
   "active": "37b626058a636fdc",
   "lastOpenFiles": [
-    "04_Milestones/M2 - Especificação Técnica da Taxonomia e Navegação.md",
-    "04_Milestones/M1 - Integridade da Progressão.md",
-    "04_Milestones/M1 - Especificação Técnica da Progressão.md",
-    "04_Milestones/Mapa de Milestones.md",
     "04_Milestones/M2 - Taxonomia e Navegação Canônica.md",
+    "04_Milestones/M2 - Navegação Autenticada e Tipos de Exercício.md",
+    "04_Milestones/M2 - Especificação Técnica da Taxonomia e Navegação.md",
+    "04_Milestones/M1 - Especificação Técnica da Progressão.md",
+    "04_Milestones/M1 - Integridade da Progressão.md",
+    "04_Milestones/Mapa de Milestones.md",
     "03_Arquitetura/Decisões Arquiteturais.md",
     "03_Arquitetura/Visão Arquitetural.md",
     "00_MOC/logic-arena-kb.canvas",

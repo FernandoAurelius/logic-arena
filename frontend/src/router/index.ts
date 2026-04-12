@@ -2,8 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import LandingView from '@/views/LandingView.vue'
 import ArenaView from '@/views/ArenaView.vue'
+import NavigatorView from '@/views/NavigatorView.vue'
+import TrackView from '@/views/TrackView.vue'
+import ExplanationView from '@/views/ExplanationView.vue'
 import TutorialView from '@/views/TutorialView.vue'
-import { useSession } from '@/lib/session'
+import { useSession } from '@/entities/session'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -12,6 +15,28 @@ const router = createRouter({
       path: '/',
       name: 'landing',
       component: LandingView,
+    },
+    {
+      path: '/navigator',
+      name: 'navigator',
+      component: NavigatorView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/tracks/:trackSlug',
+      name: 'track',
+      component: TrackView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/tracks/:trackSlug/explanation/:exerciseSlug',
+      name: 'track-explanation',
+      component: ExplanationView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/profile',
+      redirect: { name: 'navigator' },
     },
     {
       path: '/arena',

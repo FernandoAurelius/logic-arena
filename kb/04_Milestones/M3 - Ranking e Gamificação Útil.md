@@ -1,5 +1,11 @@
 # M3 - Ranking e Gamificação Útil
 
+## Nova posição no roadmap
+
+Esta milestone continua importante, mas **não é mais a próxima** depois da `M2`.
+
+Ela passa a vir **depois da `M4`**, porque o ranking só ganha valor real quando o catálogo e a taxonomia já representam o domínio do produto de forma menos provisória e menos dependente de hardcode.
+
 ## Problema
 
 A gamificação atual já dá prazer de uso, mas ainda não possui um sistema robusto que justifique comparação, status e progressão pública.
@@ -47,7 +53,7 @@ E adicionar uma quarta camada, mas apenas quando o produto estiver pronto para i
 
 ## Roadmap sugerido para achievements/trophies
 
-Essa camada deve nascer depois da integridade da progressão e da taxonomia do catálogo. O motivo é simples: as melhores conquistas dependem de tema, dificuldade, tempo, sequência e categoria.
+Essa camada deve nascer depois da integridade da progressão, da navegação canônica e da consolidação de um catálogo real. O motivo é simples: as melhores conquistas dependem de tema, dificuldade, tempo, sequência, categoria e tipo de exercício já estabilizados.
 
 ### Famílias de conquistas candidatas
 
@@ -87,3 +93,12 @@ Essas conquistas devem:
 ## Critério de aceite
 
 Dois usuários que spamam execuções repetidas não sobem no ranking como se estivessem realmente evoluindo.
+
+## Dependências explícitas
+
+Antes de implementar esta milestone, o produto deve ter:
+
+- catálogo persistido com metadados editoriais relevantes;
+- categorias e trilhas modeladas com menos improviso editorial;
+- tipos de exercício definidos a partir do domínio real das trilhas;
+- sinais mínimos de domínio por trilha/categoria.

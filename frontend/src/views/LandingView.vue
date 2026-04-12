@@ -6,7 +6,7 @@ import { ArrowRight, Cpu, History, Moon, Play, Sparkles, Sun } from 'lucide-vue-
 import LoginModal from '@/components/auth/LoginModal.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useSession } from '@/lib/session'
+import { useSession } from '@/entities/session'
 import { useTheme } from '@/lib/theme'
 
 const router = useRouter()
@@ -40,7 +40,7 @@ const highlights = [
 async function handlePrimaryAction() {
   await session.initSession()
   if (session.isAuthenticated.value) {
-    await router.push({ name: 'arena' })
+    await router.push({ name: 'navigator' })
     return
   }
   showLogin.value = true
@@ -94,7 +94,7 @@ async function handlePrimaryAction() {
             <p class="eyebrow">Preview</p>
             <CardTitle>O que acontece depois do login</CardTitle>
             <CardDescription>
-              Você entra direto na arena autenticada, com operator card, módulos, histórico, editor e console.
+              Você entra no Navigator autenticado para escolher a trilha certa e daí segue para a arena com contexto.
             </CardDescription>
           </CardHeader>
           <CardContent class="preview-shell">

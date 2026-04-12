@@ -54,8 +54,9 @@ O projeto parece mais promissor se seguir esta ordem:
 
 1. corrigir integridade da progressão;
 2. organizar catálogo e navegação;
-3. justificar a gamificação com ranking e domínio;
-4. expandir o conteúdo para problemas mais ambiciosos.
+3. consolidar um catálogo real, persistido e editável;
+4. usar essa base para definir categorias, tipos de exercício e trilhas mais ambiciosas;
+5. justificar a gamificação com ranking e domínio sobre esse catálogo já estabilizado.
 
 ## Leituras seguintes
 

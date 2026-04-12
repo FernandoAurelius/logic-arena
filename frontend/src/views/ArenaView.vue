@@ -1,59 +1,80 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js/lib/core'
-import python from 'highlight.js/lib/languages/python'
-import javascript from 'highlight.js/lib/languages/javascript'
-import json from 'highlight.js/lib/languages/json'
-import { BookOpenText, ChevronRight, ChevronDown, ChevronLeft, Cpu, Flame, LoaderCircle, LogOut, MessageSquare, Moon, Play, Send, Sun, Terminal, Trophy, X } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
+import { BookOpenText, ChevronRight, FileText, FlaskConical, ListChecks, LogOut, MessageSquare, Play, UserRound } from 'lucide-vue-next'
 import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/lib/api/generated'
-import { exercisesApi, submissionsApi } from '@/lib/api/client'
+import { schemas } from '@/shared/api/generated'
+import { submissionApi } from '@/entities/submission/api/submission.api'
+import ArenaResultsDialog from '@/components/arena/ArenaResultsDialog.vue'
+import ArenaSidebar from '@/components/arena/ArenaSidebar.vue'
 import MonacoEditor from '@/components/editor/MonacoEditor.vue'
+import ProfileModal from '@/components/theme/ProfileModal.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useSession } from '@/lib/session'
-import { useTheme } from '@/lib/theme'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useSession } from '@/entities/session'
+import { useArenaExerciseWorkspace } from '@/features/arena/open-exercise/model/useArenaExerciseWorkspace'
 
-type ExerciseSummary = ZodInfer<typeof schemas.ExerciseSummarySchema>
-type ExerciseDetail = ZodInfer<typeof schemas.ExerciseDetailSchema>
 type Submission = ZodInfer<typeof schemas.SubmissionSchema>
 type SubmissionSummary = ZodInfer<typeof schemas.SubmissionSummarySchema>
-type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>
 
 const router = useRouter()
+const route = useRoute()
 const session = useSession()
-const theme = useTheme()
 
-hljs.registerLanguage('python', python)
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('json', json)
-
-const exercises = ref<ExerciseSummary[]>([])
-const activeExercise = ref<ExerciseDetail | null>(null)
-const submissions = ref<SubmissionSummary[]>([])
-const code = ref('')
-const latestSubmission = ref<Submission | null>(null)
-const isBooting = ref(false)
 const isSubmitting = ref(false)
 const isChatBusy = ref(false)
-const errorMessage = ref('')
-const chatOpen = ref(false)
-const historyOpen = ref(false)
 const hintsOpen = ref(false)
 const chatInput = ref('')
-const chatMessages = ref<ReviewChatMessage[]>([])
-const typingHeat = ref(0)
 const confettiBurst = ref(false)
 const levelUpBurst = ref(false)
+const showProfile = ref(false)
+const resultsDialogOpen = ref(false)
+const resultsTab = ref<'saida' | 'testes' | 'revisao' | 'chat'>('saida')
+const specTab = ref<'descricao' | 'exemplos' | 'testes'>('descricao')
 
 let feedbackPollTimer: number | null = null
-let typingCooldownTimer: number | null = null
 let levelUpTimer: number | null = null
+
+const {
+  exercises,
+  activeExercise,
+  trackContext,
+  code,
+  latestSubmission,
+  chatMessages,
+  isBooting,
+  errorMessage,
+  restoreDialogOpen,
+  pendingRestoreSubmission,
+  rememberRestoreChoice,
+  routeTrackSlug,
+  groupedExercises,
+  trackExercises,
+  activeTrackIndex,
+  previousTrackExercise,
+  nextTrackExercise,
+  sidebarHistory,
+  bootstrapArena,
+  loadTrackContext,
+  loadSubmissions,
+  selectExercise: selectExerciseFromWorkspace,
+  navigateTrackExercise: navigateTrackExerciseFromWorkspace,
+  openSubmissionSession: openSubmissionSessionFromWorkspace,
+  setHydratedSubmission,
+  confirmRestoreSubmission: confirmRestoreSubmissionFromWorkspace,
+  declineRestoreSubmission: declineRestoreSubmissionFromWorkspace,
+  handleRestoreDialogOpen: handleRestoreDialogOpenFromWorkspace,
+} = useArenaExerciseWorkspace({
+  authHeader: () => session.authHeader(),
+  onSubmissionHydrated: applySubmissionProgress,
+  onStopFeedbackPolling: stopFeedbackPolling,
+  onStartFeedbackPolling: (submissionId) => startFeedbackPolling(submissionId),
+})
 
 const activeIndex = computed(() => {
   if (!activeExercise.value) return 0
@@ -65,32 +86,13 @@ const consoleLines = computed(() => {
 })
 const feedbackPayload = computed(() => latestSubmission.value?.feedback_payload ?? null)
 const visibleTestCases = computed(() => activeExercise.value?.test_cases ?? [])
-const sidebarHistory = computed(() => submissions.value.slice(0, 6))
 const isFeedbackPending = computed(() => latestSubmission.value?.feedback_status === 'pending')
 const canReviewWithAi = computed(() => Boolean(latestSubmission.value) && !isFeedbackPending.value)
 const level = computed(() => session.currentUser.value?.level ?? 1)
 const xpIntoLevel = computed(() => session.currentUser.value?.xp_into_level ?? 0)
 const xpProgress = computed(() => Math.min(100, Math.max(0, xpIntoLevel.value)))
 const xpToNextLevel = computed(() => session.currentUser.value?.xp_to_next_level ?? 100)
-const heatLabel = computed(() => {
-  if (typingHeat.value >= 3) return 'Forge em chamas'
-  if (typingHeat.value === 2) return 'Ritmo alto'
-  if (typingHeat.value === 1) return 'Aquecendo'
-  return 'Idle'
-})
 const progressRewards = computed(() => latestSubmission.value?.unlocked_progress_rewards ?? [])
-const groupedExercises = computed(() => {
-  const groups = new Map<string, { key: string; label: string; exercises: ExerciseSummary[] }>()
-  for (const exercise of exercises.value) {
-    const key = exercise.category_slug ?? 'sem-categoria'
-    const label = exercise.category_name ?? 'Sem categoria'
-    if (!groups.has(key)) {
-      groups.set(key, { key, label, exercises: [] })
-    }
-    groups.get(key)?.exercises.push(exercise)
-  }
-  return Array.from(groups.values())
-})
 const submissionOutcomeTone = computed(() => {
   if (!latestSubmission.value) return 'idle'
   if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) return 'reward'
@@ -126,23 +128,6 @@ const rewardSummary = computed(() => {
   return 'Sem ganho de XP nesta rodada'
 })
 
-const markdown = new MarkdownIt({
-  html: false,
-  breaks: true,
-  linkify: true,
-  highlight(code, language) {
-    const normalizedLanguage = language?.trim().toLowerCase()
-    if (normalizedLanguage && hljs.getLanguage(normalizedLanguage)) {
-      return `<pre class="hljs"><code>${hljs.highlight(code, { language: normalizedLanguage }).value}</code></pre>`
-    }
-    return `<pre class="hljs"><code>${hljs.highlightAuto(code).value}</code></pre>`
-  },
-})
-
-function renderMessage(content: string) {
-  return markdown.render(content)
-}
-
 function triggerLevelUp() {
   levelUpBurst.value = true
   if (levelUpTimer !== null) {
@@ -175,99 +160,68 @@ function formatSampleBlock(text: string) {
   return normalized.split('\n')
 }
 
-async function loadExercises() {
-  exercises.value = await exercisesApi.get('/api/exercises/', {
-    headers: { authorization: session.authHeader() ?? undefined },
-  })
-  if (!activeExercise.value && exercises.value.length > 0) {
-    await selectExercise(exercises.value[0].slug)
+function traduzirStatusExecucao(status?: string) {
+  switch (status) {
+    case 'passed':
+      return 'Aprovada'
+    case 'failed':
+      return 'Reprovada'
+    case 'error':
+      return 'Erro'
+    case 'pending':
+      return 'Pendente'
+    default:
+      return 'Inativa'
   }
 }
 
-async function fetchExercise(slug: string) {
-  return exercisesApi.get('/api/exercises/:slug', {
-    params: { slug },
-    headers: { authorization: session.authHeader() ?? undefined },
-  })
+function traduzirEstadoArena() {
+  if (isSubmitting.value) return 'Executando'
+  if (isBooting.value) return 'Carregando'
+  return 'Pronta'
 }
 
-async function loadSubmissions() {
-  submissions.value = await submissionsApi.get('/api/submissions/me', {
-    headers: { authorization: session.authHeader() ?? undefined },
-  })
+function abrirCentralDeResultado(tab: 'saida' | 'testes' | 'revisao' | 'chat' = 'saida') {
+  resultsTab.value = tab
+  resultsDialogOpen.value = true
 }
 
-async function bootstrapArena() {
-  errorMessage.value = ''
-  isBooting.value = true
-
-  try {
-    await Promise.all([loadExercises(), loadSubmissions()])
-  } catch (error) {
-    console.error(error)
-    errorMessage.value = 'Não foi possível carregar a arena autenticada.'
-  } finally {
-    isBooting.value = false
-  }
-}
-
-async function selectExercise(slug: string) {
-  isBooting.value = true
-  errorMessage.value = ''
-  stopFeedbackPolling()
-  chatOpen.value = false
+function resetArenaPanels() {
+  resultsDialogOpen.value = false
   hintsOpen.value = false
-  chatMessages.value = []
-
-  try {
-    const exercise = await fetchExercise(slug)
-    activeExercise.value = exercise
-    code.value = ''
-    latestSubmission.value = null
-  } catch (error) {
-    console.error(error)
-    errorMessage.value = 'Falha ao carregar os detalhes do exercício.'
-  } finally {
-    isBooting.value = false
-  }
 }
 
-async function openSubmissionSession(submissionSummary: SubmissionSummary) {
-  isBooting.value = true
-  errorMessage.value = ''
-  stopFeedbackPolling()
-  chatOpen.value = false
-  hintsOpen.value = false
+async function handleSelectExercise(slug: string) {
+  resetArenaPanels()
+  await selectExerciseFromWorkspace(slug)
+}
 
-  try {
-    const [exercise, submission] = await Promise.all([
-      fetchExercise(submissionSummary.exercise_slug),
-      submissionsApi.get('/api/submissions/:submission_id', {
-        params: { submission_id: submissionSummary.id },
-        headers: { authorization: session.authHeader() ?? undefined },
-      }),
-    ])
-    activeExercise.value = exercise
-    latestSubmission.value = submission
-    applySubmissionProgress(submission)
-    code.value = submission.source_code
-    chatMessages.value = submission.review_chat_history ?? []
-    if (submission.feedback_status === 'pending') {
-      startFeedbackPolling(submission.id)
-    }
-  } catch (error) {
-    console.error(error)
-    errorMessage.value = 'Não foi possível reabrir essa sessão do histórico.'
-  } finally {
-    isBooting.value = false
-  }
+function navigateTrackExercise(direction: 'previous' | 'next') {
+  resetArenaPanels()
+  navigateTrackExerciseFromWorkspace(direction)
+}
+
+async function handleOpenSubmissionSession(submissionSummary: SubmissionSummary) {
+  resetArenaPanels()
+  await openSubmissionSessionFromWorkspace(submissionSummary)
+}
+
+async function confirmRestoreSubmission() {
+  await confirmRestoreSubmissionFromWorkspace()
+  resultsDialogOpen.value = false
+}
+
+function declineRestoreSubmission() {
+  declineRestoreSubmissionFromWorkspace()
+  resultsDialogOpen.value = false
+}
+
+function handleRestoreDialogOpen(nextOpen: boolean) {
+  handleRestoreDialogOpenFromWorkspace(nextOpen)
 }
 
 async function refreshSubmission(submissionId: number) {
-  const refreshed = await submissionsApi.get('/api/submissions/:submission_id', {
-    params: { submission_id: submissionId },
-    headers: { authorization: session.authHeader() ?? undefined },
-  })
+  const refreshed = await submissionApi.getById(submissionId, session.authHeader() ?? undefined)
   latestSubmission.value = {
     ...refreshed,
     results: refreshed.results.length ? refreshed.results : latestSubmission.value?.results ?? [],
@@ -303,25 +257,20 @@ async function submitSolution() {
 
   isSubmitting.value = true
   errorMessage.value = ''
-  chatOpen.value = false
+  resultsDialogOpen.value = false
   chatMessages.value = []
 
   try {
-    const submission = await submissionsApi.post(
-      '/api/submissions/exercises/:slug/submit',
-      { source_code: code.value },
-      { params: { slug: activeExercise.value.slug }, headers: { authorization: session.authHeader() ?? undefined } },
-    )
-    latestSubmission.value = submission
+    const submission = await submissionApi.submit(activeExercise.value.slug, code.value, session.authHeader() ?? undefined)
+    setHydratedSubmission(submission)
+    pendingRestoreSubmission.value = null
+    restoreDialogOpen.value = false
     applySubmissionProgress(submission)
-    chatMessages.value = submission.review_chat_history ?? []
     await loadSubmissions()
-    if (submission.feedback_status === 'pending') {
-      startFeedbackPolling(submission.id)
-    }
     if (submission.status === 'passed') {
       triggerConfetti()
     }
+    abrirCentralDeResultado('saida')
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Não foi possível processar a submissão.'
@@ -340,10 +289,11 @@ async function sendReviewChat() {
   isChatBusy.value = true
 
   try {
-    const response = await submissionsApi.post(
-      '/api/submissions/:submission_id/review-chat',
-      { message, history: chatMessages.value },
-      { params: { submission_id: submission.id }, headers: { authorization: session.authHeader() ?? undefined } },
+    const response = await submissionApi.sendReviewChat(
+      submission.id,
+      message,
+      chatMessages.value,
+      session.authHeader() ?? undefined,
     )
     chatMessages.value.push({ role: 'assistant', content: response.answer })
     if (latestSubmission.value) {
@@ -371,20 +321,25 @@ function triggerConfetti() {
 }
 
 watch(
-  code,
-  () => {
-    typingHeat.value = Math.min(3, typingHeat.value + 1)
-    if (typingCooldownTimer !== null) {
-      window.clearTimeout(typingCooldownTimer)
+  () => route.query.track,
+  (trackSlug) => {
+    void loadTrackContext(typeof trackSlug === 'string' ? trackSlug : null)
+  },
+)
+
+watch(
+  () => route.query.exercise,
+  (exerciseSlug) => {
+    if (typeof exerciseSlug !== 'string' || !exerciseSlug || activeExercise.value?.slug === exerciseSlug) {
+      return
     }
-    typingCooldownTimer = window.setTimeout(() => {
-      typingHeat.value = 0
-    }, 1600)
+    if (exercises.value.some((exercise) => exercise.slug === exerciseSlug)) {
+      void handleSelectExercise(exerciseSlug)
+    }
   },
 )
 
 function openReviewChat() {
-  chatOpen.value = true
   if (chatMessages.value.length === 0 && latestSubmission.value) {
     chatMessages.value = [
       {
@@ -393,6 +348,7 @@ function openReviewChat() {
       },
     ]
   }
+  abrirCentralDeResultado('chat')
 }
 
 function toggleHints() {
@@ -411,9 +367,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopFeedbackPolling()
-  if (typingCooldownTimer !== null) {
-    window.clearTimeout(typingCooldownTimer)
-  }
   if (levelUpTimer !== null) {
     window.clearTimeout(levelUpTimer)
   }
@@ -426,210 +379,249 @@ onBeforeUnmount(() => {
       <span v-for="index in 18" :key="index" class="confetti-piece"></span>
     </div>
     <div v-if="levelUpBurst" class="levelup-banner" aria-hidden="true">
-      <span class="levelup-eyebrow">LEVEL UP</span>
-      <strong>Operator ascendeu para o nível {{ level }}</strong>
+      <span class="levelup-eyebrow">SUBIU DE NÍVEL</span>
+      <strong>Você avançou para o nível {{ level }}</strong>
     </div>
     <header class="topbar">
       <div class="topbar-left">
         <span class="brand-wordmark">LOGIC ARENA</span>
+        <nav class="workspace-nav">
+          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'navigator' })">Navegador</button>
+          <button class="workspace-nav-link workspace-nav-link--active" type="button">Arena</button>
+          <button
+            v-if="typeof route.query.track === 'string'"
+            class="workspace-nav-link"
+            type="button"
+            @click="router.push({ name: 'track', params: { trackSlug: route.query.track } })"
+          >
+            Trilha
+          </button>
+        </nav>
       </div>
       <div class="topbar-right">
+        <div class="topbar-status">
+          <div class="level-box" :class="{ 'level-box--up': levelUpBurst }">
+            <strong>NÍVEL {{ level }}</strong>
+            <span>{{ session.currentUser.value?.nickname ?? 'operador' }}</span>
+            <small>{{ xpIntoLevel }}/100 XP · faltam {{ xpToNextLevel }} XP</small>
+            <div class="level-track">
+              <div class="level-track-fill" :style="{ width: `${xpProgress}%` }"></div>
+            </div>
+          </div>
+        </div>
         <div class="topbar-actions">
-          <Button variant="outline" size="sm" @click="theme.toggleTheme">
-            <Sun v-if="theme.isDark.value" :size="14" />
-            <Moon v-else :size="14" />
-            {{ theme.isDark.value ? 'Claro' : 'Escuro' }}
+          <Button variant="outline" size="sm" @click="showProfile = true">
+            <UserRound :size="14" />
+            Perfil
           </Button>
           <Button variant="outline" size="sm" @click="logout">
             <LogOut :size="14" />
             Sair
           </Button>
         </div>
-        <div class="topbar-status">
-          <div class="level-box" :class="{ 'level-box--up': levelUpBurst }">
-            <strong>LEVEL {{ level }}</strong>
-            <span>{{ session.currentUser.value?.nickname ?? 'operator' }}</span>
-            <small>{{ xpIntoLevel }}/100 XP para o próximo nível · faltam {{ xpToNextLevel }} XP</small>
-            <div class="level-track">
-              <div class="level-track-fill" :style="{ width: `${xpProgress}%` }"></div>
-            </div>
-          </div>
-          <div class="icon-row">
-            <Terminal :size="18" />
-            <Cpu :size="18" />
-            <Trophy :size="18" />
-          </div>
-        </div>
       </div>
     </header>
 
-    <div class="terminal-body">
-      <aside class="sidenav">
-        <ScrollArea class="sidebar-scroll" viewport-class="sidebar-viewport">
-          <div class="sidebar-stack">
-            <Card class="operator-card">
-              <CardContent class="operator-card-inner">
-                <div class="operator-icon">
-                  <Cpu :size="18" />
-                </div>
-                <div>
-                  <p class="eyebrow">Operator</p>
-                  <strong>{{ session.currentUser.value?.nickname ?? 'OPERATOR_01' }}</strong>
-                  <small>STATUS: ROOT_ACCESS</small>
-                </div>
-              </CardContent>
-            </Card>
-
-              <Card class="module-panel">
-                <CardHeader>
-                  <CardTitle>Core Modules</CardTitle>
-                  <CardDescription>Escolha o exercício que vai simular a rodada atual.</CardDescription>
-                </CardHeader>
-                <CardContent class="module-list">
-                  <div v-for="group in groupedExercises" :key="group.key" class="module-group">
-                    <div class="module-group-heading">
-                      <span>{{ group.label }}</span>
-                      <small>{{ group.exercises.length }} exercícios</small>
-                    </div>
-                    <button
-                      v-for="exercise in group.exercises"
-                      :key="exercise.slug"
-                      class="module-link"
-                      :class="{ active: activeExercise?.slug === exercise.slug }"
-                      @click="selectExercise(exercise.slug)"
-                    >
-                      <BookOpenText :size="18" />
-                      <div>
-                        <strong>{{ exercise.title }}</strong>
-                        <small>
-                          {{ exercise.track_name ?? 'Trilha livre' }} · {{ exercise.difficulty }} · {{ exercise.language }}
-                        </small>
-                      </div>
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-
-            <Card class="history-panel">
-              <CardHeader>
-                <div class="panel-header-inline">
-                  <div>
-                    <CardTitle>History</CardTitle>
-                    <CardDescription>Últimas execuções persistidas por exercício.</CardDescription>
-                  </div>
-                  <button class="collapse-button" @click="historyOpen = !historyOpen" :aria-expanded="historyOpen">
-                    <ChevronDown v-if="historyOpen" :size="16" />
-                    <ChevronLeft v-else :size="16" />
-                  </button>
-                </div>
-              </CardHeader>
-              <CardContent v-if="historyOpen">
-                <ul class="history-list">
-                  <li v-for="submission in sidebarHistory" :key="submission.id">
-                    <button
-                      class="history-entry"
-                      :class="{ active: latestSubmission?.id === submission.id }"
-                      @click="openSubmissionSession(submission)"
-                    >
-                      <div class="history-line">
-                        <strong>{{ submission.exercise_title }}</strong>
-                        <Badge :variant="submission.status === 'passed' ? 'default' : 'outline'">
-                          {{ submission.status }}
-                        </Badge>
-                      </div>
-                      <span>{{ submission.passed_tests }}/{{ submission.total_tests }} · {{ submission.feedback_status }}</span>
-                    </button>
-                  </li>
-                  <li v-if="sidebarHistory.length === 0" class="dimmed">Nenhuma execução persistida.</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </ScrollArea>
-      </aside>
+    <div class="terminal-body terminal-body--arena">
+      <ArenaSidebar
+        :grouped-exercises="groupedExercises"
+        :active-exercise-slug="activeExercise?.slug ?? null"
+        :sidebar-history="sidebarHistory"
+        :latest-submission-id="latestSubmission?.id ?? null"
+        :route-track-slug="routeTrackSlug"
+        :track-name="trackContext?.name ?? activeExercise?.track_name ?? activeExercise?.module_name ?? null"
+        :can-go-previous="Boolean(previousTrackExercise)"
+        :can-go-next="Boolean(nextTrackExercise)"
+        @select-exercise="handleSelectExercise"
+        @open-history="handleOpenSubmissionSession"
+        @go-track="router.push({ name: 'track', params: { trackSlug: routeTrackSlug } })"
+        @go-navigator="router.push({ name: 'navigator' })"
+        @navigate-track="navigateTrackExercise"
+      />
 
       <main class="workspace">
         <div class="blueprint-grid"></div>
         <ScrollArea class="workspace-scroll" viewport-class="workspace-viewport">
           <div class="workspace-stack">
-            <section class="workspace-header">
-              <div>
-                <div class="breadcrumb">
-                  <span>Programming Logic</span>
-                  <ChevronRight :size="14" />
-                  <span class="active">{{ activeExercise?.difficulty ?? 'Challenge' }}</span>
-                </div>
-                <h1>Challenge: {{ activeExercise?.title ?? 'Awaiting Exercise' }}</h1>
-                <p class="workspace-copy">
-                  {{
-                    activeExercise?.statement ??
-                    'Selecione um exercício no rail lateral para começar a estação prática.'
-                  }}
-                </p>
-                <div v-if="activeExercise" class="challenge-meta">
-                  <Badge variant="outline">{{ activeExercise.category_name ?? 'Sem categoria' }}</Badge>
-                  <Badge variant="outline">{{ activeExercise.track_name ?? 'Sem trilha' }}</Badge>
-                  <Badge variant="outline">{{ activeExercise.difficulty }}</Badge>
-                </div>
-              </div>
-              <div class="workspace-status">
-                <Badge variant="outline">Quest {{ activeIndex }}/{{ exercises.length || 1 }}</Badge>
-                <Badge :variant="isSubmitting || isBooting ? 'dark' : 'default'">
-                  {{ isSubmitting ? 'Executing' : isBooting ? 'Loading' : 'Active' }}
-                </Badge>
-              </div>
-            </section>
-
             <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
+
+            <div v-if="activeExercise" class="arena-toolbar">
+              <div class="arena-toolbar__left">
+                <Button variant="outline" size="sm" @click="toggleHints">
+                  <BookOpenText :size="16" />
+                  Dicas
+                </Button>
+                <Button v-if="latestSubmission" variant="outline" size="sm" :disabled="!canReviewWithAi || isChatBusy" @click="openReviewChat">
+                  <MessageSquare :size="16" />
+                  Chat da revisão
+                </Button>
+              </div>
+              <div v-if="latestSubmission" class="arena-toolbar__center">
+                <div class="spec-outcome-banner spec-outcome-banner--toolbar" :data-tone="submissionOutcomeTone">
+                  <div class="spec-outcome-banner__status">
+                    <Badge>{{ traduzirStatusExecucao(latestSubmission.status) }}</Badge>
+                    <div class="spec-outcome-banner__copy">
+                      <strong>{{ submissionOutcomeTitle }}</strong>
+                      <span>{{ latestSubmission.passed_tests }}/{{ latestSubmission.total_tests }} testes · {{ rewardSummary }}</span>
+                    </div>
+                  </div>
+                  <div class="spec-outcome-banner__actions">
+                    <Button variant="outline" size="sm" @click="abrirCentralDeResultado('saida')">Abrir central</Button>
+                  </div>
+                </div>
+              </div>
+              <div class="arena-toolbar__right">
+                <Button size="sm" :disabled="isSubmitting || isBooting" @click="submitSolution">
+                  <Play :size="16" />
+                  {{ isSubmitting ? 'Executando...' : 'Executar' }}
+                </Button>
+              </div>
+            </div>
 
             <section v-if="activeExercise" class="two-column">
               <div class="left-column">
                 <Card class="spec-card">
-                  <CardHeader>
-                    <CardTitle>Technical Specification</CardTitle>
-                    <CardDescription>{{ activeExercise.statement }}</CardDescription>
+                  <CardHeader class="spec-card-header">
+                    <Tabs v-model:model-value="specTab" class="spec-tabs">
+                      <TabsList class="spec-tabs-list">
+                        <TabsTrigger value="descricao" class="spec-tabs-trigger">
+                          <FileText :size="15" />
+                          Especificação
+                        </TabsTrigger>
+                        <TabsTrigger value="exemplos" class="spec-tabs-trigger">
+                          <FlaskConical :size="15" />
+                          Exemplos
+                        </TabsTrigger>
+                        <TabsTrigger value="testes" class="spec-tabs-trigger">
+                          <ListChecks :size="15" />
+                          Testes
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                    <div class="spec-heading-block">
+                      <div class="breadcrumb">
+                        <button class="breadcrumb-link" type="button" @click="router.push({ name: 'navigator' })">Navegador</button>
+                        <ChevronRight :size="14" />
+                        <button
+                          v-if="routeTrackSlug"
+                          class="breadcrumb-link"
+                          type="button"
+                          @click="router.push({ name: 'track', params: { trackSlug: routeTrackSlug } })"
+                        >
+                          {{ activeExercise?.track_name ?? 'Trilha' }}
+                        </button>
+                        <template v-if="routeTrackSlug">
+                          <ChevronRight :size="14" />
+                        </template>
+                        <button
+                          v-else-if="activeExercise?.module_name"
+                          class="breadcrumb-link"
+                          type="button"
+                          @click="router.push({ name: 'navigator' })"
+                        >
+                          {{ activeExercise.module_name }}
+                        </button>
+                        <template v-if="!routeTrackSlug && activeExercise?.module_name">
+                          <ChevronRight :size="14" />
+                        </template>
+                        <span class="active">{{ activeExercise?.difficulty ?? 'Exercício' }}</span>
+                      </div>
+                      <h1 class="spec-heading-title">{{ activeExercise?.title ?? 'Aguardando exercício' }}</h1>
+                      <div class="challenge-meta challenge-meta--compact">
+                        <Badge variant="outline">{{ activeExercise.module_name ?? 'Sem módulo' }}</Badge>
+                        <Badge variant="outline">{{ activeExercise.track_name ?? 'Sem trilha' }}</Badge>
+                        <Badge variant="outline">{{ activeExercise.difficulty }}</Badge>
+                        <Badge variant="outline">Questão {{ activeIndex }}/{{ exercises.length || 1 }}</Badge>
+                        <Badge :variant="isSubmitting || isBooting ? 'dark' : 'default'">
+                          {{ traduzirEstadoArena() }}
+                        </Badge>
+                      </div>
+                      <div v-if="routeTrackSlug && trackContext" class="workspace-track-inline">
+                        <span class="workspace-track-inline__label">
+                          {{ trackContext.name }}
+                          <small>
+                            {{
+                              activeTrackIndex >= 0
+                                ? `Etapa ${activeTrackIndex + 1} de ${trackExercises.length}`
+                                : 'Contexto de trilha ativo'
+                            }}
+                          </small>
+                        </span>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent class="spec-content">
-                    <div class="formula-box">
-                      <p class="section-label">Modo de prova</p>
-                      <strong>Resolva sem código inicial. Abra <em>Hints</em> apenas se quiser uma pista opcional.</strong>
-                    </div>
+                    <Tabs v-model:model-value="specTab" class="spec-tabs-content">
+                      <TabsContent value="descricao" class="spec-pane">
+                        <div class="formula-box formula-box--statement">
+                          <p class="section-label">Enunciado</p>
+                          <p>{{ activeExercise.statement }}</p>
+                        </div>
 
-                    <div class="example-grid">
-                      <div class="io-card">
-                        <p class="section-label">Input Examples</p>
-                        <div class="code-block">
-                          <span v-for="(line, index) in formatSampleBlock(activeExercise.sample_input)" :key="`input-${index}`">
-                            {{ line }}
-                          </span>
+                        <div class="formula-box">
+                          <p class="section-label">Modo de prova</p>
+                          <strong>Resolva sem código inicial. Abra <em>dicas</em> apenas se quiser uma pista opcional.</strong>
                         </div>
-                      </div>
-                      <div class="io-card">
-                        <p class="section-label">Output Examples</p>
-                        <div class="code-block">
-                          <span v-for="(line, index) in formatSampleBlock(activeExercise.sample_output)" :key="`output-${index}`">
-                            {{ line }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
 
-                    <div v-if="visibleTestCases.length" class="visible-tests">
-                      <p class="section-label">Visible Tests</p>
-                      <div class="test-grid">
-                        <div v-for="testCase in visibleTestCases" :key="testCase.id" class="test-card">
-                          <strong>Teste {{ testCase.id }}</strong>
-                          <div class="test-case-line">
-                            <span>Entrada</span>
-                            <code>{{ testCase.input_data }}</code>
+                        <div v-if="routeTrackSlug && trackContext && activeTrackIndex >= 0" class="formula-box formula-box--track">
+                          <p class="section-label">Posição na trilha</p>
+                          <strong>{{ trackContext.name }} · etapa {{ activeTrackIndex + 1 }}</strong>
+                          <p>
+                            {{
+                              trackExercises[activeTrackIndex]?.pedagogical_brief ??
+                              'Este exercício faz parte de um percurso estruturado de progressão.'
+                            }}
+                          </p>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="exemplos" class="spec-pane spec-pane--examples">
+                        <div class="example-flow-grid">
+                          <div class="example-flow-card io-card">
+                            <p class="section-label">Exemplo de entrada</p>
+                            <div class="code-block">
+                              <span v-for="(line, index) in formatSampleBlock(activeExercise.sample_input)" :key="`input-${index}`">
+                                {{ line }}
+                              </span>
+                            </div>
                           </div>
-                          <div class="test-case-line">
-                            <span>Saída</span>
-                            <code>{{ testCase.expected_output }}</code>
+                          <div class="example-flow-arrow" aria-hidden="true">
+                            <ChevronRight :size="18" />
+                          </div>
+                          <div class="example-flow-card io-card">
+                            <p class="section-label">Exemplo de saída</p>
+                            <div class="code-block">
+                              <span v-for="(line, index) in formatSampleBlock(activeExercise.sample_output)" :key="`output-${index}`">
+                                {{ line }}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </TabsContent>
+
+                      <TabsContent value="testes" class="spec-pane">
+                        <div v-if="visibleTestCases.length" class="visible-tests">
+                          <p class="section-label">Testes</p>
+                          <div class="test-grid">
+                            <div v-for="testCase in visibleTestCases" :key="testCase.id" class="test-card">
+                              <strong>Teste {{ testCase.id }}</strong>
+                              <div class="test-case-line">
+                                <span>Entrada</span>
+                                <code>{{ testCase.input_data }}</code>
+                              </div>
+                              <div class="test-case-line">
+                                <span>Saída</span>
+                                <code>{{ testCase.expected_output }}</code>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div v-else class="formula-box">
+                          <p class="section-label">Testes</p>
+                          <p>Este exercício não expõe testes visíveis nesta rodada.</p>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </CardContent>
                 </Card>
               </div>
@@ -641,207 +633,85 @@ onBeforeUnmount(() => {
                       v-model="code"
                       class="code-editor"
                       language="python"
-                      height="36rem"
+                      height="calc(100vh - 15.5rem)"
                       :read-only="isSubmitting"
+                      placeholder="# escreva sua solução aqui"
                     />
                   </CardContent>
-                  <CardFooter class="editor-footer">
-                    <div class="editor-actions">
-                      <Button variant="outline" @click="toggleHints">
-                        <BookOpenText :size="16" />
-                        {{ hintsOpen ? 'Ocultar hints' : 'Hints' }}
-                      </Button>
-                      <Button :disabled="isSubmitting || isBooting" @click="submitSolution">
-                        <Play :size="16" />
-                        {{ isSubmitting ? 'Executando...' : 'Executar módulo' }}
-                      </Button>
-                    </div>
-                    <Button variant="outline" :disabled="!canReviewWithAi || isChatBusy" @click="openReviewChat">
-                      <MessageSquare :size="16" />
-                      Revisar com IA
-                    </Button>
-                    <span class="editor-helper">
-                      {{ isFeedbackPending ? 'Execução concluída · revisão com IA em andamento' : 'Runner isolado · revisão com IA disponível' }}
-                    </span>
-                    <div class="typing-heat" :data-level="typingHeat">
-                      <Flame :size="16" />
-                      <span>{{ heatLabel }}</span>
-                    </div>
-                  </CardFooter>
                 </Card>
-
-                <Card v-if="hintsOpen" class="hint-card">
-                  <CardHeader>
-                    <CardTitle>Hints</CardTitle>
-                    <CardDescription>Pistas opcionais para destravar o raciocínio sem entregar a solução.</CardDescription>
-                  </CardHeader>
-                  <CardContent class="hint-content">
-                    <div class="hint-block">
-                      <p class="section-label">Pista do professor</p>
-                      <p>{{ activeExercise.professor_note || 'Sem hint adicional para este exercício.' }}</p>
-                    </div>
-                    <div class="hint-block">
-                      <p class="section-label">Estratégia</p>
-                      <ul>
-                        <li>Separe o problema em entrada, processamento e saída antes de codar.</li>
-                        <li>Use o exemplo visível para validar o fluxo mínimo.</li>
-                        <li>Pense em um caso limite simples antes de submeter.</li>
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <section class="results-grid">
-                  <Card v-if="latestSubmission" class="outcome-card" :data-tone="submissionOutcomeTone">
-                    <CardHeader>
-                      <div class="feedback-header">
-                        <div>
-                          <p class="eyebrow">Round Outcome</p>
-                          <CardTitle>{{ submissionOutcomeTitle }}</CardTitle>
-                        </div>
-                        <div class="feedback-badges">
-                          <Badge>{{ latestSubmission.status }}</Badge>
-                          <Badge variant="outline">{{ latestSubmission.xp_awarded > 0 ? `+${latestSubmission.xp_awarded} XP` : '0 XP' }}</Badge>
-                          <Badge variant="outline">LEVEL {{ latestSubmission.user_progress.level }}</Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent class="outcome-grid">
-                      <div class="outcome-block">
-                        <p class="section-label">Execução</p>
-                        <strong>{{ latestSubmission.passed_tests }}/{{ latestSubmission.total_tests }} testes</strong>
-                        <p>{{ submissionOutcomeCopy }}</p>
-                      </div>
-                      <div class="outcome-block">
-                        <p class="section-label">Progressão</p>
-                        <strong>{{ rewardSummary }}</strong>
-                        <p>
-                          XP total: {{ latestSubmission.user_progress.xp_total }} · faltam
-                          {{ latestSubmission.user_progress.xp_to_next_level }} XP para o próximo nível
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card class="console-card">
-                    <CardHeader class="console-header">
-                      <div class="console-heading">
-                        <Terminal :size="16" />
-                        <CardTitle>Console Output</CardTitle>
-                      </div>
-                      <Badge :variant="latestSubmission?.status === 'passed' ? 'default' : 'outline'">
-                        {{ latestSubmission?.status ?? 'idle' }}
-                      </Badge>
-                    </CardHeader>
-                    <CardContent class="console-content">
-                      <div class="console-body">
-                        <div v-for="(line, index) in consoleLines" :key="`${index}-${line}`" class="console-line">
-                          <span class="console-time">{{ String(index).padStart(2, '0') }}:42</span>
-                          <span :class="line.includes('PASSOU') ? 'tag pass' : line.includes('FALHOU') ? 'tag fail' : 'tag exec'">
-                            {{ line.includes('PASSOU') ? '[PASS]' : line.includes('FALHOU') ? '[FAIL]' : '[EXEC]' }}
-                          </span>
-                          <span>{{ line }}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card v-if="latestSubmission" class="feedback-card">
-                    <CardHeader>
-                      <div class="feedback-header">
-                        <div>
-                          <p class="eyebrow">Submission</p>
-                          <CardTitle>{{ latestSubmission.passed_tests }}/{{ latestSubmission.total_tests }} testes</CardTitle>
-                        </div>
-                      <div class="feedback-badges">
-                        <Badge>{{ latestSubmission.status }}</Badge>
-                        <Badge variant="outline">{{ latestSubmission.feedback_status }}</Badge>
-                        <Badge variant="outline">{{ latestSubmission.xp_awarded > 0 ? `+${latestSubmission.xp_awarded} XP` : '0 XP' }}</Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                    <CardContent class="feedback-grid feedback-grid--stacked">
-                      <div class="feedback-column">
-                        <p class="section-label">Progressão</p>
-                        <p>{{ rewardSummary }}</p>
-                      <ul v-if="progressRewards.length">
-                        <li v-for="reward in progressRewards" :key="reward.milestone_key">{{ reward.label }}</li>
-                      </ul>
-                    </div>
-                    <div class="feedback-column">
-                      <p class="section-label">Resumo</p>
-                      <p>{{ feedbackPayload?.summary ?? latestSubmission.feedback }}</p>
-                      </div>
-                      <div class="feedback-column">
-                        <p class="section-label">Pontos fortes</p>
-                        <ul>
-                          <li v-for="item in feedbackPayload?.strengths ?? []" :key="item">{{ item }}</li>
-                        </ul>
-                      </div>
-                      <div class="feedback-column">
-                        <p class="section-label">Ajustes</p>
-                        <ul>
-                          <li v-for="item in feedbackPayload?.issues ?? []" :key="item">{{ item }}</li>
-                        </ul>
-                      </div>
-                      <div class="feedback-column">
-                        <p class="section-label">Próximos passos</p>
-                        <ul>
-                          <li v-for="item in feedbackPayload?.next_steps ?? []" :key="item">{{ item }}</li>
-                        </ul>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </section>
               </div>
             </section>
           </div>
         </ScrollArea>
-        <aside class="review-drawer" :class="{ open: chatOpen }" v-if="latestSubmission">
-          <div class="review-drawer-header">
-            <div>
-              <p class="eyebrow">IA Review</p>
-              <h3>Conversar sobre a submissão</h3>
-            </div>
-            <button class="review-drawer-close" @click="chatOpen = false" aria-label="Fechar revisão com IA">
-              <X :size="16" />
-            </button>
-          </div>
-          <div class="review-drawer-meta">
-            <Badge>{{ latestSubmission.status }}</Badge>
-            <Badge variant="outline">{{ latestSubmission.feedback_source }}</Badge>
-          </div>
-          <div class="review-chat-log">
-            <article
-              v-for="(message, index) in chatMessages"
-              :key="`${message.role}-${index}`"
-              class="review-chat-message"
-              :class="message.role"
-            >
-              <strong>{{ message.role === 'assistant' ? 'IA' : 'Você' }}</strong>
-              <div class="markdown-body" v-html="renderMessage(message.content)"></div>
-            </article>
-            <div v-if="isChatBusy" class="review-chat-message assistant">
-              <strong>IA</strong>
-              <p><LoaderCircle class="inline-loader" :size="16" /> Revisando sua dúvida...</p>
-            </div>
-          </div>
-          <div class="review-chat-form">
-            <textarea
-              v-model="chatInput"
-              class="review-chat-input"
-              rows="4"
-              placeholder="Pergunte por que falhou, como melhorar a solução ou qual raciocínio a banca esperava."
-            ></textarea>
-            <div class="review-chat-actions">
-              <Button :disabled="isChatBusy || !chatInput.trim()" @click="sendReviewChat">
-                <Send :size="16" />
-                Enviar
-              </Button>
-            </div>
-          </div>
-        </aside>
       </main>
     </div>
+    <ArenaResultsDialog
+      :open="resultsDialogOpen"
+      :tab="resultsTab"
+      :active-exercise-title="activeExercise?.title ?? ''"
+      :submission="latestSubmission"
+      :console-lines="consoleLines"
+      :submission-outcome-tone="submissionOutcomeTone"
+      :submission-outcome-title="submissionOutcomeTitle"
+      :submission-outcome-copy="submissionOutcomeCopy"
+      :reward-summary="rewardSummary"
+      :progress-rewards="progressRewards"
+      :feedback-payload="feedbackPayload"
+      :chat-messages="chatMessages"
+      :chat-input="chatInput"
+      :is-chat-busy="isChatBusy"
+      @update:open="resultsDialogOpen = $event"
+      @update:tab="resultsTab = $event"
+      @update:chat-input="chatInput = $event"
+      @send-chat="sendReviewChat"
+    />
+    <Dialog :open="restoreDialogOpen" @update:open="handleRestoreDialogOpen">
+      <DialogContent class="arena-confirm-dialog" :show-close="true">
+        <DialogHeader>
+          <DialogTitle>Restaurar última submissão?</DialogTitle>
+          <DialogDescription>
+            Encontramos uma tentativa anterior sua para
+            <strong>{{ pendingRestoreSubmission?.exercise_title ?? activeExercise?.title ?? 'este exercício' }}</strong>.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="hint-content">
+          <div class="hint-block">
+            <p class="section-label">Escolha como abrir</p>
+            <p>Você pode continuar da sua última submissão salva ou começar com o editor totalmente em branco.</p>
+          </div>
+          <label class="remember-choice-row">
+            <input v-model="rememberRestoreChoice" type="checkbox" />
+            <span>Lembrar minha resposta</span>
+          </label>
+        </div>
+        <div class="arena-confirm-dialog__actions">
+          <Button variant="outline" @click="declineRestoreSubmission">Começar em branco</Button>
+          <Button @click="confirmRestoreSubmission">Abrir última submissão</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    <Dialog :open="hintsOpen" @update:open="hintsOpen = $event">
+      <DialogContent class="hint-dialog" :show-close="true">
+        <DialogHeader>
+          <DialogTitle>Dicas</DialogTitle>
+          <DialogDescription>Pistas opcionais para destravar o raciocínio sem entregar a solução.</DialogDescription>
+        </DialogHeader>
+        <div class="hint-content">
+          <div class="hint-block">
+            <p class="section-label">Pista do professor</p>
+            <p>{{ activeExercise?.professor_note || 'Sem hint adicional para este exercício.' }}</p>
+          </div>
+          <div class="hint-block">
+            <p class="section-label">Estratégia</p>
+            <ul>
+              <li>Separe o problema em entrada, processamento e saída antes de codar.</li>
+              <li>Use o exemplo visível para validar o fluxo mínimo.</li>
+              <li>Pense em um caso limite simples antes de submeter.</li>
+            </ul>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    <ProfileModal v-if="showProfile" @close="showProfile = false" />
   </div>
 </template>

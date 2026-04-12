@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { useSession } from '@/lib/session'
+import { useSession } from '@/entities/session'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -23,7 +23,7 @@ async function handleLogin() {
   try {
     await session.login(nickname.value, password.value)
     emit('close')
-    await router.push({ name: 'arena' })
+    await router.push({ name: 'navigator' })
   } catch (error) {
     console.error(error)
     errorMessage.value = 'Não foi possível autenticar com esse nickname e senha.'

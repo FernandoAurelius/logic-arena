@@ -55,9 +55,12 @@ Para a navegação deixar de ser apenas estrutural e passar a ser pedagógica, o
 
 Valores possíveis na primeira versão:
 
-- `exam_like`
-- `practice`
-- `integrative`
+- `core_drill`
+- `exam_simulation`
+- `guided_build`
+- `integrative_case`
+
+Esses valores são mais úteis do que rótulos vagos como `practice`, porque comunicam melhor a intenção pedagógica e o tipo de experiência esperada.
 
 ### `estimated_time_minutes`
 
@@ -124,6 +127,78 @@ Uma `M2` bem concluída precisa permitir que o usuário:
 - saiba qual trilha está fazendo;
 - perceba o próximo passo natural.
 
+## 4.1 Leitura mais madura de `exercise_type`
+
+### Por que o desenho anterior era raso
+
+Tipos como:
+
+- `exam_like`
+- `practice`
+- `integrative`
+
+até apontam direções, mas continuam amplos demais. Eles não ajudam muito a decidir:
+
+- qual UI usar;
+- qual tom de ajuda oferecer;
+- quanto guidance mostrar;
+- qual expectativa de esforço comunicar.
+
+### Proposta refinada de primeiros valores
+
+#### `core_drill`
+
+Exercício curto, objetivo, focado em uma habilidade central.
+
+Exemplos:
+
+- entrada e saída
+- conversão
+- condição simples
+- laço curto
+
+Experiência esperada:
+
+- resolução rápida;
+- pouco contexto extra;
+- ideal para aquecimento e treino concentrado.
+
+#### `exam_simulation`
+
+Exercício que emula mais diretamente o estilo de prova do professor.
+
+Experiência esperada:
+
+- ambiente mais seco;
+- menos ajuda;
+- sensação mais forte de avaliação;
+- destaque para formato de entrada e saída.
+
+#### `guided_build`
+
+Exercício que ainda é de prática, mas comporta scaffold mental mais claro, hints mais estratégicos e leitura em etapas.
+
+Experiência esperada:
+
+- pode ter subobjetivos;
+- pode mostrar checklist da solução;
+- serve bem para construir repertório sem virar tutorial demais.
+
+#### `integrative_case`
+
+Desafio mais amplo, que integra várias peças de raciocínio ou até várias camadas do sistema.
+
+Experiência esperada:
+
+- leitura mais longa;
+- maior tempo estimado;
+- trilha mais avançada;
+- maior peso na percepção de domínio.
+
+### Conclusão
+
+Esses quatro tipos iniciais já são suficientes para orientar UI, copy, dificuldade percebida e evolução do catálogo sem criar tipologia demais cedo.
+
 ## 5. Checklist de fechamento realista
 
 ### Backend
@@ -139,6 +214,7 @@ Uma `M2` bem concluída precisa permitir que o usuário:
 - filtros básicos
 - estado visual do exercício atual dentro da trilha
 - caminho sugerido de progressão
+- tratamento visual coerente para pelo menos os primeiros `exercise_type`
 
 ### Conteúdo
 
@@ -157,14 +233,67 @@ Para não inflar a milestone além do necessário, eu não colocaria aqui:
 
 Esses pontos dependem da `M2`, mas pertencem a outras milestones.
 
+## 7. Decisão final de fechamento
+
+### Fonte de verdade da taxonomia na M2
+
+Para fechar a `M2` sem inflar escopo indevidamente, a fonte de verdade de:
+
+- `exercise_type`
+- `estimated_time_minutes`
+- `exercise_order`
+
+permanece em `backend/arena/catalog.py`.
+
+### Justificativa
+
+- a taxonomia já funciona ponta a ponta no produto;
+- a API já expõe esses metadados ao frontend;
+- a `Track Page`, o `Navigator` e a `Arena` já dependem dessa camada curada;
+- persistir isso no banco agora aumentaria escopo com migration, backfill e risco de divergência sem entregar ganho proporcional de UX nesta milestone.
+
+### Leitura correta
+
+Isso não é uma lacuna acidental. É uma decisão deliberada de `M2`.
+
+A persistência editável desses metadados deve entrar apenas quando o catálogo precisar ser alterado por painel/API administrativa, sem depender de deploy.
+
+## 8. Leitura final do status
+
+Com a implementação atual, a `M2` pode ser considerada **fechada no escopo inicial**.
+
+### Fechamos de fato
+
+- navegação autenticada por catálogo;
+- `Navigator` como superfície dedicada;
+- `Track Page` como leitura de progressão;
+- contexto de trilha refletido na `Arena`;
+- filtros básicos e estado visual de progresso;
+- taxonomia mínima funcional exposta pela API;
+- documentação pedagógica por módulo.
+
+### Não entra mais nesta milestone
+
+- persistência em banco da taxonomia curada;
+- ranking;
+- achievements;
+- mastery scoring avançado;
+- gamificação mais pesada;
+- expansão full-stack do catálogo.
+
 ## Sequência recomendada para completar a M2
 
 1. adicionar metadados mínimos faltantes no domínio
 2. expor filtro/catálogo estruturado na API
-3. refazer a navegação lateral para categoria + trilha
-4. adicionar filtros básicos
-5. comunicar ordem recomendada de progressão
-6. revisar seed e classificação final
+3. refinar `exercise_type` e seus primeiros valores
+4. refazer a navegação lateral para categoria + trilha
+5. adicionar filtros básicos
+6. comunicar ordem recomendada de progressão
+7. revisar seed e classificação final
+
+## Próxima leitura
+
+- [[M2 - Navegação Autenticada e Tipos de Exercício]]
 
 ## Conclusão operacional
 
@@ -173,3 +302,84 @@ Se a pergunta é “o que falta para a tarefa estar realmente concluída no esco
 **falta transformar taxonomia em navegação pedagógica de verdade**.
 
 Hoje a taxonomia existe. O que ainda não existe plenamente é a experiência canônica baseada nela.
+
+## Atualização de implementação - 2026-04-11
+
+A `M2` deixou de ser apenas direção conceitual e ganhou uma primeira fatia real no produto.
+
+### O que entrou no backend
+
+- nova camada `arena/catalog.py` com metadados editoriais por trilha;
+- enriquecimento do resumo de exercício com:
+  - `exercise_type`
+  - `exercise_type_label`
+  - `estimated_time_minutes`
+  - `concept_summary`
+- novo endpoint autenticado `GET /api/catalog/navigator`
+- novo endpoint autenticado `GET /api/catalog/tracks/{track_slug}`
+
+### O que esses endpoints resolvem
+
+O catálogo não precisa mais ser reconstruído inteiramente no frontend a partir de uma lista plana de exercícios.
+
+Agora o backend já devolve:
+
+- categorias com trilhas agregadas;
+- progresso por trilha;
+- `current_target` por trilha;
+- roadmap de exercícios com estado:
+  - `passed`
+  - `in_progress`
+  - `available`
+  - `locked`
+- milestone/checkpoint da trilha;
+- conceitos e pré-requisitos editoriais da trilha.
+
+### O que entrou no frontend
+
+- nova rota autenticada `Navigator`
+- nova rota autenticada `Track`
+- redirecionamento pós-login para `Navigator`
+- arena aceitando contexto via query string:
+  - `exercise`
+  - `track`
+- rail lateral da arena ficando contextual quando aberta a partir de uma trilha
+
+### Leitura honesta desta fatia
+
+Essa implementação **não fecha toda a M2**, mas muda o estado da milestone de forma importante:
+
+- já existe uma superfície real de descoberta (`Navigator`);
+- já existe uma superfície real de progressão (`Track Page`);
+- a arena já começou a respeitar contexto de trilha;
+- a plataforma já comunica melhor tipos de exercício, tempo estimado e target atual.
+
+### O que ainda ficou para a próxima fatia
+
+- persistir os metadados novos no domínio, em vez de depender de catálogo editorial em código;
+- modelar explicitamente a camada de `Concept` e explicações reaproveitáveis;
+- adicionar filtros de verdade no `Navigator`;
+- aprofundar a ligação entre `Track Page`, documentação e Arena;
+- refinar a ordem pedagógica com `sort_order` explícito por exercício.
+
+### Refinamento de UX na segunda rodada
+
+Depois da primeira materialização, a navegação ganhou uma segunda revisão importante:
+
+- o catálogo e a trilha passaram a oferecer botões mais diretos de ida e volta entre superfícies;
+- o roadmap da trilha foi reorganizado para parecer mais com um caminho do que com uma lista;
+- a Arena passou a expor atalhos contextuais para `Navigator`, `Track` e navegação entre steps;
+- o seletor de tema foi exposto na UI autenticada, consolidando uma direção de personalização simples e uniforme.
+
+Essa camada não altera a tese da `M2`; ela apenas deixa a experiência menos frágil na prática.
+
+## Ajuste de navegação - 2026-04-11
+
+A segunda rodada de refinamento começou a atacar a fricção que sobrou na ida e volta entre superfícies:
+
+- a `Track Page` agora opera mais como mapa do que como lista vertical;
+- os steps seguem a sequência pedagógica dos módulos, e não a ordem casual do banco;
+- a `Arena` ganhou atalhos explícitos para `Navigator`, `Track Roadmap` e `Próxima etapa`;
+- o rail lateral continua contextual quando a arena é aberta a partir de uma trilha.
+
+Isso aproxima bastante a experiência do fluxo ideal que queríamos para a `M2`.
