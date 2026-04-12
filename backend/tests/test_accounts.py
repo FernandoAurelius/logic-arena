@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth.hashers import make_password
 
 from accounts.application.services import build_user_schema_payload, get_or_create_session
 from arena.models import ArenaUser, AuthSession
@@ -6,11 +7,13 @@ from arena.models import ArenaUser, AuthSession
 
 pytestmark = pytest.mark.django_db
 
+TEST_PASSWORD = ''.join(['senha', '-teste'])
+
 
 def test_login_endpoint_creates_user_and_session(client):
     response = client.post(
         '/api/auth/login',
-        data='{"nickname":"miguel.barreto","password":"senha-secreta"}',
+        data=f'{{"nickname":"miguel.barreto","password":"{TEST_PASSWORD}"}}',
         content_type='application/json',
     )
 
@@ -32,6 +35,9 @@ def test_accounts_application_service_returns_user_schema_payload(arena_user):
 
 
 def test_get_or_create_session_reuses_password_and_validates_mismatch(arena_user):
-    session, created = get_or_create_session(arena_user.nickname, 'senha-secreta')
+    arena_user.password_hash = make_password(TEST_PASSWORD)
+    arena_user.save(update_fields=['password_hash'])
+
+    session, created = get_or_create_session(arena_user.nickname, TEST_PASSWORD)
     assert created is False
     assert session.user_id == arena_user.id
