@@ -69,8 +69,9 @@ def _collapse_inline(value: str) -> str:
 
 
 def _get_exercise_type_label(exercise: Exercise) -> str:
-    if exercise.exercise_type:
-        return exercise.exercise_type.name
+    exercise_type = getattr(exercise, 'exercise_type', None)
+    if exercise_type:
+        return exercise_type.name
     return 'Drill de implementação'
 
 
@@ -79,16 +80,16 @@ def _build_code_examples(exercise: Exercise, track: ExerciseTrack | None) -> lis
         ' '.join(
             filter(
                 None,
-                [
-                    exercise.title,
-                    exercise.statement,
-                    exercise.professor_note,
-                    track.description if track else '',
-                    track.goal if track else '',
-                ],
+                    [
+                        exercise.title,
+                        exercise.statement,
+                        exercise.professor_note,
+                        getattr(track, 'description', '') if track else '',
+                        getattr(track, 'goal', '') if track else '',
+                    ],
+                )
             )
         )
-    )
 
     examples: list[ExplanationCodeExampleSeed] = []
 
@@ -198,12 +199,14 @@ print(resultado)""",
 
 
 def build_explanation_blueprint(exercise: Exercise) -> ExplanationBlueprint:
-    track = exercise.track
+    track = getattr(exercise, 'track', None)
     exercise_type_label = _get_exercise_type_label(exercise)
     statement_excerpt = _first_non_empty_line(exercise.statement) or exercise.title
     professor_note = _collapse_inline(exercise.professor_note)
     sample_input = _collapse_inline(exercise.sample_input)
     sample_output = _collapse_inline(exercise.sample_output)
+    track_concepts = getattr(track, 'concepts', None)
+    track_prerequisites = getattr(track, 'prerequisites', None)
     concepts = [
         ExplanationConceptSeed(
             title=concept.title,
@@ -211,10 +214,14 @@ def build_explanation_blueprint(exercise: Exercise) -> ExplanationBlueprint:
             why_it_matters=concept.why_it_matters,
             common_mistake=concept.common_mistake,
         )
-        for concept in (track.concepts.all() if track else ())
+        for concept in (track_concepts.all() if track_concepts is not None else ())
     ]
     concept_titles = ', '.join(concept.title for concept in concepts) if concepts else 'leitura precisa do enunciado'
-    prerequisites = [prerequisite.label for prerequisite in track.prerequisites.all()] if track else ['Leitura atenta do enunciado', 'Saída exata com `print`']
+    prerequisites = (
+        [prerequisite.label for prerequisite in track_prerequisites.all()]
+        if track_prerequisites is not None
+        else ['Leitura atenta do enunciado', 'Saída exata com `print`']
+    )
     contextual_note = f' Observação do professor: {professor_note}.' if professor_note else ''
     io_contract = ''
     if sample_input or sample_output:

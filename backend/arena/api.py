@@ -27,6 +27,16 @@ from .schemas import (
     UserSchema,
 )
 from .feedback import review_submission_chat
+from .selectors import (
+    get_active_exercise_by_slug,
+    get_exercise_for_track,
+    get_module_by_slug,
+    get_submission_for_user,
+    get_track_by_slug,
+    list_active_exercises,
+    list_navigator_modules,
+    list_user_submissions,
+)
 from .services import (
     build_exercise_progress_payload,
     build_exercise_catalog_meta,
@@ -162,8 +172,7 @@ def list_exercises(request, authorization: str | None = Header(default=None)):
         require_session(authorization)
     except PermissionError as error:
         return 401, {'message': str(error)}
-    exercises = Exercise.objects.filter(is_active=True).select_related('category', 'track', 'track__module', 'exercise_type')
-    return 200, [serialize_exercise_summary(exercise) for exercise in exercises]
+    return 200, [serialize_exercise_summary(exercise) for exercise in list_active_exercises()]
 
 
 @exercise_router.get('/{slug}', response={200: ExerciseDetailSchema, 401: ErrorSchema}, summary='Detalha um exercício específico.')
@@ -172,7 +181,7 @@ def get_exercise(request, slug: str, authorization: str | None = Header(default=
         require_session(authorization)
     except PermissionError as error:
         return 401, {'message': str(error)}
-    exercise = get_object_or_404(Exercise.objects.prefetch_related('test_cases').select_related('category', 'track', 'track__module', 'exercise_type'), slug=slug, is_active=True)
+    exercise = get_object_or_404(list_active_exercises().prefetch_related('test_cases'), slug=slug, is_active=True)
     return 200, {
         **serialize_exercise_summary(exercise),
         'statement': exercise.statement,
@@ -190,7 +199,7 @@ def get_navigator(request, authorization: str | None = Header(default=None)):
     except PermissionError as error:
         return 401, {'message': str(error)}
 
-    modules = LearningModule.objects.prefetch_related('tracks__exercises').all()
+    modules = list_navigator_modules()
     serialized_modules = []
     recommended_module_slug = None
     recommended_module_name = None
@@ -253,7 +262,7 @@ def get_module_detail(request, module_slug: str, authorization: str | None = Hea
     except PermissionError as error:
         return 401, {'message': str(error)}
 
-    module = LearningModule.objects.prefetch_related('tracks__exercises').filter(slug=module_slug).first()
+    module = get_module_by_slug(module_slug)
     if module is None:
         return 404, {'message': 'Módulo não encontrado.'}
 
@@ -302,7 +311,7 @@ def get_track_detail(request, track_slug: str, authorization: str | None = Heade
     except PermissionError as error:
         return 401, {'message': str(error)}
 
-    track = ExerciseTrack.objects.select_related('category', 'module').prefetch_related('concepts', 'prerequisites').filter(slug=track_slug).first()
+    track = get_track_by_slug(track_slug)
     if track is None:
         return 404, {'message': 'Trilha não encontrada.'}
 
@@ -392,7 +401,7 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
     except PermissionError as error:
         return 401, {'message': str(error)}
 
-    track = ExerciseTrack.objects.select_related('category', 'module').prefetch_related('concepts', 'prerequisites').filter(slug=track_slug).first()
+    track = get_track_by_slug(track_slug)
     if track is None:
         return 404, {'message': 'Trilha não encontrada.'}
 
@@ -690,12 +699,15 @@ def update_track(request, track_slug: str, payload: TrackUpdateSchema, authoriza
     except PermissionError as error:
         return 401, {'message': str(error)}
 
-    track = ExerciseTrack.objects.select_related('category', 'module').prefetch_related('concepts', 'prerequisites').filter(slug=track_slug).first()
+    track = get_track_by_slug(track_slug)
     if track is None:
         return 404, {'message': 'Trilha não encontrada.'}
 
     if payload.module_slug is not None:
-        track.module = LearningModule.objects.filter(slug=payload.module_slug).first()
+        module = LearningModule.objects.filter(slug=payload.module_slug).first()
+        if module is None:
+            return 404, {'message': 'Módulo não encontrado.'}
+        track.module = module
     if payload.category_slug is not None:
         category = ExerciseCategory.objects.filter(slug=payload.category_slug).first()
         if category is None:
@@ -743,7 +755,7 @@ def update_exercise_catalog(request, slug: str, payload: ExerciseCatalogUpdateSc
     except PermissionError as error:
         return 401, {'message': str(error)}
 
-    exercise = Exercise.objects.select_related('track', 'category').prefetch_related('test_cases').filter(slug=slug).first()
+    exercise = get_active_exercise_by_slug(slug)
     if exercise is None:
         return 404, {'message': 'Exercício não encontrado.'}
 
@@ -829,7 +841,7 @@ def list_my_submissions(request, authorization: str | None = Header(default=None
             'feedback_source': submission.feedback_source,
             'created_at': submission.created_at,
         }
-        for submission in session.user.submissions.select_related('exercise').all()
+        for submission in list_user_submissions(session.user)
     ]
 
 
@@ -840,7 +852,7 @@ def get_submission(request, submission_id: int, authorization: str | None = Head
     except PermissionError as error:
         return 401, {'message': str(error)}
 
-    submission = Submission.objects.select_related('exercise').filter(id=submission_id, user=session.user).first()
+    submission = get_submission_for_user(session.user, submission_id)
     if submission is None:
         return 404, {'message': 'Submissão não encontrada.'}
 
@@ -854,7 +866,7 @@ def review_chat(request, submission_id: int, payload: ReviewChatInputSchema, aut
     except PermissionError as error:
         return 401, {'message': str(error)}
 
-    submission = Submission.objects.select_related('exercise').filter(id=submission_id, user=session.user).first()
+    submission = get_submission_for_user(session.user, submission_id)
     if submission is None:
         return 404, {'message': 'Submissão não encontrada.'}
 
