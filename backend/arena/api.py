@@ -704,7 +704,10 @@ def update_track(request, track_slug: str, payload: TrackUpdateSchema, authoriza
         return 404, {'message': 'Trilha não encontrada.'}
 
     if payload.module_slug is not None:
-        track.module = LearningModule.objects.filter(slug=payload.module_slug).first()
+        module = LearningModule.objects.filter(slug=payload.module_slug).first()
+        if module is None:
+            return 404, {'message': 'Módulo não encontrado.'}
+        track.module = module
     if payload.category_slug is not None:
         category = ExerciseCategory.objects.filter(slug=payload.category_slug).first()
         if category is None:

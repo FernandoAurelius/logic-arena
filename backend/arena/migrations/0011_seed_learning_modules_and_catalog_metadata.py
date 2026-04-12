@@ -456,7 +456,6 @@ EXERCISE_ASSIGNMENTS = {
 
 
 def seed_catalog(apps, schema_editor):
-    ArenaUser = apps.get_model('arena', 'ArenaUser')
     Exercise = apps.get_model('arena', 'Exercise')
     ExerciseCategory = apps.get_model('arena', 'ExerciseCategory')
     ExerciseTrack = apps.get_model('arena', 'ExerciseTrack')
@@ -465,8 +464,6 @@ def seed_catalog(apps, schema_editor):
     ExerciseTrackConcept = apps.get_model('arena', 'ExerciseTrackConcept')
     ExerciseTrackPrerequisite = apps.get_model('arena', 'ExerciseTrackPrerequisite')
     ExerciseExplanation = apps.get_model('arena', 'ExerciseExplanation')
-
-    ArenaUser.objects.update(is_catalog_admin=True)
 
     for exercise_type_data in EXERCISE_TYPES:
         ExerciseType.objects.update_or_create(

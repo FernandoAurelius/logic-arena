@@ -81,3 +81,18 @@ def test_explanation_endpoint_returns_persisted_content(client, auth_headers, ca
     assert payload['concepts']
     assert payload['code_examples']
     assert any('if' in example['code'] or 'print' in example['code'] for example in payload['code_examples'])
+
+
+def test_update_track_rejects_unknown_module_slug(client, auth_headers, arena_user, catalog_graph):
+    arena_user.is_catalog_admin = True
+    arena_user.save(update_fields=['is_catalog_admin'])
+
+    response = client.patch(
+        f"/api/catalog-admin/tracks/{catalog_graph['track'].slug}",
+        data='{"module_slug":"modulo-inexistente"}',
+        content_type='application/json',
+        **auth_headers,
+    )
+
+    assert response.status_code == 404
+    assert response.json()['message'] == 'Módulo não encontrado.'
