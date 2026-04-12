@@ -1,10 +1,10 @@
 import type { infer as ZodInfer } from 'zod'
 
+import type { TrackDetail } from '@/entities/track'
 import { schemas } from '@/shared/api/generated'
 import { apiClients } from '@/shared/api/zodios'
 
 type NavigatorResponse = ZodInfer<typeof schemas.NavigatorResponseSchema>
-type TrackDetail = ZodInfer<typeof schemas.TrackDetailSchema>
 
 export const catalogApi = {
   async getNavigator(authorization?: string): Promise<NavigatorResponse> {
