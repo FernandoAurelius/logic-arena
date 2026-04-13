@@ -1,9 +1,5 @@
-import type { infer as ZodInfer } from 'zod'
-
-import { schemas } from '@/shared/api/generated'
-import { apiClients } from '@/shared/api/zodios'
-
-type ExerciseExplanation = ZodInfer<typeof schemas.ExerciseExplanationSchema>
+import type { ExerciseExplanation } from '@/entities/explanation'
+import { apiClients, buildAuthHeaders } from '@/shared/api'
 
 export const explanationApi = {
   async getByTrackAndExercise(trackSlug: string, exerciseSlug: string, authorization?: string): Promise<ExerciseExplanation> {
@@ -12,7 +8,7 @@ export const explanationApi = {
         track_slug: trackSlug,
         exercise_slug: exerciseSlug,
       },
-      headers: { authorization: authorization ?? undefined },
+      headers: buildAuthHeaders(authorization),
     }) as Promise<ExerciseExplanation>
   },
 }
