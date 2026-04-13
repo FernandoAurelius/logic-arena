@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'accounts',
     'catalog',
     'learning',
+    'practice',
     'arena',
 ]
 
