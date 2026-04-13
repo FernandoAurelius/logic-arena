@@ -157,10 +157,6 @@ export function useArenaPage() {
     void router.push({ name: 'track', params: { trackSlug: workspace.routeTrackSlug.value } })
   }
 
-  function goArena() {
-    void router.push({ name: 'arena' })
-  }
-
   async function logout() {
     submissionFlow.stopFeedbackPolling()
     session.clearSession()
@@ -230,13 +226,9 @@ export function useArenaPage() {
     xpProgress,
     xpToNextLevel,
     submissionFlow,
-    bootstrapArena: workspace.bootstrapArena,
-    loadTrackContext: workspace.loadTrackContext,
-    loadSubmissions: workspace.loadSubmissions,
     selectExercise: handleSelectExercise,
     navigateTrackExercise,
     openSubmissionSession: handleOpenSubmissionSession,
-    setHydratedSubmission: workspace.setHydratedSubmission,
     confirmRestoreSubmission,
     declineRestoreSubmission,
     handleRestoreDialogOpen,
@@ -246,7 +238,6 @@ export function useArenaPage() {
     toggleHints,
     goNavigator,
     goTrack,
-    goArena,
     logout,
   }
 }

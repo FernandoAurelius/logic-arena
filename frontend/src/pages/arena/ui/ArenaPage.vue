@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useArenaPage } from '@/pages/arena/model/useArenaPage'
 import ArenaToolbar from '@/widgets/arena/ArenaToolbar.vue'
 import ArenaSpecPanel from '@/widgets/arena/ArenaSpecPanel.vue'
+
 const {
   session,
   hintsOpen,
@@ -160,15 +161,15 @@ const {
                   :is-submitting="submissionFlow.isSubmitting.value"
                   :is-booting="isBooting"
                   :track-name="trackContext?.name ?? null"
-              :active-track-index="activeTrackIndex"
-              :track-exercise-count="trackExercises.length"
-              :active-track-brief="activeTrackIndex >= 0 ? trackExercises[activeTrackIndex]?.pedagogical_brief ?? null : null"
-              :visible-test-cases="visibleTestCases"
-              @update:spec-tab="specTab = $event"
+                  :active-track-index="activeTrackIndex"
+                  :track-exercise-count="trackExercises.length"
+                  :active-track-brief="activeTrackIndex >= 0 ? trackExercises[activeTrackIndex]?.pedagogical_brief ?? null : null"
+                  :visible-test-cases="visibleTestCases"
+                  @update:spec-tab="specTab = $event"
                   @go-navigator="goNavigator"
                   @go-track="goTrack"
-            />
-          </div>
+                />
+              </div>
 
               <div class="right-column">
                 <Card class="editor-card editor-card--compact">

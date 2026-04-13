@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import LandingView from '@/views/LandingView.vue'
-import ArenaView from '@/views/ArenaView.vue'
 import NavigatorView from '@/views/NavigatorView.vue'
 import TrackView from '@/views/TrackView.vue'
 import ExplanationView from '@/views/ExplanationView.vue'
 import TutorialView from '@/views/TutorialView.vue'
+import ArenaPage from '@/pages/arena/ui/ArenaPage.vue'
 import { useSession } from '@/entities/session'
 
 const router = createRouter({
@@ -41,7 +41,7 @@ const router = createRouter({
     {
       path: '/arena',
       name: 'arena',
-      component: ArenaView,
+      component: ArenaPage,
       meta: { requiresAuth: true },
     },
     {
