@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import '@/styles/catalog.css'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import '@/pages/arena/style.css'
 import { LogOut, UserRound } from 'lucide-vue-next'
-import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api/generated'
 import ArenaResultsDialog from '@/components/arena/ArenaResultsDialog.vue'
 import ArenaSidebar from '@/components/arena/ArenaSidebar.vue'
 import MonacoEditor from '@/components/editor/MonacoEditor.vue'
@@ -14,30 +11,18 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useSession } from '@/entities/session'
-import { useArenaExerciseWorkspace } from '@/features/arena/open-exercise/model/useArenaExerciseWorkspace'
-import { useArenaSubmissionFlow } from '@/features/arena/submission/model/useArenaSubmissionFlow'
+import { useArenaPage } from '@/pages/arena/model/useArenaPage'
 import ArenaToolbar from '@/widgets/arena/ArenaToolbar.vue'
 import ArenaSpecPanel from '@/widgets/arena/ArenaSpecPanel.vue'
-
-type Submission = ZodInfer<typeof schemas.SubmissionSchema>
-type SubmissionSummary = ZodInfer<typeof schemas.SubmissionSummarySchema>
-
-const router = useRouter()
-const route = useRoute()
-const session = useSession()
-
-const hintsOpen = ref(false)
-const chatInput = ref('')
-const confettiBurst = ref(false)
-const levelUpBurst = ref(false)
-const showProfile = ref(false)
-const specTab = ref<'descricao' | 'exemplos' | 'testes'>('descricao')
-
-let levelUpTimer: number | null = null
-let submissionFlowRef: ReturnType<typeof useArenaSubmissionFlow> | null = null
-
 const {
+  session,
+  hintsOpen,
+  chatInput,
+  confettiBurst,
+  levelUpBurst,
+  showProfile,
+  specTab,
+  routeTrackSlug,
   exercises,
   activeExercise,
   trackContext,
@@ -49,181 +34,33 @@ const {
   restoreDialogOpen,
   pendingRestoreSubmission,
   rememberRestoreChoice,
-  routeTrackSlug,
   groupedExercises,
   trackExercises,
+  activeIndex,
+  visibleTestCases,
+  level,
+  xpProgress,
+  xpIntoLevel,
+  xpToNextLevel,
   activeTrackIndex,
   previousTrackExercise,
   nextTrackExercise,
   sidebarHistory,
-  bootstrapArena,
-  loadTrackContext,
-  loadSubmissions,
-  selectExercise: selectExerciseFromWorkspace,
-  navigateTrackExercise: navigateTrackExerciseFromWorkspace,
-  openSubmissionSession: openSubmissionSessionFromWorkspace,
-  setHydratedSubmission,
-  confirmRestoreSubmission: confirmRestoreSubmissionFromWorkspace,
-  declineRestoreSubmission: declineRestoreSubmissionFromWorkspace,
-  handleRestoreDialogOpen: handleRestoreDialogOpenFromWorkspace,
-} = useArenaExerciseWorkspace({
-  authHeader: () => session.authHeader(),
-  onSubmissionHydrated: applySubmissionProgress,
-  onStopFeedbackPolling: () => submissionFlowRef?.stopFeedbackPolling(),
-  onStartFeedbackPolling: (submissionId) => submissionFlowRef?.startFeedbackPolling(submissionId),
-})
-
-const activeIndex = computed(() => {
-  if (!activeExercise.value) return 0
-  return exercises.value.findIndex((exercise) => exercise.slug === activeExercise.value?.slug) + 1
-})
-const visibleTestCases = computed(() => activeExercise.value?.test_cases ?? [])
-const level = computed(() => session.currentUser.value?.level ?? 1)
-const xpIntoLevel = computed(() => session.currentUser.value?.xp_into_level ?? 0)
-const xpProgress = computed(() => Math.min(100, Math.max(0, xpIntoLevel.value)))
-const xpToNextLevel = computed(() => session.currentUser.value?.xp_to_next_level ?? 100)
-
-const submissionFlow = useArenaSubmissionFlow({
-  authHeader: () => session.authHeader(),
-  activeExerciseSlug: computed(() => activeExercise.value?.slug ?? null),
-  code,
-  latestSubmission,
-  chatMessages,
-  onSubmissionHydrated: setHydratedSubmission,
-  onSubmissionProgress: applySubmissionProgress,
-  onSubmissionPassed: () => triggerConfetti(),
-  onReloadSubmissions: loadSubmissions,
-})
-submissionFlowRef = submissionFlow
-
-function triggerLevelUp() {
-  levelUpBurst.value = true
-  if (levelUpTimer !== null) {
-    window.clearTimeout(levelUpTimer)
-  }
-  levelUpTimer = window.setTimeout(() => {
-    levelUpBurst.value = false
-  }, 2600)
-}
-
-function applySubmissionProgress(submission: Submission) {
-  const previousLevel = session.currentUser.value?.level ?? 1
-  session.mergeCurrentUserProgress(submission.user_progress)
-  if (submission.user_progress.level > previousLevel) {
-    triggerLevelUp()
-    triggerConfetti()
-  }
-}
-
-function resetArenaPanels() {
-  submissionFlow.resultsDialogOpen.value = false
-  hintsOpen.value = false
-}
-
-async function handleSelectExercise(slug: string) {
-  resetArenaPanels()
-  await selectExerciseFromWorkspace(slug)
-}
-
-function navigateTrackExercise(direction: 'previous' | 'next') {
-  resetArenaPanels()
-  navigateTrackExerciseFromWorkspace(direction)
-}
-
-async function handleOpenSubmissionSession(submissionSummary: SubmissionSummary) {
-  resetArenaPanels()
-  await openSubmissionSessionFromWorkspace(submissionSummary)
-}
-
-async function confirmRestoreSubmission() {
-  await confirmRestoreSubmissionFromWorkspace()
-  submissionFlow.resultsDialogOpen.value = false
-}
-
-function declineRestoreSubmission() {
-  declineRestoreSubmissionFromWorkspace()
-  submissionFlow.resultsDialogOpen.value = false
-}
-
-function handleRestoreDialogOpen(nextOpen: boolean) {
-  handleRestoreDialogOpenFromWorkspace(nextOpen)
-}
-
-async function submitSolution() {
-  if (!activeExercise.value || !session.token.value) {
-    errorMessage.value = 'Faça login antes de submeter uma solução.'
-    return
-  }
-
-  errorMessage.value = ''
-
-  try {
-    pendingRestoreSubmission.value = null
-    restoreDialogOpen.value = false
-    await submissionFlow.submitSolution()
-  } catch (error) {
-    console.error(error)
-    errorMessage.value = 'Não foi possível processar a submissão.'
-  }
-}
-
-async function sendReviewChat() {
-  await submissionFlow.sendReviewChat(chatInput)
-}
-
-function triggerConfetti() {
-  confettiBurst.value = false
-  window.setTimeout(() => {
-    confettiBurst.value = true
-    window.setTimeout(() => {
-      confettiBurst.value = false
-    }, 2200)
-  }, 20)
-}
-
-watch(
-  () => route.query.track,
-  (trackSlug) => {
-    void loadTrackContext(typeof trackSlug === 'string' ? trackSlug : null)
-  },
-)
-
-watch(
-  () => route.query.exercise,
-  (exerciseSlug) => {
-    if (typeof exerciseSlug !== 'string' || !exerciseSlug || activeExercise.value?.slug === exerciseSlug) {
-      return
-    }
-    if (exercises.value.some((exercise) => exercise.slug === exerciseSlug)) {
-      void handleSelectExercise(exerciseSlug)
-    }
-  },
-)
-
-function openReviewChat() {
-  submissionFlow.openReviewChat()
-}
-
-function toggleHints() {
-  hintsOpen.value = !hintsOpen.value
-}
-
-async function logout() {
-  submissionFlow.stopFeedbackPolling()
-  session.clearSession()
-  await router.push({ name: 'landing' })
-}
-
-onMounted(() => {
-  void bootstrapArena()
-})
-
-onBeforeUnmount(() => {
-  submissionFlow.stopFeedbackPolling()
-  if (levelUpTimer !== null) {
-    window.clearTimeout(levelUpTimer)
-  }
-})
+  submissionFlow,
+  selectExercise,
+  navigateTrackExercise,
+  openSubmissionSession,
+  confirmRestoreSubmission,
+  declineRestoreSubmission,
+  handleRestoreDialogOpen,
+  submitSolution,
+  sendReviewChat,
+  openReviewChat,
+  toggleHints,
+  goNavigator,
+  goTrack,
+  logout,
+} = useArenaPage()
 </script>
 
 <template>
@@ -239,14 +76,9 @@ onBeforeUnmount(() => {
       <div class="topbar-left">
         <span class="brand-wordmark">LOGIC ARENA</span>
         <nav class="workspace-nav">
-          <button class="workspace-nav-link" type="button" @click="router.push({ name: 'navigator' })">Navegador</button>
+          <button class="workspace-nav-link" type="button" @click="goNavigator">Navegador</button>
           <button class="workspace-nav-link workspace-nav-link--active" type="button">Arena</button>
-          <button
-            v-if="typeof route.query.track === 'string'"
-            class="workspace-nav-link"
-            type="button"
-            @click="router.push({ name: 'track', params: { trackSlug: route.query.track } })"
-          >
+          <button v-if="routeTrackSlug" class="workspace-nav-link" type="button" @click="goTrack">
             Trilha
           </button>
         </nav>
@@ -285,10 +117,10 @@ onBeforeUnmount(() => {
         :track-name="trackContext?.name ?? activeExercise?.track_name ?? activeExercise?.module_name ?? null"
         :can-go-previous="Boolean(previousTrackExercise)"
         :can-go-next="Boolean(nextTrackExercise)"
-        @select-exercise="handleSelectExercise"
-        @open-history="handleOpenSubmissionSession"
-        @go-track="router.push({ name: 'track', params: { trackSlug: routeTrackSlug } })"
-        @go-navigator="router.push({ name: 'navigator' })"
+        @select-exercise="selectExercise"
+        @open-history="openSubmissionSession"
+        @go-track="goTrack"
+        @go-navigator="goNavigator"
         @navigate-track="navigateTrackExercise"
       />
 
@@ -328,15 +160,15 @@ onBeforeUnmount(() => {
                   :is-submitting="submissionFlow.isSubmitting.value"
                   :is-booting="isBooting"
                   :track-name="trackContext?.name ?? null"
-                  :active-track-index="activeTrackIndex"
-                  :track-exercise-count="trackExercises.length"
-                  :active-track-brief="activeTrackIndex >= 0 ? trackExercises[activeTrackIndex]?.pedagogical_brief ?? null : null"
-                  :visible-test-cases="visibleTestCases"
-                  @update:spec-tab="specTab = $event"
-                  @go-navigator="router.push({ name: 'navigator' })"
-                  @go-track="router.push({ name: 'track', params: { trackSlug: routeTrackSlug } })"
-                />
-              </div>
+              :active-track-index="activeTrackIndex"
+              :track-exercise-count="trackExercises.length"
+              :active-track-brief="activeTrackIndex >= 0 ? trackExercises[activeTrackIndex]?.pedagogical_brief ?? null : null"
+              :visible-test-cases="visibleTestCases"
+              @update:spec-tab="specTab = $event"
+                  @go-navigator="goNavigator"
+                  @go-track="goTrack"
+            />
+          </div>
 
               <div class="right-column">
                 <Card class="editor-card editor-card--compact">

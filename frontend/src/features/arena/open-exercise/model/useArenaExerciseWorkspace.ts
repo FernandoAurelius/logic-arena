@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api/generated'
+import { schemas } from '@/shared/api'
 import { catalogApi } from '@/entities/catalog/api/catalog.api'
 import { exerciseApi } from '@/entities/exercise/api/exercise.api'
 import { submissionApi } from '@/entities/submission/api/submission.api'

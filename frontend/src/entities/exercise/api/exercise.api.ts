@@ -1,6 +1,6 @@
 import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api/generated'
+import { schemas } from '@/shared/api'
 import { apiClients } from '@/shared/api/zodios'
 
 type ExerciseSummary = ZodInfer<typeof schemas.ExerciseSummarySchema>
