@@ -21,6 +21,26 @@ def test_practice_exercise_endpoints_return_active_catalog(client, auth_headers,
     assert payload['test_cases']
 
 
+def test_practice_can_create_exercise_via_post_endpoint(client, auth_headers):
+    response = client.post(
+        '/api/exercises/',
+        data=(
+            '{"slug":"novo-exercicio-practice","title":"Novo Exercício","statement":"Leia um valor e exiba ele.",'
+            '"category_slug":"fundamentos-post","category_name":"Fundamentos Post","track_slug":"trilha-post",'
+            '"track_name":"Trilha Post","module_slug":"modulo-post","module_name":"Módulo Post",'
+            '"exercise_type_slug":"drill-de-implementacao","test_cases":[{"input_data":"1\\n","expected_output":"1","is_hidden":false}]}'
+        ),
+        content_type='application/json',
+        **auth_headers,
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload['slug'] == 'novo-exercicio-practice'
+    assert payload['track_slug'] == 'trilha-post'
+    assert payload['module_slug'] == 'modulo-post'
+
+
 def test_submission_awards_xp_on_first_pass_and_updates_progress(client, auth_headers, arena_user, catalog_graph, monkeypatch):
     exercise = catalog_graph['exercises'][0]
 

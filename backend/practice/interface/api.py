@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from ninja import Header, Router
 
 from accounts.application.services import require_session
+from catalog.application.services import create_exercise
 from practice.application.services import (
     evaluate_submission,
     review_submission_chat,
@@ -22,6 +23,7 @@ from practice.schemas import (
     SubmissionSummarySchema,
 )
 from arena.models import Exercise
+from arena.schemas import ExerciseCreateSchema
 
 
 exercise_router = Router(tags=['exercises'])
@@ -45,6 +47,20 @@ def get_exercise(request, slug: str, authorization: str | None = Header(default=
         return 401, {'message': str(error)}
     exercise = get_object_or_404(list_active_exercises().prefetch_related('test_cases'), slug=slug, is_active=True)
     return 200, serialize_exercise_detail(exercise)
+
+
+@exercise_router.post('/', response={201: ExerciseDetailSchema, 400: ErrorSchema, 401: ErrorSchema}, summary='Cadastra um exercício novo via API.')
+def post_exercise(request, payload: ExerciseCreateSchema, authorization: str | None = Header(default=None)):
+    try:
+        require_session(authorization)
+    except PermissionError as error:
+        return 401, {'message': str(error)}
+
+    if Exercise.objects.filter(slug=payload.slug).exists():
+        return 400, {'message': 'Já existe um exercício com esse slug.'}
+
+    exercise = create_exercise(payload)
+    return 201, serialize_exercise_detail(exercise)
 
 
 @submission_router.post('/exercises/{slug}/submit', response={200: SubmissionSchema, 401: ErrorSchema}, summary='Executa os testes, persiste a submissão e devolve o resultado.')
