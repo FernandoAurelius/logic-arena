@@ -18,7 +18,6 @@ from .schemas import (
     TrackUpdateSchema,
     UserSchema,
 )
-<<<<<<< HEAD
 from .selectors import get_active_exercise_by_slug, get_module_by_slug, get_track_by_slug, list_navigator_modules
 from .services import (
     build_exercise_catalog_meta,
