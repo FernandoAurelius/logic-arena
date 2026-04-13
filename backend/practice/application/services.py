@@ -8,14 +8,14 @@ from urllib.request import Request, urlopen
 from django.conf import settings
 from django.db import close_old_connections
 
-from accounts.application.services import build_user_progress_summary
 from arena.feedback import (
     build_feedback_error_payload,
     generate_feedback,
     review_submission_chat as arena_review_submission_chat,
 )
 from arena.models import ArenaUser, Exercise, Submission, UserExerciseProgress
-from arena.services import apply_submission_progress, build_exercise_progress_payload, normalize_text
+from arena.services import normalize_text
+from progress.application.services import apply_submission_progress, build_exercise_progress_payload, build_user_progress_summary
 
 
 NUMERIC_TOLERANCE = 1e-9

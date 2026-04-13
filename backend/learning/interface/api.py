@@ -5,8 +5,9 @@ from accounts.schemas import ErrorSchema
 from arena.models import Exercise
 from arena.schemas import ExerciseExplanationSchema, TrackDetailSchema
 from arena.services import build_exercise_catalog_meta
-from learning.application.services import build_track_progress_summary, ensure_exercise_explanation
+from learning.application.services import ensure_exercise_explanation
 from learning.selectors import get_track_by_slug
+from progress.application.services import build_track_progress_summary
 
 
 router = Router(tags=['learning'])
