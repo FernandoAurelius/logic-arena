@@ -8,8 +8,8 @@ import { LogOut, UserRound } from 'lucide-vue-next'
 import type { TrackSummary } from '@/entities/catalog'
 import { useSession } from '@/entities/session'
 import { useNavigatorCatalog } from '@/features/navigator/catalog/model/useNavigatorCatalog'
-import ProfileModal from '@/components/theme/ProfileModal.vue'
-import { Button } from '@/components/ui/button'
+import ProfileModal from '@/widgets/profile/ProfileModal.vue'
+import { Button } from '@/shared/ui/button'
 import NavigatorCatalogWidget from '@/widgets/navigator/NavigatorCatalogWidget.vue'
 
 const router = useRouter()

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { BookOpenText, MessageSquare, Play } from 'lucide-vue-next'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
 
 defineProps<{
   hasSubmission: boolean

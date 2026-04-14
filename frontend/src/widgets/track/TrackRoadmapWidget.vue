@@ -4,9 +4,9 @@ import { ArrowRight, BookOpenText, Lock, Play, ShieldCheck } from 'lucide-vue-ne
 
 import type { TrackDetail } from '@/entities/track'
 import { useTrackRoadmap } from '@/features/track/roadmap/model/useTrackRoadmap'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
+import { Button } from '@/shared/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/shared/ui/drawer'
 
 const props = defineProps<{
   track: TrackDetail

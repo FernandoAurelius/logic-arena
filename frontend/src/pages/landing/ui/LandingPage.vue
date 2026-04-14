@@ -3,9 +3,9 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, Cpu, History, Moon, Play, Sparkles, Sun } from 'lucide-vue-next'
 
-import LoginModal from '@/components/auth/LoginModal.vue'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import LoginModal from '@/features/auth/login/ui/LoginModal.vue'
+import { Button } from '@/shared/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { useSession } from '@/entities/session'
 import { useTheme } from '@/lib/theme'
 

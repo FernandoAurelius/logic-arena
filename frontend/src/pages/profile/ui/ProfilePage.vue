@@ -3,9 +3,9 @@ import '@/styles/catalog.css'
 import { useRouter } from 'vue-router'
 import { LogOut, Route, UserRound } from 'lucide-vue-next'
 
-import ThemePicker from '@/components/theme/ThemePicker.vue'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import ThemePicker from '@/widgets/profile/ThemePicker.vue'
+import { Button } from '@/shared/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { useSession } from '@/entities/session'
 
 const router = useRouter()

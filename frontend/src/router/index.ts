@@ -1,10 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import LandingView from '@/views/LandingView.vue'
-import NavigatorView from '@/views/NavigatorView.vue'
-import TrackView from '@/views/TrackView.vue'
-import ExplanationView from '@/views/ExplanationView.vue'
-import TutorialView from '@/views/TutorialView.vue'
+import LandingPage from '@/pages/landing/ui/LandingPage.vue'
+import NavigatorPage from '@/pages/navigator/ui/NavigatorPage.vue'
+import TrackPage from '@/pages/track/ui/TrackPage.vue'
+import ExplanationPage from '@/pages/explanation/ui/ExplanationPage.vue'
+import TutorialPage from '@/pages/tutorial/ui/TutorialPage.vue'
+import ProfilePage from '@/pages/profile/ui/ProfilePage.vue'
 import ArenaPage from '@/pages/arena/ui/ArenaPage.vue'
 import { useSession } from '@/entities/session'
 
@@ -14,29 +15,31 @@ const router = createRouter({
     {
       path: '/',
       name: 'landing',
-      component: LandingView,
+      component: LandingPage,
     },
     {
       path: '/navigator',
       name: 'navigator',
-      component: NavigatorView,
+      component: NavigatorPage,
       meta: { requiresAuth: true },
     },
     {
       path: '/tracks/:trackSlug',
       name: 'track',
-      component: TrackView,
+      component: TrackPage,
       meta: { requiresAuth: true },
     },
     {
       path: '/tracks/:trackSlug/explanation/:exerciseSlug',
       name: 'track-explanation',
-      component: ExplanationView,
+      component: ExplanationPage,
       meta: { requiresAuth: true },
     },
     {
       path: '/profile',
-      redirect: { name: 'navigator' },
+      name: 'profile',
+      component: ProfilePage,
+      meta: { requiresAuth: true },
     },
     {
       path: '/arena',
@@ -47,7 +50,7 @@ const router = createRouter({
     {
       path: '/ajuda',
       name: 'tutorial',
-      component: TutorialView,
+      component: TutorialPage,
     },
   ],
 })

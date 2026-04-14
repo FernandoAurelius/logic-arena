@@ -7,8 +7,8 @@ import { BookOpenText, LogOut, UserRound } from 'lucide-vue-next'
 
 import { useSession } from '@/entities/session'
 import { useExplanationArticle } from '@/features/explanation/article/model/useExplanationArticle'
-import ProfileModal from '@/components/theme/ProfileModal.vue'
-import { Button } from '@/components/ui/button'
+import ProfileModal from '@/widgets/profile/ProfileModal.vue'
+import { Button } from '@/shared/ui/button'
 import ExplanationArticleWidget from '@/widgets/explanation/ExplanationArticleWidget.vue'
 
 const route = useRoute()

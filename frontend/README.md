@@ -14,12 +14,12 @@ Ele conversa com o backend tipado via `OpenAPI` + `Zodios`, renderiza a shell vi
 
 ## Arquivos e áreas principais
 
-- `src/views/LandingView.vue`: entrada pública do produto
-- `src/views/TutorialView.vue`: ajuda guiada e onboarding leve
-- `src/views/ArenaView.vue`: estação autenticada de prática
-- `src/components/editor/MonacoEditor.vue`: editor de código protagonista da arena
-- `src/components/ui/`: primitives visuais no estilo técnico/brutalista do projeto
-- `src/lib/api/`: client tipado gerado a partir do `OpenAPI`
+- `src/pages/*/ui/*.vue`: pontos de entrada das rotas, sem lógica solta de view
+- `src/widgets/arena/`, `src/widgets/navigator/`, `src/widgets/track/`, `src/widgets/explanation/`, `src/widgets/profile/`: blocos compostos de interface
+- `src/features/*`: fluxos e ações do usuário
+- `src/entities/*`: modelos e contratos de domínio do frontend
+- `src/shared/ui/`: primitives visuais no estilo técnico/brutalista do projeto
+- `src/shared/api/`: client tipado gerado a partir do `OpenAPI`
 - `src/lib/session.ts`: sessão local e cabeçalhos de autenticação
 - `src/lib/theme.ts`: persistência e troca de tema
 
