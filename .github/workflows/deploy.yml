@@ -43,6 +43,10 @@ jobs:
           git reset --hard origin/main
 
           cd "$APP_DIR/backend"
+          export DB_ENGINE="postgres"
+          export DB_NAME="logic_arena"
+          export DB_USER="logic_arena"
+          export DB_PASSWORD="logic_arena"
           export DB_HOST="127.0.0.1"
           export DB_PORT="5433"
           ./.venv/bin/python manage.py migrate
