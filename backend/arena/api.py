@@ -21,8 +21,6 @@ from .schemas import (
 from .selectors import get_active_exercise_by_slug, get_module_by_slug, get_track_by_slug, list_navigator_modules
 from .services import (
     build_exercise_catalog_meta,
-    build_module_progress_summary,
-    build_track_progress_summary,
     build_user_schema_payload,
     ensure_exercise_explanation,
     get_or_create_session,
@@ -34,6 +32,8 @@ from catalog.interface.api import catalog_admin_router as catalog_admin_app_rout
 from catalog.interface.api import catalog_router as catalog_app_router
 from practice.interface.api import exercise_router as practice_exercise_router
 from practice.interface.api import submission_router as practice_submission_router
+from progress.interface.api import router as progress_router
+from progress.application.services import build_module_progress_summary, build_track_progress_summary
 
 
 api = NinjaAPI(
@@ -567,6 +567,7 @@ def update_exercise_catalog(request, slug: str, payload: ExerciseCatalogUpdateSc
 api.add_router('/auth', accounts_router)
 api.add_router('/exercises', practice_exercise_router)
 api.add_router('/submissions', practice_submission_router)
+api.add_router('/progress', progress_router)
 api.add_router('/catalog', catalog_app_router)
 api.add_router('/catalog-admin', catalog_admin_app_router)
 api.add_router('', system_router)

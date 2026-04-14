@@ -3,24 +3,9 @@ import secrets
 from django.contrib.auth.hashers import check_password, make_password
 
 from arena.models import ArenaUser, AuthSession
+from progress.application.services import build_user_progress_summary
 
 from ..selectors import get_session_by_token
-
-
-def compute_level_from_xp(xp_total: int) -> int:
-    return max(1, (xp_total // 100) + 1)
-
-
-def build_user_progress_summary(user: ArenaUser) -> dict:
-    xp_total = user.xp_total
-    level = compute_level_from_xp(xp_total)
-    xp_into_level = xp_total - ((level - 1) * 100)
-    return {
-        'xp_total': xp_total,
-        'level': level,
-        'xp_into_level': xp_into_level,
-        'xp_to_next_level': max(0, 100 - xp_into_level),
-    }
 
 
 def build_user_schema_payload(user: ArenaUser) -> dict:
