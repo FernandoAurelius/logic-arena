@@ -1,8 +1,8 @@
 import pytest
 from django.contrib.auth.hashers import make_password
 
-from accounts.application.services import build_user_schema_payload, get_or_create_session
-from arena.models import ArenaUser, AuthSession
+from apps.accounts.application.services import build_user_schema_payload, get_or_create_session
+from apps.arena.models import ArenaUser, AuthSession
 
 
 pytestmark = pytest.mark.django_db

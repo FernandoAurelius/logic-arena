@@ -1,7 +1,7 @@
 import pytest
 
-from catalog.application.services import build_module_progress_summary, build_track_progress_summary
-from catalog.selectors import get_track_by_slug, list_active_exercises, list_navigator_modules
+from apps.catalog.application.services import build_module_progress_summary, build_track_progress_summary
+from apps.catalog.selectors import get_track_by_slug, list_active_exercises, list_navigator_modules
 
 
 pytestmark = pytest.mark.django_db

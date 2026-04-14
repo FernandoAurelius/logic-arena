@@ -1,7 +1,7 @@
 import pytest
 
-from learning.application.services import build_module_progress_summary, build_track_progress_summary
-from learning.selectors import get_track_by_slug
+from apps.learning.application.services import build_module_progress_summary, build_track_progress_summary
+from apps.learning.selectors import get_track_by_slug
 
 
 pytestmark = pytest.mark.django_db

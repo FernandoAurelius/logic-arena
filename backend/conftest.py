@@ -5,7 +5,7 @@ import pytest
 from django.contrib.auth.hashers import make_password
 from django.test import Client
 
-from arena.models import (
+from apps.arena.models import (
     ArenaUser,
     AuthSession,
     Exercise,

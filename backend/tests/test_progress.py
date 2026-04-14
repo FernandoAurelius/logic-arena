@@ -1,13 +1,13 @@
 import pytest
 
-from progress.application.services import (
+from apps.progress.application.services import (
     ProgressReward,
     apply_submission_progress,
     build_module_progress_summary,
     build_track_progress_summary,
     build_user_progress_summary,
 )
-from arena.models import Submission
+from apps.arena.models import Submission
 
 
 pytestmark = pytest.mark.django_db

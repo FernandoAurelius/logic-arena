@@ -1,7 +1,7 @@
 import pytest
 
-from practice.application import services
-from arena.models import ArenaUser, Submission, UserExerciseProgress
+from apps.practice.application import services
+from apps.arena.models import ArenaUser, Submission, UserExerciseProgress
 
 
 pytestmark = pytest.mark.django_db

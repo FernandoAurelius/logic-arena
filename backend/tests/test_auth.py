@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from arena.models import ArenaUser, AuthSession
+from apps.arena.models import ArenaUser, AuthSession
 
 
 pytestmark = pytest.mark.django_db

@@ -1,6 +1,6 @@
 import pytest
 
-from arena.selectors import get_active_exercise_by_slug, get_track_by_slug, list_active_exercises
+from apps.arena.selectors import get_active_exercise_by_slug, get_track_by_slug, list_active_exercises
 
 
 pytestmark = pytest.mark.django_db
