@@ -5,19 +5,16 @@ from apps.accounts.application.services import require_session
 from apps.catalog.application.services import create_exercise
 from apps.practice.application.services import (
     evaluate_submission,
-    review_submission_chat,
     serialize_exercise_detail,
     serialize_exercise_summary,
     serialize_submission,
     serialize_submission_summary,
 )
-from apps.practice.selectors import get_submission_for_user, list_active_exercises, list_user_submissions
+from apps.practice.selectors import list_active_exercises, list_user_submissions
 from apps.practice.schemas import (
     ErrorSchema,
     ExerciseDetailSchema,
     ExerciseSummarySchema,
-    ReviewChatInputSchema,
-    ReviewChatResponseSchema,
     SubmissionInputSchema,
     SubmissionSchema,
     SubmissionSummarySchema,
@@ -85,48 +82,3 @@ def list_my_submissions(request, authorization: str | None = Header(default=None
         return 401, {'message': str(error)}
 
     return 200, [serialize_submission_summary(submission) for submission in list_user_submissions(session.user)]
-
-
-@submission_router.get('/{submission_id}', response={200: SubmissionSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Retorna a submissão atualizada para polling do feedback.')
-def get_submission(request, submission_id: int, authorization: str | None = Header(default=None)):
-    try:
-        session = require_session(authorization)
-    except PermissionError as error:
-        return 401, {'message': str(error)}
-
-    submission = get_submission_for_user(session.user, submission_id)
-    if submission is None:
-        return 404, {'message': 'Submissão não encontrada.'}
-
-    return 200, serialize_submission(submission)
-
-
-@submission_router.post('/{submission_id}/review-chat', response={200: ReviewChatResponseSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Continua a revisão com IA sobre uma submissão específica.')
-def review_chat(request, submission_id: int, payload: ReviewChatInputSchema, authorization: str | None = Header(default=None)):
-    try:
-        session = require_session(authorization)
-    except PermissionError as error:
-        return 401, {'message': str(error)}
-
-    submission = get_submission_for_user(session.user, submission_id)
-    if submission is None:
-        return 404, {'message': 'Submissão não encontrada.'}
-
-    persisted_history = submission.review_chat_history or []
-    answer = review_submission_chat(
-        exercise_title=submission.exercise.title,
-        statement=submission.exercise.statement,
-        source_code=submission.source_code,
-        console_output=submission.console_output,
-        feedback_summary=submission.feedback,
-        user_message=payload.message,
-        history=persisted_history,
-    )
-    updated_history = [
-        *persisted_history,
-        {'role': 'user', 'content': payload.message},
-        {'role': 'assistant', 'content': answer},
-    ]
-    submission.review_chat_history = updated_history
-    submission.save(update_fields=['review_chat_history', 'updated_at'])
-    return 200, {'answer': answer}

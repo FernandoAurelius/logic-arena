@@ -1,21 +1,15 @@
 import json
 import re
-import threading
 from dataclasses import dataclass
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from django.conf import settings
-from django.db import close_old_connections
 
-from apps.arena.feedback import (
-    build_feedback_error_payload,
-    generate_feedback,
-    review_submission_chat as arena_review_submission_chat,
-)
 from apps.arena.models import ArenaUser, Exercise, Submission, UserExerciseProgress
 from apps.arena.services import normalize_text
 from apps.progress.application.services import apply_submission_progress, build_exercise_progress_payload, build_user_progress_summary
+from apps.review.application.services import schedule_submission_feedback
 
 
 NUMERIC_TOLERANCE = 1e-9
@@ -268,91 +262,5 @@ def evaluate_submission(user: ArenaUser, exercise: Exercise, source_code: str) -
         unlocked_progress_rewards=[],
     )
     apply_submission_progress(user, exercise, submission)
-    _start_feedback_job(submission.id, exercise.title, exercise.statement, source_code, passed_tests, total_tests, results)
+    schedule_submission_feedback(submission.id, exercise.title, exercise.statement, source_code, passed_tests, total_tests, results)
     return submission, results
-
-
-def _start_feedback_job(
-    submission_id: int,
-    exercise_title: str,
-    statement: str,
-    source_code: str,
-    passed_tests: int,
-    total_tests: int,
-    results: list[dict],
-) -> None:
-    def job() -> None:
-        close_old_connections()
-        try:
-            feedback_payload = generate_feedback(
-                exercise_title=exercise_title,
-                statement=statement,
-                source_code=source_code,
-                passed_tests=passed_tests,
-                total_tests=total_tests,
-                results=results,
-            )
-            Submission.objects.filter(id=submission_id).update(
-                feedback=feedback_payload.summary,
-                feedback_status=Submission.FEEDBACK_READY,
-                feedback_source=feedback_payload.source,
-                feedback_payload=feedback_payload.model_dump(),
-                review_chat_history=[
-                    {
-                        'role': 'assistant',
-                        'content': '\n'.join(
-                            [
-                                '### Revisão automática',
-                                feedback_payload.summary,
-                                '',
-                                '**Pontos fortes**',
-                                *[f"- {item}" for item in feedback_payload.strengths],
-                                '',
-                                '**Ajustes**',
-                                *[f"- {item}" for item in feedback_payload.issues],
-                                '',
-                                '**Próximos passos**',
-                                *[f"- {item}" for item in feedback_payload.next_steps],
-                            ]
-                        ).strip(),
-                    }
-                ],
-            )
-        except Exception as error:
-            payload = build_feedback_error_payload(error)
-            Submission.objects.filter(id=submission_id).update(
-                feedback=payload.summary,
-                feedback_status=Submission.FEEDBACK_ERROR,
-                feedback_source=payload.source,
-                feedback_payload=payload.model_dump(),
-                review_chat_history=[
-                    {
-                        'role': 'assistant',
-                        'content': payload.summary,
-                    }
-                ],
-            )
-        finally:
-            close_old_connections()
-
-    threading.Thread(target=job, daemon=True).start()
-
-
-def review_submission_chat(
-    exercise_title: str,
-    statement: str,
-    source_code: str,
-    console_output: str,
-    feedback_summary: str,
-    user_message: str,
-    history: list[dict[str, str]],
-) -> str:
-    return arena_review_submission_chat(
-        exercise_title=exercise_title,
-        statement=statement,
-        source_code=source_code,
-        console_output=console_output,
-        feedback_summary=feedback_summary,
-        user_message=user_message,
-        history=history,
-    )

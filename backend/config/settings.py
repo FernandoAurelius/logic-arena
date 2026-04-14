@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'apps.learning.apps.LearningConfig',
     'apps.practice.apps.PracticeConfig',
     'apps.progress.apps.ProgressConfig',
+    'apps.review.apps.ReviewConfig',
     'apps.arena.apps.ArenaConfig',
 ]
 

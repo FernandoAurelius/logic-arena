@@ -34,6 +34,7 @@ from apps.practice.interface.api import exercise_router as practice_exercise_rou
 from apps.practice.interface.api import submission_router as practice_submission_router
 from apps.progress.interface.api import router as progress_router
 from apps.progress.application.services import build_module_progress_summary, build_track_progress_summary
+from apps.review.interface.api import router as review_router
 
 
 api = NinjaAPI(
@@ -567,6 +568,7 @@ def update_exercise_catalog(request, slug: str, payload: ExerciseCatalogUpdateSc
 api.add_router('/auth', accounts_router)
 api.add_router('/exercises', practice_exercise_router)
 api.add_router('/submissions', practice_submission_router)
+api.add_router('/submissions', review_router)
 api.add_router('/progress', progress_router)
 api.add_router('/catalog', catalog_app_router)
 api.add_router('/catalog-admin', catalog_admin_app_router)
