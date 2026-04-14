@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api/generated'
+import { schemas } from '@/shared/api'
 import { sessionApi } from '@/entities/session/api/session.api'
 
 type User = ZodInfer<typeof schemas.UserSchema>

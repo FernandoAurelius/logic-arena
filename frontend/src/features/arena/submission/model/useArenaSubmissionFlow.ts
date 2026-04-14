@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api/generated'
+import { schemas } from '@/shared/api'
 import { submissionApi } from '@/entities/submission/api/submission.api'
 
 type Submission = ZodInfer<typeof schemas.SubmissionSchema>

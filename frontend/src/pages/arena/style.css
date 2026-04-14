@@ -1,0 +1,167 @@
+.terminal-shell {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--surface);
+}
+
+.terminal-body {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  min-height: 0;
+}
+
+.terminal-body--arena {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.arena-sidebar,
+.workspace,
+.two-column,
+.spec-card,
+.editor-card--compact {
+  min-height: 0;
+}
+
+.workspace {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.blueprint-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.workspace-stack {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.two-column {
+  display: grid;
+  grid-template-columns: minmax(18rem, 29rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  min-height: calc(100vh - 13.25rem);
+  height: calc(100vh - 13.25rem);
+}
+
+.left-column,
+.right-column {
+  min-height: 0;
+  height: 100%;
+}
+
+.left-column {
+  align-self: stretch;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.right-column {
+  grid-template-rows: minmax(0, 1fr) auto auto;
+}
+
+.spec-card,
+.editor-card--compact {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.spec-card {
+  height: 100%;
+  max-height: 100%;
+}
+
+.editor-card--compact {
+  height: 100%;
+}
+
+.spec-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  padding-right: 0.35rem;
+  scrollbar-gutter: stable;
+}
+
+.editor-content {
+  padding-top: 0;
+  height: 100%;
+}
+
+.editor-content--flush {
+  padding: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: block;
+}
+
+.code-editor {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  box-shadow: 4px 4px 0 var(--primary);
+  overflow: hidden;
+}
+
+.arena-confirm-dialog {
+  max-width: 28rem;
+}
+
+.hint-dialog {
+  max-width: 36rem;
+}
+
+.results-dialog-content {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.confetti-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+}
+
+.levelup-banner {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.9rem 1.2rem;
+  border: 2px solid var(--on-surface);
+  background: color-mix(in srgb, var(--primary-container) 22%, var(--surface));
+  box-shadow: 6px 6px 0 var(--primary);
+  text-align: center;
+  animation: level-pop 2.6s ease forwards;
+}
+
+.levelup-eyebrow {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
