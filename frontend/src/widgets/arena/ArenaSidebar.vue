@@ -2,18 +2,15 @@
 import { computed, ref } from 'vue'
 import { BookOpenText, ChevronRight, History, Rows3, PanelLeftClose, PanelLeftOpen, Undo2 } from 'lucide-vue-next'
 import { TooltipArrow, TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot as Tooltip, TooltipTrigger } from 'reka-ui'
-import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/lib/api/generated'
+import type { ExerciseSummary } from '@/entities/exercise'
+import type { SubmissionSummary } from '@/entities/submission'
+import type { TrackExercise } from '@/entities/track'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { ScrollArea } from '@/shared/ui/scroll-area'
-
-type ExerciseSummary = ZodInfer<typeof schemas.ExerciseSummarySchema>
-type TrackExercise = ZodInfer<typeof schemas.TrackExerciseSchema>
-type SubmissionSummary = ZodInfer<typeof schemas.SubmissionSummarySchema>
 
 type GroupedExercise = {
   key: string

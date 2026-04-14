@@ -1,7 +1,6 @@
 import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api'
-import { apiClients } from '@/shared/api/zodios'
+import { apiClients, schemas } from '@/shared/api'
 
 type LoginResponse = ZodInfer<typeof schemas.LoginResponseSchema>
 type User = ZodInfer<typeof schemas.UserSchema>

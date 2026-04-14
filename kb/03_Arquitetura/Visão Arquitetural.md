@@ -72,12 +72,21 @@ Mesmo sendo um MVP, separar backend principal e runner já traz três vantagens:
 - deixa a avaliação mais observável;
 - prepara o terreno para limites de execução, hardening e futuras linguagens.
 
-## O que ainda não está maduro
+## Estado atual da arquitetura
 
-- o modelo de domínio de `Exercise` ainda é raso e não suporta categorias/trilhas;
-- a progressão de XP vive no frontend e ainda não tem guardrails;
+Desde abril de 2026, a base principal já foi reorganizada:
+
+- `backend/apps/*` concentra os bounded contexts reais do monólito;
+- `frontend/src` segue `Feature-Sliced Design` como estrutura canônica;
+- `backend/apps/arena` ficou como shell de integração da API pública;
+- `practice` e `progress` já ganharam `domain/` para regras comportamentais mais densas.
+
+## O que ainda está evoluindo
+
+- o shell `backend/apps/arena` ainda precisa continuar emagrecendo ao longo das próximas rodadas;
+- os guardrails arquiteturais ainda devem ficar mais rígidos com o tempo;
 - o ranking ainda não existe;
-- parte da lógica de produto ainda está implícita em UI, não em domínio persistido.
+- novos formatos de exercício ainda dependem da evolução do domínio de prática e revisão.
 
 ## Leituras seguintes
 

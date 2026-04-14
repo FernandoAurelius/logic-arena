@@ -177,6 +177,7 @@ Esse comando:
 cd "/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/frontend"
 npm install
 npm run generate:api
+npm run check:architecture
 npm run dev
 ```
 
@@ -218,6 +219,19 @@ Os endpoints centrais do MVP hoje são:
 - `GET/POST /api/catalog-admin/tracks`
 - `PATCH /api/catalog-admin/tracks/{slug}`
 - `PATCH /api/catalog-admin/exercises/{slug}/catalog`
+
+## Guardrails arquiteturais
+
+O repositório agora tem checks leves para segurar a arquitetura pós-migração:
+
+- `backend`: `pytest` cobre guardrails de import entre apps e pureza mínima dos módulos `domain/`;
+- `frontend`: `npm run check:architecture` falha se reaparecer `src/views`, `src/components`, imports diretos de `@/lib/api/generated` ou violações básicas entre camadas FSD.
+
+Na prática, isso cristaliza o contrato atual:
+
+- `backend/apps/*` é a raiz canônica dos bounded contexts;
+- `backend/apps/arena` existe como shell de integração e compatibilidade, não como lugar de regra nova;
+- `frontend/src/pages`, `widgets`, `features`, `entities` e `shared` são as camadas oficiais da UI.
 - `GET /api/health`
 
 O contrato `OpenAPI` exportado pelo backend vive em [`backend/openapi.json`](/home/miguelbarreto/estudos/logica-de-programacao/avaliacao-pratica-app/backend/openapi.json).

@@ -83,6 +83,42 @@ Manter uma knowledge base orientada a Obsidian dentro do próprio repo.
 - facilita trabalho com agentes;
 - torna a arquitetura e o roadmap parte viva do projeto.
 
+## 7. Bounded contexts como apps Django
+
+### Decisão
+
+O backend passa a tratar bounded contexts como apps em `backend/apps/*`.
+
+### Justificativa
+
+- deixa ownership mais claro;
+- reduz service blob em um app único;
+- aproxima o monólito de um dialeto pragmático de DDD compatível com Django.
+
+### Regra prática
+
+- `models.py`, `selectors.py`, `schemas.py`, `application/` e `interface/` existem por padrão;
+- `domain/` só entra onde houver regra comportamental densa;
+- `arena` fica como shell de integração, não como centro de domínio.
+
+## 8. Frontend canônico em FSD
+
+### Decisão
+
+O frontend passa a tratar `shared`, `entities`, `features`, `widgets` e `pages` como camadas oficiais.
+
+### Justificativa
+
+- elimina áreas-curinga como `views/` e `components/`;
+- melhora ownership de UI, tipos e fluxos de usuário;
+- reduz regressão estrutural durante expansão do produto.
+
+### Regra prática
+
+- `src/views` e `src/components` não fazem mais parte do contrato;
+- acesso ao gerado cru da API fica encapsulado;
+- checks automáticos barram regressão de camadas.
+
 ## Leituras seguintes
 
 - [[../04_Milestones/Mapa de Milestones]]

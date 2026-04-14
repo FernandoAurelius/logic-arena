@@ -1,14 +1,10 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api'
 import { useSession } from '@/entities/session'
+import type { Submission, SubmissionSummary } from '@/entities/submission'
 import { useArenaExerciseWorkspace } from '@/features/arena/open-exercise/model/useArenaExerciseWorkspace'
 import { useArenaSubmissionFlow } from '@/features/arena/submission/model/useArenaSubmissionFlow'
-
-type Submission = ZodInfer<typeof schemas.SubmissionSchema>
-type SubmissionSummary = ZodInfer<typeof schemas.SubmissionSummarySchema>
 
 export function useArenaPage() {
   const router = useRouter()

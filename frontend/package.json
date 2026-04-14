@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "check:architecture": "node ./scripts/check-architecture.mjs",
+    "build": "npm run check:architecture && vue-tsc -b && vite build",
     "preview": "vite preview",
     "generate:api": "openapi-zod-client ../backend/openapi.json -o ./src/lib/api/generated.ts --export-schemas --with-docs --with-description --implicit-required --group-strategy tag --api-client-name logicArenaApi && node ./scripts/fix-generated-api.mjs"
   },
