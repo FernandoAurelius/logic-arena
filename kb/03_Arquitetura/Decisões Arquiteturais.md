@@ -119,6 +119,24 @@ O frontend passa a tratar `shared`, `entities`, `features`, `widgets` e `pages` 
 - acesso ao gerado cru da API fica encapsulado;
 - checks automáticos barram regressão de camadas.
 
+## 9. Boy Scout Rule como regra permanente
+
+### Decisão
+
+Sempre que possível, mudanças no `Logic Arena` devem aplicar a `Boy Scout Rule`.
+
+### Justificativa
+
+- evita regressão silenciosa enquanto o produto cresce;
+- reduz a tendência de conviver com duplicação, acoplamento ruim e organização frouxa;
+- transforma polimento arquitetural em parte do fluxo normal de evolução, e não em fase rara e pesada.
+
+### Regra prática
+
+- aplicar melhorias pequenas e seguras de `SOLID`, `DRY` e organização quando elas estiverem claramente ao alcance da mudança em curso;
+- empurrar código para a camada correta quando o desalinhamento for evidente;
+- não usar essa regra como desculpa para rewrites oportunistas ou refactors desproporcionais ao escopo.
+
 ## Leituras seguintes
 
 - [[../04_Milestones/Mapa de Milestones]]
