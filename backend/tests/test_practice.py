@@ -1,7 +1,7 @@
 import pytest
 
-from practice.application import services
-from arena.models import ArenaUser, Submission, UserExerciseProgress
+from apps.practice.application import services
+from apps.arena.models import ArenaUser, Submission, UserExerciseProgress
 
 
 pytestmark = pytest.mark.django_db
@@ -60,7 +60,7 @@ def test_submission_awards_xp_on_first_pass_and_updates_progress(client, auth_he
         raise AssertionError(f'Unexpected stdin: {stdin!r}')
 
     monkeypatch.setattr(services, 'run_python', fake_run_python)
-    monkeypatch.setattr(services, '_start_feedback_job', lambda *args, **kwargs: None)
+    monkeypatch.setattr(services, 'schedule_submission_feedback', lambda *args, **kwargs: None)
 
     response = client.post(
         f'/api/submissions/exercises/{exercise.slug}/submit',

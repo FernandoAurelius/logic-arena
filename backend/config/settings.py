@@ -18,12 +18,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
-    'accounts',
-    'catalog',
-    'learning',
-    'practice',
-    'progress',
-    'arena',
+    'apps.accounts.apps.AccountsConfig',
+    'apps.catalog.apps.CatalogConfig',
+    'apps.learning.apps.LearningConfig',
+    'apps.practice.apps.PracticeConfig',
+    'apps.progress.apps.ProgressConfig',
+    'apps.review.apps.ReviewConfig',
+    'apps.arena.apps.ArenaConfig',
 ]
 
 MIDDLEWARE = [
