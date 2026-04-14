@@ -2,10 +2,10 @@
 import { ArrowRight, Map, Play, Sparkles, Target } from 'lucide-vue-next'
 
 import type { ModuleSummary, TrackSummary } from '@/entities/catalog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { ScrollArea } from '@/shared/ui/scroll-area'
 
 defineProps<{
   modules: ModuleSummary[]

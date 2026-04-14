@@ -7,8 +7,8 @@ import { BookOpenText, LogOut, UserRound } from 'lucide-vue-next'
 import { catalogApi } from '@/entities/catalog/api/catalog.api'
 import type { TrackDetail } from '@/entities/track'
 import { useSession } from '@/entities/session'
-import ProfileModal from '@/components/theme/ProfileModal.vue'
-import { Button } from '@/components/ui/button'
+import ProfileModal from '@/widgets/profile/ProfileModal.vue'
+import { Button } from '@/shared/ui/button'
 import TrackRoadmapWidget from '@/widgets/track/TrackRoadmapWidget.vue'
 
 const route = useRoute()

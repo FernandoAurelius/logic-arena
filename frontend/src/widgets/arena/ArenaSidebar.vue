@@ -5,11 +5,11 @@ import { TooltipArrow, TooltipContent, TooltipPortal, TooltipProvider, TooltipRo
 import type { infer as ZodInfer } from 'zod'
 
 import { schemas } from '@/lib/api/generated'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { ScrollArea } from '@/shared/ui/scroll-area'
 
 type ExerciseSummary = ZodInfer<typeof schemas.ExerciseSummarySchema>
 type TrackExercise = ZodInfer<typeof schemas.TrackExerciseSchema>

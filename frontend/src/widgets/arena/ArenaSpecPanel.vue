@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ChevronRight, FileText, FlaskConical, ListChecks } from 'lucide-vue-next'
 
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/shared/ui/badge'
+import { Card, CardContent, CardHeader } from '@/shared/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
 type VisibleTestCase = {
   id: number

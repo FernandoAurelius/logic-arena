@@ -9,11 +9,11 @@ import { Bot, FileTerminal, LoaderCircle, MessageSquareText, Send, Terminal, Tes
 import type { infer as ZodInfer } from 'zod'
 
 import { schemas } from '@/lib/api/generated'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
 type Submission = ZodInfer<typeof schemas.SubmissionSchema>
 type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>

@@ -3,8 +3,8 @@ import { ArrowLeft, Play, Route } from 'lucide-vue-next'
 
 import type { ExerciseExplanation } from '@/entities/explanation'
 import { renderMarkdown } from '@/shared/markdown/renderer'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/shared/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 
 defineProps<{
   explanation: ExerciseExplanation
