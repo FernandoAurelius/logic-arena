@@ -6,19 +6,13 @@ import python from 'highlight.js/lib/languages/python'
 import javascript from 'highlight.js/lib/languages/javascript'
 import json from 'highlight.js/lib/languages/json'
 import { Bot, FileTerminal, LoaderCircle, MessageSquareText, Send, Terminal, TestTubeDiagonal } from 'lucide-vue-next'
-import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/lib/api/generated'
+import type { FeedbackPayload, ProgressReward, ReviewChatMessage, Submission } from '@/entities/submission'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
-
-type Submission = ZodInfer<typeof schemas.SubmissionSchema>
-type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>
-type ProgressReward = ZodInfer<typeof schemas.ProgressRewardSchema>
-type FeedbackPayload = ZodInfer<typeof schemas.FeedbackPayloadSchema>
 
 type ResultsTab = 'saida' | 'testes' | 'revisao' | 'chat'
 

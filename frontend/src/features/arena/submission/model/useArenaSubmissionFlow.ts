@@ -1,13 +1,7 @@
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
-import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api'
-import { submissionApi } from '@/entities/submission/api/submission.api'
-
-type Submission = ZodInfer<typeof schemas.SubmissionSchema>
-type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>
-type ProgressReward = ZodInfer<typeof schemas.ProgressRewardSchema>
+import { submissionApi, type ProgressReward, type ReviewChatMessage, type Submission } from '@/entities/submission'
 
 type ResultsTab = 'saida' | 'testes' | 'revisao' | 'chat'
 

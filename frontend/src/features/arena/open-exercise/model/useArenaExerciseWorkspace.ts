@@ -1,19 +1,10 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api'
 import { catalogApi } from '@/entities/catalog/api/catalog.api'
-import { exerciseApi } from '@/entities/exercise/api/exercise.api'
-import { submissionApi } from '@/entities/submission/api/submission.api'
-
-type ExerciseSummary = ZodInfer<typeof schemas.ExerciseSummarySchema>
-type ExerciseDetail = ZodInfer<typeof schemas.ExerciseDetailSchema>
-type Submission = ZodInfer<typeof schemas.SubmissionSchema>
-type SubmissionSummary = ZodInfer<typeof schemas.SubmissionSummarySchema>
-type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>
-type TrackDetail = ZodInfer<typeof schemas.TrackDetailSchema>
-type TrackExercise = ZodInfer<typeof schemas.TrackExerciseSchema>
+import { exerciseApi, type ExerciseDetail, type ExerciseSummary } from '@/entities/exercise'
+import { submissionApi, type ReviewChatMessage, type Submission, type SubmissionSummary } from '@/entities/submission'
+import type { TrackDetail, TrackExercise } from '@/entities/track'
 
 type ArenaExerciseWorkspaceOptions = {
   authHeader: () => string | null

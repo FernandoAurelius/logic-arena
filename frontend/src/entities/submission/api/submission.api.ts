@@ -1,7 +1,6 @@
 import type { infer as ZodInfer } from 'zod'
 
-import { schemas } from '@/shared/api'
-import { apiClients } from '@/shared/api/zodios'
+import { apiClients, schemas } from '@/shared/api'
 
 type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>
 type Submission = ZodInfer<typeof schemas.SubmissionSchema>
