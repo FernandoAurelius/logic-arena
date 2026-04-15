@@ -20,6 +20,7 @@ const props = withDefaults(defineProps<{
   open: boolean
   tab: ResultsTab
   activeExerciseTitle?: string
+  familyKey?: string
   submission: Submission | null
   consoleLines?: string[]
   submissionOutcomeTone?: string
@@ -33,6 +34,7 @@ const props = withDefaults(defineProps<{
   isChatBusy?: boolean
 }>(), {
   activeExerciseTitle: '',
+  familyKey: 'code_lab',
   consoleLines: () => [],
   submissionOutcomeTone: 'idle',
   submissionOutcomeTitle: 'Aguardando execução',
@@ -94,6 +96,12 @@ const hasStructuredFeedback = computed(() =>
     || props.feedbackPayload?.next_steps?.length,
   ),
 )
+const isObjectiveFamily = computed(() => props.familyKey === 'objective_item')
+const selectedOptionsSummary = computed(() =>
+  props.submission?.selected_options?.length
+    ? props.submission.selected_options.map((option) => option.toUpperCase()).join(', ')
+    : 'Nenhuma alternativa marcada.'
+)
 
 function renderMessage(content: string) {
   return markdown.render(content)
@@ -146,7 +154,11 @@ function consoleTagLabel(line: string) {
       <DialogHeader>
         <DialogTitle>Central da tentativa</DialogTitle>
         <DialogDescription>
-          {{ activeExerciseTitle }} · {{ submission.passed_tests }}/{{ submission.total_tests }} testes
+          {{
+            isObjectiveFamily
+              ? `${activeExerciseTitle} · ${submission.passed_tests}/${submission.total_tests} critérios`
+              : `${activeExerciseTitle} · ${submission.passed_tests}/${submission.total_tests} testes`
+          }}
         </DialogDescription>
       </DialogHeader>
 
@@ -194,9 +206,22 @@ function consoleTagLabel(line: string) {
               </CardHeader>
               <CardContent class="outcome-grid">
                 <div class="outcome-block">
-                  <p class="section-label">Execução</p>
-                  <strong>{{ submission.passed_tests }}/{{ submission.total_tests }} testes</strong>
+                  <p class="section-label">{{ isObjectiveFamily ? 'Decisão' : 'Execução' }}</p>
+                  <strong>
+                    {{
+                      isObjectiveFamily
+                        ? `${submission.passed_tests}/${submission.total_tests} critérios`
+                        : `${submission.passed_tests}/${submission.total_tests} testes`
+                    }}
+                  </strong>
                   <p>{{ submissionOutcomeCopy }}</p>
+                </div>
+                <div v-if="isObjectiveFamily" class="outcome-block">
+                  <p class="section-label">Alternativas selecionadas</p>
+                  <strong>{{ selectedOptionsSummary }}</strong>
+                  <p>
+                    O julgamento desta rodada foi feito a partir da sua seleção objetiva e da regra configurada para o item.
+                  </p>
                 </div>
                 <div class="outcome-block">
                   <p class="section-label">Progressão</p>
@@ -213,12 +238,28 @@ function consoleTagLabel(line: string) {
               <CardHeader class="console-header">
                 <div class="console-heading">
                   <Terminal :size="16" />
-                  <CardTitle>Console de execução</CardTitle>
+                  <CardTitle>{{ isObjectiveFamily ? 'Evidência objetiva' : 'Console de execução' }}</CardTitle>
                 </div>
-                <Badge variant="outline" class="console-status-badge">Saída bruta</Badge>
+                <Badge variant="outline" class="console-status-badge">
+                  {{ isObjectiveFamily ? 'Resposta registrada' : 'Saída bruta' }}
+                </Badge>
               </CardHeader>
               <CardContent class="console-content">
-                <div class="console-body">
+                <div v-if="isObjectiveFamily" class="objective-evidence">
+                  <div class="objective-evidence__block">
+                    <p class="section-label">Seleção enviada</p>
+                    <code>{{ selectedOptionsSummary }}</code>
+                  </div>
+                  <div class="objective-evidence__block">
+                    <p class="section-label">Status</p>
+                    <code>{{ traduzirStatusExecucao(submission.status) }}</code>
+                  </div>
+                  <div class="objective-evidence__block">
+                    <p class="section-label">Revisão base</p>
+                    <p>{{ feedbackSummary }}</p>
+                  </div>
+                </div>
+                <div v-else class="console-body">
                   <div v-for="(line, index) in consoleLines" :key="`${index}-${line}`" class="console-line">
                     <span class="console-time">{{ String(index).padStart(2, '0') }}:42</span>
                     <span :class="consoleTagClass(line)">
@@ -235,8 +276,14 @@ function consoleTagLabel(line: string) {
         <TabsContent value="testes" class="results-tab-panel">
           <Card>
             <CardHeader>
-              <CardTitle>Resultado dos testes</CardTitle>
-              <CardDescription>Diagnóstico detalhado de cada caso executado.</CardDescription>
+              <CardTitle>{{ isObjectiveFamily ? 'Critérios e evidências' : 'Resultado dos testes' }}</CardTitle>
+              <CardDescription>
+                {{
+                  isObjectiveFamily
+                    ? 'Diagnóstico detalhado do julgamento objetivo desta tentativa.'
+                    : 'Diagnóstico detalhado de cada caso executado.'
+                }}
+              </CardDescription>
             </CardHeader>
             <CardContent class="test-results-list">
               <article v-for="result in submission.results" :key="result.index" class="test-result-card" :data-passed="result.passed">

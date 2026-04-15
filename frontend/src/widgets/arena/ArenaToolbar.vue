@@ -10,6 +10,7 @@ defineProps<{
   isChatBusy: boolean
   isSubmitting: boolean
   isBooting: boolean
+  familyKey?: string | null
   latestSubmissionStatus?: string
   latestSubmissionPassedTests?: number
   latestSubmissionTotalTests?: number
@@ -39,6 +40,13 @@ function traduzirStatusExecucao(status?: string) {
       return 'Inativa'
   }
 }
+
+function resolvePrimaryActionLabel(familyKey?: string | null, isSubmitting?: boolean) {
+  if (isSubmitting) {
+    return familyKey === 'objective_item' ? 'Corrigindo...' : 'Executando...'
+  }
+  return familyKey === 'objective_item' ? 'Responder' : 'Executar'
+}
 </script>
 
 <template>
@@ -65,7 +73,13 @@ function traduzirStatusExecucao(status?: string) {
           <Badge>{{ traduzirStatusExecucao(latestSubmissionStatus) }}</Badge>
           <div class="spec-outcome-banner__copy">
             <strong>{{ submissionOutcomeTitle }}</strong>
-            <span>{{ latestSubmissionPassedTests }}/{{ latestSubmissionTotalTests }} testes · {{ rewardSummary }}</span>
+            <span>
+              {{
+                familyKey === 'objective_item'
+                  ? `${latestSubmissionPassedTests}/${latestSubmissionTotalTests} critérios · ${rewardSummary}`
+                  : `${latestSubmissionPassedTests}/${latestSubmissionTotalTests} testes · ${rewardSummary}`
+              }}
+            </span>
           </div>
         </div>
         <div class="spec-outcome-banner__actions">
@@ -76,7 +90,7 @@ function traduzirStatusExecucao(status?: string) {
     <div class="arena-toolbar__right">
       <Button size="sm" :disabled="isSubmitting || isBooting" @click="$emit('submit')">
         <Play :size="16" />
-        {{ isSubmitting ? 'Executando...' : 'Executar' }}
+        {{ resolvePrimaryActionLabel(familyKey, isSubmitting) }}
       </Button>
     </div>
   </div>
