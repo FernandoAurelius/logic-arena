@@ -30,6 +30,7 @@ from .models import (
     UserExerciseProgress,
 )
 from .feedback import build_feedback_error_payload, generate_feedback
+from apps.practice.application.registry import get_family_spec
 
 
 NUMERIC_TOLERANCE = 1e-9
@@ -111,6 +112,8 @@ def get_or_create_session(nickname: str, password: str) -> tuple[AuthSession, bo
 
 
 def create_exercise(payload) -> Exercise:
+    get_family_spec(payload.family_key)
+
     category = None
     track = None
     module = None

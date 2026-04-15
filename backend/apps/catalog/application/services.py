@@ -8,6 +8,7 @@ from apps.arena.models import (
 )
 from apps.arena.services import sync_exercise_explanation
 from apps.progress.application.services import build_module_progress_summary, build_track_progress_summary
+from apps.practice.application.registry import get_family_spec
 
 
 DEFAULT_EXERCISE_TYPE_SLUG = 'drill-de-implementacao'
@@ -52,6 +53,8 @@ def serialize_exercise_summary(exercise: Exercise) -> dict:
 
 
 def create_exercise(payload) -> Exercise:
+    get_family_spec(payload.family_key)
+
     category = None
     track = None
     module = None

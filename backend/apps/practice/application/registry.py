@@ -74,7 +74,7 @@ def resolve_surface_key(exercise) -> str:
     template = str(evaluation_plan.get('template', '')).strip().lower()
 
     if exercise.family_key == 'code_lab':
-        if workspace_spec.get('workspace_kind') == 'multifile' or workspace_spec.get('files'):
+        if workspace_spec.get('workspace_kind') == 'multifile':
             return 'code_editor_multifile'
         return family_spec.default_surface_key
 

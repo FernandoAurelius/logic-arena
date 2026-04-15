@@ -13,7 +13,6 @@ from apps.practice.application.services import (
     serialize_attempt_session,
     serialize_exercise_detail,
     serialize_exercise_summary,
-    serialize_submission,
     serialize_submission_snapshot,
     update_attempt_session_state,
 )
@@ -73,7 +72,10 @@ def post_exercise(request, payload: ExerciseCreateSchema, authorization: str | N
     if Exercise.objects.filter(slug=payload.slug).exists():
         return 400, {'message': 'Já existe um exercício com esse slug.'}
 
-    exercise = create_exercise(payload)
+    try:
+        exercise = create_exercise(payload)
+    except ValueError as error:
+        return 400, {'message': str(error)}
     return 201, serialize_exercise_detail(exercise)
 
 
@@ -181,31 +183,33 @@ def _evaluate_practice_session(session_id: int, snapshot_type: str, payload: Pra
     if attempt_session is None:
         return 404, {'message': 'Sessão não encontrada.'}
 
-    snapshot, evaluation_run, review, legacy_submission = evaluate_attempt_session(
-        attempt_session,
-        snapshot_type=snapshot_type,
-        source_code=payload.source_code,
-        selected_options=payload.selected_options,
-        response_text=payload.response_text,
-        files=payload.files,
-    )
+    try:
+        snapshot, evaluation_run, review, _legacy_submission = evaluate_attempt_session(
+            attempt_session,
+            snapshot_type=snapshot_type,
+            source_code=payload.source_code,
+            selected_options=payload.selected_options,
+            response_text=payload.response_text,
+            files=payload.files,
+        )
+    except ValueError as error:
+        return 400, {'message': str(error)}
     serialized_session = serialize_attempt_session(attempt_session)
-    serialized_progress = serialize_submission(legacy_submission) if legacy_submission else None
     return 200, {
         'session': serialized_session,
         'snapshot': serialize_submission_snapshot(snapshot),
         'evaluation': serialized_session.get('latest_evaluation'),
         'review': serialized_session.get('latest_review') if review else None,
-        'xp_awarded': serialized_progress['xp_awarded'] if serialized_progress else 0,
-        'unlocked_progress_rewards': serialized_progress['unlocked_progress_rewards'] if serialized_progress else [],
-        'exercise_progress': serialized_progress['exercise_progress'] if serialized_progress else None,
-        'user_progress': serialized_progress['user_progress'] if serialized_progress else None,
+        'xp_awarded': serialized_session.get('xp_awarded', 0),
+        'unlocked_progress_rewards': serialized_session.get('unlocked_progress_rewards', []),
+        'exercise_progress': serialized_session.get('exercise_progress'),
+        'user_progress': serialized_session.get('user_progress'),
     }
 
 
 @practice_router.post(
     '/sessions/{session_id}/run',
-    response={200: AttemptEvaluationResponseSchema, 401: ErrorSchema, 404: ErrorSchema},
+    response={200: AttemptEvaluationResponseSchema, 400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema},
     summary='Executa um run intermediário dentro da sessão.',
 )
 def run_practice_session(request, session_id: int, payload: PracticeAnswerInputSchema, authorization: str | None = Header(default=None)):
@@ -214,7 +218,7 @@ def run_practice_session(request, session_id: int, payload: PracticeAnswerInputS
 
 @practice_router.post(
     '/sessions/{session_id}/check',
-    response={200: AttemptEvaluationResponseSchema, 401: ErrorSchema, 404: ErrorSchema},
+    response={200: AttemptEvaluationResponseSchema, 400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema},
     summary='Executa uma checagem estruturada dentro da sessão.',
 )
 def check_practice_session(request, session_id: int, payload: PracticeAnswerInputSchema, authorization: str | None = Header(default=None)):
@@ -223,7 +227,7 @@ def check_practice_session(request, session_id: int, payload: PracticeAnswerInpu
 
 @practice_router.post(
     '/sessions/{session_id}/submit',
-    response={200: AttemptEvaluationResponseSchema, 401: ErrorSchema, 404: ErrorSchema},
+    response={200: AttemptEvaluationResponseSchema, 400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema},
     summary='Submete a sessão de prática e gera avaliação persistida.',
 )
 def submit_practice_session(request, session_id: int, payload: PracticeAnswerInputSchema, authorization: str | None = Header(default=None)):
