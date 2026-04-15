@@ -353,7 +353,7 @@ function confirmGoNavigator() {
             <Card class="history-panel history-panel--embedded">
               <CardHeader>
                 <CardTitle>Histórico</CardTitle>
-                <CardDescription>Últimas execuções persistidas por exercício.</CardDescription>
+                <CardDescription>Últimas tentativas persistidas por exercício.</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul class="history-list">
@@ -372,7 +372,7 @@ function confirmGoNavigator() {
                       <span>{{ submission.passed_tests }}/{{ submission.total_tests }} testes</span>
                     </button>
                   </li>
-                  <li v-if="sidebarHistory.length === 0" class="dimmed">Nenhuma execução persistida.</li>
+                  <li v-if="sidebarHistory.length === 0" class="dimmed">Nenhuma tentativa persistida.</li>
                 </ul>
               </CardContent>
             </Card>

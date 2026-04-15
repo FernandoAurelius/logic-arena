@@ -11,6 +11,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         schema = api.get_openapi_schema()
-        output_path = Path(__file__).resolve().parents[3] / 'openapi.json'
+        output_path = Path(__file__).resolve().parents[4] / 'openapi.json'
         output_path.write_text(json.dumps(schema, indent=2, ensure_ascii=False), encoding='utf-8')
         self.stdout.write(self.style.SUCCESS(f'OpenAPI exportado em {output_path}'))

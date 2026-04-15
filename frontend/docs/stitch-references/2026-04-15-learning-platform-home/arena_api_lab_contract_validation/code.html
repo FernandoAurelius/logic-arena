@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>API LAB ARENA - Contrato e Comportamento</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#5e5e5e",
+                        "on-primary-fixed-variant": "#8a1c00",
+                        "surface-container-high": "#e8e8e5",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "surface-container-highest": "#e2e3e0",
+                        "outline-variant": "#e3beb6",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface": "#f9f9f6",
+                        "on-background": "#1a1c1a",
+                        "secondary-container": "#e2e2e2",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f4f4f1",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-primary-container": "#5a0e00",
+                        "surface-bright": "#f9f9f6",
+                        "inverse-surface": "#2f312f",
+                        "tertiary": "#5d5f5f",
+                        "on-tertiary-container": "#2a2c2c",
+                        "error-container": "#ffdad6",
+                        "primary": "#b52701",
+                        "on-secondary-container": "#646464",
+                        "secondary-fixed": "#e2e2e2",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e2e3e0",
+                        "primary-container": "#ff5c35",
+                        "surface-dim": "#dadad7",
+                        "on-surface": "#1a1c1a",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#eeeeeb",
+                        "primary-fixed": "#ffdad2",
+                        "outline": "#8f7069",
+                        "tertiary-container": "#929393",
+                        "on-primary-fixed": "#3d0700",
+                        "on-secondary-fixed-variant": "#474747",
+                        "surface-tint": "#b52701",
+                        "inverse-primary": "#ffb4a3",
+                        "inverse-on-surface": "#f1f1ee",
+                        "secondary-fixed-dim": "#c6c6c6",
+                        "background": "#f9f9f6",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "on-surface-variant": "#5b413a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"],
+                        "mono": ["JetBrains Mono"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hard-shadow { box-shadow: 4px 4px 0px #1a1c1a; }
+        .hard-shadow-primary { box-shadow: 4px 4px 0px #b52701; }
+        .brutal-border { border: 2px solid #1a1c1a; }
+        .blueprint-bg {
+            background-image: radial-gradient(#8f7069 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 border-b-2 border-[#1a1c1a] bg-[#f9f9f6] shadow-[4px_4px_0px_#1a1c1a] flex justify-between items-center h-16 px-6 max-w-full font-['Space_Grotesk'] tracking-tight">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold uppercase text-[#1a1c1a]">API LAB ARENA</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-[#5b413a] hover:text-[#1a1c1a] transition-all" href="#">Docs</a>
+<a class="text-[#b52701] border-b-2 border-[#b52701] pb-1" href="#">Specs</a>
+<a class="text-[#5b413a] hover:text-[#1a1c1a] transition-all" href="#">Validator</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center bg-surface-container px-3 py-1 brutal-border">
+<span class="material-symbols-outlined text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48" placeholder="Search Endpoint..." type="text"/>
+</div>
+<button class="bg-primary text-white brutal-border px-4 py-1.5 font-bold uppercase text-sm shadow-[2px_2px_0px_#1a1c1a] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all active:translate-x-[2px] active:translate-y-[2px]">
+                Deploy API
+            </button>
+<div class="flex gap-2">
+<span class="material-symbols-outlined p-1 hover:bg-surface-container transition-all cursor-pointer">settings</span>
+<span class="material-symbols-outlined p-1 hover:bg-surface-container transition-all cursor-pointer">help</span>
+</div>
+<div class="w-8 h-8 brutal-border overflow-hidden">
+<img alt="User Developer Avatar" class="w-full h-full object-cover" data-alt="Stylized avatar of a software developer with glasses and a minimal technical hoodie against a flat gray background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvVk1s2seKFR-ytLMGCL_-TpJcgutsh4PlPtqmgE44VHTODN2g-zrOAIl5kLgeHhy7rTy0VMJz4nEsP1XOgL2kWVA4SBAfblHr95Oip6T6_8DACvbOIdCbNtBUI0pe3kGjiO5BNuzfUQoydHE8Hi30TcUpCbNGnUCoa6j0Gf8bHvQd15OP-uLf7k6ee1561M8tFqyEkYDXofnyrhOq-qkKsFHaDFK8QN-QPk44U_BDgODt0JsbjsQYFJs6tHDsqMSL47HjHPgIz4g"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 border-r-2 border-[#1a1c1a] bg-[#eeeeeb] flex flex-col p-4 space-y-2 overflow-y-auto font-['Space_Grotesk'] text-sm uppercase font-bold">
+<div class="mb-6">
+<div class="flex items-center gap-3 mb-1">
+<div class="w-10 h-10 brutal-border bg-white p-1">
+<span class="material-symbols-outlined text-primary" style="font-size: 32px;">hub</span>
+</div>
+<div>
+<h2 class="text-lg font-black text-[#1a1c1a] leading-none">API WORKSPACE</h2>
+<p class="text-[10px] text-on-surface-variant font-medium">v2.4.0-stable</p>
+</div>
+</div>
+</div>
+<button class="bg-[#b52701] text-white shadow-[4px_4px_0px_#1a1c1a] border-2 border-[#1a1c1a] mb-2 p-3 flex items-center gap-3 active:scale-95 duration-100">
+<span class="material-symbols-outlined">add</span>
+            New Request
+        </button>
+<nav class="flex-1">
+<a class="text-[#5b413a] hover:bg-[#e8e8e5] p-3 mb-1 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">code</span> Editor
+            </a>
+<a class="bg-[#b52701] text-white shadow-[4px_4px_0px_#1a1c1a] border-2 border-[#1a1c1a] mb-2 p-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined">description</span> Contract
+            </a>
+<a class="text-[#5b413a] hover:bg-[#e8e8e5] p-3 mb-1 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">troubleshoot</span> Inspector
+            </a>
+<a class="text-[#5b413a] hover:bg-[#e8e8e5] p-3 mb-1 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">history</span> History
+            </a>
+<!-- Track Progress -->
+<div class="mt-8 pt-4 border-t-2 border-outline-variant/30">
+<p class="text-[10px] mb-2 opacity-70">Trilha: API Integration</p>
+<div class="w-full h-3 bg-secondary-container brutal-border overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container" style="width: 65%;"></div>
+</div>
+<p class="text-right text-[10px] mt-1">65% COMPLETO</p>
+</div>
+</nav>
+<div class="pt-4 border-t-2 border-outline-variant/30">
+<a class="text-[#5b413a] hover:bg-[#e8e8e5] p-3 mb-1 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">settings</span> Settings
+            </a>
+<a class="text-[#5b413a] hover:bg-[#e8e8e5] p-3 mb-1 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">contact_support</span> Support
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 h-screen flex flex-col overflow-hidden blueprint-bg">
+<!-- Header / Toolbar -->
+<div class="h-14 bg-surface border-b-2 border-on-background flex items-center justify-between px-6 shrink-0">
+<div class="flex items-center gap-4">
+<span class="font-headline font-bold uppercase text-sm bg-on-background text-surface px-2 py-0.5">Lab #102</span>
+<h1 class="font-headline font-bold text-lg">Contrato e Comportamento: Auth Flow</h1>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-1.5 brutal-border bg-surface hover:bg-surface-container-high transition-all font-headline font-bold text-xs uppercase shadow-[2px_2px_0px_#1a1c1a]">
+<span class="material-symbols-outlined text-sm">play_arrow</span> Executar Requisição
+                </button>
+<button class="flex items-center gap-2 px-4 py-1.5 brutal-border bg-surface hover:bg-surface-container-high transition-all font-headline font-bold text-xs uppercase shadow-[2px_2px_0px_#1a1c1a]">
+<span class="material-symbols-outlined text-sm">fact_check</span> Validar Contrato
+                </button>
+<button class="flex items-center gap-2 px-6 py-1.5 brutal-border bg-primary text-white hover:translate-y-0.5 hover:shadow-none transition-all font-headline font-bold text-xs uppercase shadow-[4px_4px_0px_#1a1c1a]">
+                    Submeter
+                </button>
+</div>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Panel: Contract Specification -->
+<section class="w-[320px] bg-surface-container-low border-r-2 border-on-background flex flex-col overflow-y-auto">
+<div class="p-4 bg-on-background text-surface font-headline font-bold text-xs uppercase tracking-widest sticky top-0 z-10">
+                    Especificação de Contrato
+                </div>
+<div class="p-4 space-y-6">
+<!-- Request Spec -->
+<div>
+<h3 class="font-headline font-bold text-xs uppercase text-primary mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">upload</span> Requisição
+                        </h3>
+<div class="bg-surface-container-highest brutal-border p-3 space-y-3">
+<div class="flex items-center gap-2">
+<span class="bg-on-background text-white text-[10px] font-black px-1.5 py-0.5">POST</span>
+<code class="text-xs font-mono">/api/v1/auth</code>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-bold uppercase text-on-surface-variant">Headers Esperados:</p>
+<div class="font-mono text-[10px] bg-white/50 p-1.5 border border-outline-variant/30">
+                                    Content-Type: application/json<br/>
+                                    Accept: application/json
+                                </div>
+</div>
+</div>
+</div>
+<!-- Response Spec -->
+<div>
+<h3 class="font-headline font-bold text-xs uppercase text-primary mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">download</span> Resposta Esperada
+                        </h3>
+<div class="bg-surface-container-highest brutal-border p-3 space-y-3">
+<div class="flex items-center gap-2">
+<span class="bg-green-600 text-white text-[10px] font-black px-1.5 py-0.5">201</span>
+<span class="text-[10px] font-bold">CREATED</span>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-bold uppercase text-on-surface-variant">Schema JSON:</p>
+<div class="font-mono text-[10px] bg-on-background text-green-400 p-2 overflow-x-auto">
+<pre>{
+  "token": "string",
+  "expires_at": "ISO8601"
+}</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 p-3 bg-primary/5 border-2 border-dashed border-primary/30 text-[11px] leading-relaxed italic text-on-surface-variant">
+                        "O token deve ter validade mínima de 3600 segundos. O formato da data deve seguir o padrão UTC."
+                    </div>
+</div>
+</section>
+<!-- Center Panel: Code Editor -->
+<section class="flex-1 flex flex-col bg-surface-container-lowest overflow-hidden">
+<div class="h-10 bg-surface-container border-b-2 border-on-background flex items-center px-4 justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-sm">code</span>
+<span class="font-headline font-bold text-xs uppercase">client_auth.py</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-on-surface-variant">Python 3.11</span>
+</div>
+</div>
+<div class="flex-1 relative font-mono text-sm leading-relaxed overflow-auto blueprint-bg p-4">
+<div class="bg-surface-container-lowest brutal-border p-4 hard-shadow min-h-[400px]">
+<div class="flex gap-4">
+<div class="text-right text-on-surface-variant/40 select-none pr-4 border-r border-outline-variant/20">
+                                1<br/>2<br/>3<br/>4<br/>5<br/>6<br/>7<br/>8<br/>9<br/>10<br/>11<br/>12<br/>13<br/>14<br/>15
+                            </div>
+<div class="flex-1 outline-none whitespace-pre" contenteditable="true">
+<span class="text-blue-600">import</span> requests
+<span class="text-blue-600">import</span> json
+
+<span class="text-blue-600">def</span> <span class="text-primary font-bold">authenticate_user</span>(url, credentials):
+    headers = {
+        <span class="text-green-700">'Content-Type'</span>: <span class="text-green-700">'application/json'</span>,
+        <span class="text-green-700">'Accept'</span>: <span class="text-green-700">'application/json'</span>
+    }
+    
+    response = requests.post(
+        f<span class="text-green-700">"{url}/api/v1/auth"</span>, 
+        data=json.dumps(credentials),
+        headers=headers
+    )
+    
+    <span class="text-gray-400"># O contrato exige token e expires_at</span>
+<span class="text-blue-600">return</span> response.json(), response.status_code</div>
+</div>
+</div>
+</div>
+<!-- Bottom Panel: Response Inspector -->
+<div class="h-[300px] border-t-2 border-on-background bg-surface flex flex-col">
+<div class="flex bg-surface-container border-b border-on-background">
+<button class="px-6 py-2 border-r border-on-background bg-surface-container-lowest font-headline font-bold text-xs uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">terminal</span> Body
+                        </button>
+<button class="px-6 py-2 border-r border-on-background hover:bg-surface-container-high transition-all font-headline font-bold text-xs uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">list_alt</span> Headers
+                        </button>
+<button class="px-6 py-2 border-r border-on-background hover:bg-surface-container-high transition-all font-headline font-bold text-xs uppercase flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-sm">compare</span> Contract Validation
+                        </button>
+</div>
+<div class="flex-1 overflow-auto p-4 flex gap-4">
+<!-- Diff View -->
+<div class="flex-1 flex flex-col gap-2">
+<p class="text-[10px] font-black uppercase opacity-50">JSON Obtido (Real)</p>
+<div class="flex-1 bg-on-background p-3 text-red-300 font-mono text-xs brutal-border overflow-auto">
+<pre>{
+  "token": "eyJhbGciOiJIUzI1Ni...",
+  <span class="bg-red-900/50 text-white">"expiry": "2023-12-01T12:00:00Z"</span>
+}</pre>
+</div>
+</div>
+<div class="flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">swap_horiz</span>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<p class="text-[10px] font-black uppercase opacity-50">JSON Esperado (Contrato)</p>
+<div class="flex-1 bg-on-background p-3 text-green-300 font-mono text-xs brutal-border overflow-auto">
+<pre>{
+  "token": "string",
+  <span class="bg-green-900/50 text-white">"expires_at": "ISO8601"</span>
+}</pre>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Floating Panel: Diagnosis & AI Revision -->
+<section class="w-[380px] p-6 bg-surface-container flex flex-col gap-6 overflow-y-auto border-l-2 border-on-background">
+<!-- Diagnosis -->
+<div class="bg-surface-container-lowest brutal-border p-5 hard-shadow">
+<h3 class="font-headline font-black text-sm uppercase mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-error">warning</span> Diagnóstico Técnico
+                    </h3>
+<ul class="space-y-3">
+<li class="flex items-start gap-3 p-2 bg-error-container/30 border border-error/20">
+<span class="material-symbols-outlined text-error text-lg">close</span>
+<div>
+<p class="text-xs font-bold uppercase">Erro de Campo Ausente</p>
+<p class="text-[11px] text-on-surface-variant">Campo <code class="font-mono bg-error-container px-1">expires_at</code> não encontrado no payload de resposta.</p>
+</div>
+</li>
+<li class="flex items-start gap-3 p-2 bg-error-container/30 border border-error/20">
+<span class="material-symbols-outlined text-error text-lg">close</span>
+<div>
+<p class="text-xs font-bold uppercase">Status Code Incorreto</p>
+<p class="text-[11px] text-on-surface-variant">Obtido <span class="font-bold">400 Bad Request</span>, esperado <span class="font-bold">201 Created</span>.</p>
+</div>
+</li>
+</ul>
+</div>
+<!-- AI Architect Revision -->
+<div class="bg-on-background text-surface brutal-border p-5 hard-shadow-primary relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2 opacity-20">
+<span class="material-symbols-outlined text-6xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<h3 class="font-headline font-black text-sm uppercase mb-4 text-primary-container flex items-center gap-2">
+<span class="material-symbols-outlined">psychology</span> AI Architect
+                    </h3>
+<div class="space-y-4 relative z-10">
+<p class="text-xs leading-relaxed text-surface-variant font-medium">
+                            "A violação ocorreu porque a implementação no Django está utilizando a chave legada <code class="bg-surface/10 px-1 text-primary-container">expiry</code> em vez de <code class="bg-surface/10 px-1 text-primary-container">expires_at</code>."
+                        </p>
+<p class="text-xs leading-relaxed text-surface-variant">
+                            Além disso, o header <code class="bg-surface/10 px-1">Accept</code> enviado na requisição parece estar sendo ignorado pelo middleware de validação.
+                        </p>
+<div class="pt-4 border-t border-surface/20">
+<p class="text-[10px] font-bold uppercase text-primary-container mb-2">Sugestão de Fix:</p>
+<div class="bg-surface/5 p-2 font-mono text-[10px] text-green-300">
+                                response_data = {<br/>
+                                  "token": auth_token,<br/>
+                                  "expires_at": expiry_date.isoformat()<br/>
+                                }
+                            </div>
+</div>
+</div>
+</div>
+<!-- Quick Stats Badge -->
+<div class="mt-auto pt-6 flex justify-between items-center text-[10px] font-black uppercase opacity-60">
+<div class="flex flex-col">
+<span>Latência</span>
+<span class="text-on-surface">142ms</span>
+</div>
+<div class="flex flex-col text-right">
+<span>Segurança</span>
+<span class="text-green-600">Grade A+</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- FAB Overlay for Focus Actions -->
+<div class="fixed bottom-8 right-12 z-50 md:hidden">
+<button class="w-14 h-14 bg-primary text-white brutal-border rounded-full flex items-center justify-center shadow-[4px_4px_0px_#1a1c1a]">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</button>
+</div>
+</body></html>

@@ -1,12 +1,14 @@
 from .evaluation import (
     APPROVAL_PATTERNS,
     NUMERIC_TOLERANCE,
+    build_objective_option_catalog,
     canonical_text,
     detect_status_intent,
     extract_numeric_tokens,
+    evaluate_objective_selection,
     format_execution_results_console,
     line_matches,
+    normalize_choice_key,
     normalize_text,
     outputs_match_robust,
 )
-

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ARENA_CODE | Execution Feedback</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#929393",
+                        "primary": "#b52701",
+                        "background": "#f9f9f6",
+                        "surface-tint": "#b52701",
+                        "surface-bright": "#f9f9f6",
+                        "on-surface-variant": "#5b413a",
+                        "outline": "#8f7069",
+                        "surface-container-low": "#f4f4f1",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#e2e2e2",
+                        "primary-container": "#ff5c35",
+                        "surface-container": "#eeeeeb",
+                        "on-background": "#1a1c1a",
+                        "on-primary-container": "#5a0e00",
+                        "surface": "#f9f9f6",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "outline-variant": "#e3beb6",
+                        "secondary-fixed": "#e2e2e2",
+                        "secondary-container": "#e2e2e2",
+                        "tertiary": "#5d5f5f",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e8e8e5",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "on-tertiary-container": "#2a2c2c",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "on-primary-fixed-variant": "#8a1c00",
+                        "secondary-fixed-dim": "#c6c6c6",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-secondary-container": "#646464",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#f1f1ee",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#2f312f",
+                        "secondary": "#5e5e5e",
+                        "surface-variant": "#e2e3e0",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-surface": "#1a1c1a",
+                        "surface-dim": "#dadad7",
+                        "inverse-primary": "#ffb4a3",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "surface-container-highest": "#e2e3e0",
+                        "on-primary-fixed": "#3d0700",
+                        "primary-fixed": "#ffdad2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hard-shadow {
+            box-shadow: 4px 4px 0px #1a1c1a;
+        }
+        .hard-shadow-primary {
+            box-shadow: 4px 4px 0px #b52701;
+        }
+        .button-press:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px #1a1c1a;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-stone-50 dark:bg-stone-900 border-b-2 border-stone-900 dark:border-stone-50 shadow-[4px_4px_0px_#1a1c1a]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black italic text-stone-900 dark:text-stone-50 font-headline tracking-tighter uppercase">ARENA_CODE</span>
+<div class="hidden md:flex gap-6">
+<a class="text-orange-700 dark:text-orange-500 border-b-4 border-orange-700 dark:border-orange-500 pb-1 font-headline uppercase tracking-tighter" href="#">Curriculum</a>
+<a class="text-stone-500 dark:text-stone-400 font-bold font-headline uppercase tracking-tighter hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-transform hover:translate-y-[-2px]" href="#">Battleground</a>
+<a class="text-stone-500 dark:text-stone-400 font-bold font-headline uppercase tracking-tighter hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-transform hover:translate-y-[-2px]" href="#">Leaderboard</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex flex-col items-end mr-4">
+<span class="text-orange-700 dark:text-orange-500 font-headline font-black text-sm tracking-tighter">LEVEL 24</span>
+<span class="text-stone-500 dark:text-stone-400 font-headline font-bold text-xs tracking-tighter">2,450 XP</span>
+</div>
+<button class="p-2 text-stone-900 dark:text-stone-50 hover:bg-stone-200 rounded">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+<button class="p-2 text-stone-900 dark:text-stone-50 hover:bg-stone-200 rounded relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+<div class="w-10 h-10 border-2 border-stone-900 dark:border-stone-50 bg-stone-200 overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Stylized geometric avatar of a young developer with glasses and a hoodie in a minimalist tech aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKVzIflgwHstOIMgdbsLMZQqa0mzGhDI_JDeftFmNMjdXEndz14pCD7r9dYu9LBrZ9_ON6gswm68rReO3Uyc5vsbT-CH3XGeIsp8JeLqjcNXi7P-GtnZNvanouTJ9Weu4Fznz96MZ9wIPV8xu4bMgW46dNWKQMPHOtDn3ol7N6FHeDWkBubl1yEeAFsvATH4Trby6k5QZIIHkKOJ3AYE9oFP9P2e_NdONQZvKH4dl6Ep-Y7xzPeCg3r8VOHiQRlAHu1GdmNz_5h8U"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-stone-100 dark:bg-stone-800 border-r-2 border-stone-900 dark:border-stone-50 flex flex-col pt-8 z-40">
+<div class="px-4 mb-8">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 bg-stone-900 flex items-center justify-center">
+<span class="material-symbols-outlined text-stone-50 text-sm">terminal</span>
+</div>
+<div class="flex flex-col">
+<span class="text-lg font-bold text-stone-900 font-headline leading-none">PYTHON_CORE</span>
+<span class="text-[10px] text-stone-500 font-headline font-bold uppercase tracking-wider">Concurrency &amp; AsyncIO</span>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 bg-orange-700 text-stone-50 dark:bg-orange-500 dark:text-stone-900 mx-2 p-3 border-2 border-stone-900 dark:border-stone-50 shadow-[4px_4px_0px_#1a1c1a] font-headline text-sm font-bold uppercase" href="#">
+<span class="material-symbols-outlined">route</span>
+<span>Current Track</span>
+</a>
+<a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 p-3 mx-2 border-2 border-transparent hover:border-stone-900 dark:hover:border-stone-50 font-headline text-sm font-bold uppercase" href="#">
+<span class="material-symbols-outlined">history</span>
+<span>Module History</span>
+</a>
+<a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 p-3 mx-2 border-2 border-transparent hover:border-stone-900 dark:hover:border-stone-50 font-headline text-sm font-bold uppercase" href="#">
+<span class="material-symbols-outlined">description</span>
+<span>Technical Specs</span>
+</a>
+<a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 p-3 mx-2 border-2 border-transparent hover:border-stone-900 dark:hover:border-stone-50 font-headline text-sm font-bold uppercase" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+<span>AI Mentor</span>
+</a>
+</nav>
+<div class="px-4 mb-6">
+<button class="w-full py-3 bg-stone-900 text-stone-50 font-headline font-bold uppercase tracking-tighter text-sm hard-shadow button-press">
+                START_DIAGNOSTIC
+            </button>
+</div>
+<div class="border-t border-stone-300 dark:border-stone-700 pt-4 pb-8">
+<a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 p-3 mx-2 font-headline text-xs font-bold uppercase" href="#">
+<span class="material-symbols-outlined text-sm">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 p-3 mx-2 font-headline text-xs font-bold uppercase" href="#">
+<span class="material-symbols-outlined text-sm">help</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 mt-16 p-8 min-h-[calc(100vh-64px)] grid grid-cols-12 gap-8 bg-surface">
+<!-- Left Panel: Context -->
+<section class="col-span-3 space-y-6">
+<div class="p-6 bg-surface-container-low border-2 border-outline-variant/20">
+<h3 class="font-headline font-black text-xl mb-4 text-on-surface uppercase tracking-tight">OBJECTIVE_X04</h3>
+<p class="text-sm leading-relaxed text-on-surface-variant mb-4">
+                    Create a list comprehension that filters even numbers and squares them.
+                </p>
+<div class="bg-surface-container p-4 border border-outline/10">
+<span class="text-[10px] font-headline font-bold text-primary uppercase block mb-2">Input Data</span>
+<code class="text-xs font-mono text-stone-600">numbers = [1, 2, 3, 4, 5, 6]</code>
+</div>
+</div>
+<div class="p-6 bg-surface border-2 border-stone-900 relative">
+<div class="absolute -top-3 left-4 bg-stone-900 px-2 py-1 text-[10px] font-headline font-bold text-white uppercase">REQUISITOS</div>
+<ul class="space-y-3 pt-2">
+<li class="flex items-start gap-2 text-xs">
+<span class="material-symbols-outlined text-green-600 text-sm">check_circle</span>
+<span>Mapeamento de potência.</span>
+</li>
+<li class="flex items-start gap-2 text-xs">
+<span class="material-symbols-outlined text-red-600 text-sm">cancel</span>
+<span>Filtragem por módulo 2.</span>
+</li>
+</ul>
+</div>
+</section>
+<!-- Center Panel: Editor (Feedback State) -->
+<section class="col-span-5 flex flex-col h-full">
+<div class="flex-1 bg-surface-container-lowest border-2 border-outline p-0 relative hard-shadow overflow-hidden flex flex-col">
+<!-- Editor Header -->
+<div class="h-10 bg-surface-container border-b-2 border-outline flex items-center px-4 justify-between">
+<div class="flex gap-2">
+<div class="w-3 h-3 rounded-full bg-red-400"></div>
+<div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+<div class="w-3 h-3 rounded-full bg-green-400"></div>
+</div>
+<span class="text-[10px] font-headline font-bold uppercase tracking-widest text-stone-500">python_compiler_v2.4</span>
+</div>
+<!-- Code Canvas -->
+<div class="flex-1 p-6 font-mono text-sm relative overflow-auto">
+<div class="flex">
+<div class="w-8 text-on-surface-variant/40 text-right pr-4 select-none">
+                            1<br/>2<br/>3<br/>4
+                        </div>
+<div class="text-on-surface whitespace-pre">
+<span class="text-stone-400"># Generator Expression</span>
+numbers = [1, 2, 3, 4, 5, 6]
+
+result = [ <div class="inline-flex items-center px-2 py-0.5 bg-green-100 border-2 border-green-600 text-green-900 font-bold relative group">
+    x**2
+    <span class="absolute -top-6 left-0 bg-green-600 text-white text-[8px] px-1 font-headline uppercase leading-tight">SUCCESS</span>
+</div> for x in numbers if <div class="inline-flex items-center px-2 py-0.5 bg-red-100 border-2 border-red-600 text-red-900 font-bold relative">
+    n
+    <span class="absolute -top-6 left-0 bg-red-600 text-white text-[8px] px-1 font-headline uppercase leading-tight">FAILED</span>
+</div> % 2 == 0 ]
+                        </div>
+</div>
+</div>
+<!-- Status Bar -->
+<div class="h-8 bg-red-600 text-white flex items-center px-4 justify-between font-headline font-bold text-[10px] uppercase tracking-widest">
+<span>EXECUTION_INTERRUPTED: NameError</span>
+<div class="flex gap-4">
+<span>CPU: 0.02%</span>
+<span>MEM: 12MB</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Panel: Detailed Feedback -->
+<section class="col-span-4 space-y-6">
+<!-- AI ARCHITECT PANEL -->
+<div class="bg-surface-container-high border-2 border-stone-900 p-6 hard-shadow flex flex-col gap-6">
+<div class="flex items-center gap-3 border-b-2 border-stone-900 pb-4">
+<span class="material-symbols-outlined text-primary scale-125">smart_toy</span>
+<h2 class="font-headline font-black text-lg tracking-tight uppercase">ANÁLISE DO AI ARCHITECT</h2>
+</div>
+<div class="space-y-4">
+<!-- Slot 1 Success -->
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-green-600 flex-shrink-0">check_circle</span>
+<div>
+<span class="block text-[10px] font-headline font-bold text-green-700 uppercase mb-1">Slot 1 Status</span>
+<p class="text-xs font-semibold text-on-surface">CORRETO: Expressão de mapeamento válida.</p>
+</div>
+</div>
+<!-- Slot 2 Error -->
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-red-600 flex-shrink-0">error</span>
+<div>
+<span class="block text-[10px] font-headline font-bold text-red-700 uppercase mb-1">Slot 2 Status</span>
+<p class="text-xs font-semibold text-on-surface">ERRO: Variável 'n' não definida no escopo da compreensão. Você deve usar a variável iteradora definida no loop.</p>
+</div>
+</div>
+</div>
+<!-- Technical Review -->
+<div class="bg-surface p-4 border-l-4 border-primary">
+<span class="block text-[10px] font-headline font-bold text-primary uppercase mb-2">REVISÃO TÉCNICA</span>
+<p class="text-[11px] leading-relaxed text-on-surface-variant italic">
+                        In list comprehensions, the variable defined after "for" (in this case, 'x') is local to the scope of that expression. Referencing 'n' results in a NameError because it hasn't been declared within the loop's context.
+                    </p>
+</div>
+<!-- Gamification -->
+<div class="bg-stone-200/50 p-4 border-2 border-dashed border-stone-400 text-center">
+<span class="block font-headline font-black text-2xl text-stone-400">+0 XP</span>
+<span class="block text-[10px] font-headline font-bold text-stone-500 uppercase">(Tentativa pendente)</span>
+</div>
+<!-- Primary CTA -->
+<button class="w-full py-4 bg-primary text-white font-headline font-black text-sm uppercase tracking-widest hard-shadow-primary button-press">
+                    TENTAR NOVAMENTE
+                </button>
+</div>
+<!-- Hint/Next Lesson -->
+<div class="p-6 bg-surface-container-low border-2 border-stone-900 flex items-center justify-between">
+<div>
+<span class="text-[10px] font-headline font-bold uppercase text-stone-500">Recommended Read</span>
+<p class="text-xs font-bold uppercase">Scoping Rules in Python</p>
+</div>
+<span class="material-symbols-outlined text-stone-900">arrow_forward</span>
+</div>
+</section>
+</main>
+<!-- Visual Polish: Grid Overlay -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03] z-[100]" style="background-image: radial-gradient(#1a1c1a 1px, transparent 1px); background-size: 24px 24px;"></div>
+</body></html>

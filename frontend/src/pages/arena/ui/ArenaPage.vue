@@ -5,15 +5,14 @@ import { LogOut, UserRound } from 'lucide-vue-next'
 
 import ArenaResultsDialog from '@/widgets/arena/ArenaResultsDialog.vue'
 import ArenaSidebar from '@/widgets/arena/ArenaSidebar.vue'
-import MonacoEditor from '@/shared/ui/editor/MonacoEditor.vue'
 import ProfileModal from '@/widgets/profile/ProfileModal.vue'
 import { Button } from '@/shared/ui/button'
-import { Card, CardContent } from '@/shared/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { ScrollArea } from '@/shared/ui/scroll-area'
 import { useArenaPage } from '@/pages/arena/model/useArenaPage'
 import ArenaToolbar from '@/widgets/arena/ArenaToolbar.vue'
 import ArenaSpecPanel from '@/widgets/arena/ArenaSpecPanel.vue'
+import ArenaSurfaceHost from '@/widgets/arena/ArenaSurfaceHost.vue'
 
 const {
   session,
@@ -26,8 +25,11 @@ const {
   routeTrackSlug,
   exercises,
   activeExercise,
+  activeSessionConfig,
   trackContext,
   code,
+  selectedOptions,
+  responseText,
   latestSubmission,
   chatMessages,
   isBooting,
@@ -138,6 +140,7 @@ const {
               :is-chat-busy="submissionFlow.isChatBusy.value"
               :is-submitting="submissionFlow.isSubmitting.value"
               :is-booting="isBooting"
+              :family-key="activeSessionConfig?.family_key ?? 'code_lab'"
               :latest-submission-status="latestSubmission?.status"
               :latest-submission-passed-tests="latestSubmission?.passed_tests"
               :latest-submission-total-tests="latestSubmission?.total_tests"
@@ -156,6 +159,7 @@ const {
                   :spec-tab="specTab"
                   :route-track-slug="routeTrackSlug"
                   :active-exercise="activeExercise"
+                  :session-config="activeSessionConfig"
                   :active-index="activeIndex"
                   :exercise-count="exercises.length"
                   :is-submitting="submissionFlow.isSubmitting.value"
@@ -172,18 +176,15 @@ const {
               </div>
 
               <div class="right-column">
-                <Card class="editor-card editor-card--compact">
-                  <CardContent class="editor-content editor-content--flush">
-                    <MonacoEditor
-                      v-model="code"
-                      class="code-editor"
-                      language="python"
-                      height="calc(100vh - 15.5rem)"
-                      :read-only="submissionFlow.isSubmitting.value"
-                      placeholder="# escreva sua solução aqui"
-                    />
-                  </CardContent>
-                </Card>
+                <ArenaSurfaceHost
+                  v-model:code="code"
+                  v-model:selected-options="selectedOptions"
+                  v-model:response-text="responseText"
+                  :surface-key="activeSessionConfig?.surface_key ?? 'code_editor_single'"
+                  :read-only="submissionFlow.isSubmitting.value"
+                  :exercise-title="activeExercise?.title ?? 'atividade'"
+                  :session-config="activeSessionConfig"
+                />
               </div>
             </section>
           </div>
@@ -194,6 +195,7 @@ const {
       :open="submissionFlow.resultsDialogOpen.value"
       :tab="submissionFlow.resultsTab.value"
       :active-exercise-title="activeExercise?.title ?? ''"
+      :family-key="activeSessionConfig?.family_key ?? 'code_lab'"
       :submission="latestSubmission"
       :console-lines="submissionFlow.consoleLines.value"
       :submission-outcome-tone="submissionFlow.submissionOutcomeTone.value"
@@ -213,16 +215,16 @@ const {
     <Dialog :open="restoreDialogOpen" @update:open="handleRestoreDialogOpen">
       <DialogContent class="arena-confirm-dialog" :show-close="true">
         <DialogHeader>
-          <DialogTitle>Restaurar última submissão?</DialogTitle>
+          <DialogTitle>Restaurar última tentativa?</DialogTitle>
           <DialogDescription>
-            Encontramos uma tentativa anterior sua para
+            Encontramos uma sessão anterior sua para
             <strong>{{ pendingRestoreSubmission?.exercise_title ?? activeExercise?.title ?? 'este exercício' }}</strong>.
           </DialogDescription>
         </DialogHeader>
         <div class="hint-content">
           <div class="hint-block">
             <p class="section-label">Escolha como abrir</p>
-            <p>Você pode continuar da sua última submissão salva ou começar com o editor totalmente em branco.</p>
+            <p>Você pode continuar da sua última tentativa salva ou começar com o editor totalmente em branco.</p>
           </div>
           <label class="remember-choice-row">
             <input v-model="rememberRestoreChoice" type="checkbox" />
@@ -231,7 +233,7 @@ const {
         </div>
         <div class="arena-confirm-dialog__actions">
           <Button variant="outline" @click="declineRestoreSubmission">Começar em branco</Button>
-          <Button @click="confirmRestoreSubmission">Abrir última submissão</Button>
+          <Button @click="confirmRestoreSubmission">Abrir última tentativa</Button>
         </div>
       </DialogContent>
     </Dialog>

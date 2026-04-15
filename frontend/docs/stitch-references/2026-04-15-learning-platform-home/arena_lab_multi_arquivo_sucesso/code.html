@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-high": "#e8e8e5",
+                      "on-background": "#1a1c1a",
+                      "on-primary": "#ffffff",
+                      "inverse-on-surface": "#f1f1ee",
+                      "tertiary-fixed-dim": "#c6c6c7",
+                      "outline-variant": "#e3beb6",
+                      "on-surface": "#1a1c1a",
+                      "surface-bright": "#f9f9f6",
+                      "primary": "#b52701",
+                      "primary-container": "#ff5c35",
+                      "on-primary-container": "#5a0e00",
+                      "surface": "#f9f9f6",
+                      "primary-fixed-dim": "#ffb4a3",
+                      "inverse-surface": "#2f312f",
+                      "on-secondary": "#ffffff",
+                      "surface-container-low": "#f4f4f1",
+                      "tertiary-fixed": "#e2e2e2",
+                      "on-error": "#ffffff",
+                      "surface-dim": "#dadad7",
+                      "surface-variant": "#e2e3e0",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed": "#3d0700",
+                      "inverse-primary": "#ffb4a3",
+                      "surface-container": "#eeeeeb",
+                      "on-secondary-container": "#646464",
+                      "secondary-fixed": "#e2e2e2",
+                      "secondary-container": "#e2e2e2",
+                      "on-secondary-fixed-variant": "#474747",
+                      "on-surface-variant": "#5b413a",
+                      "surface-tint": "#b52701",
+                      "on-tertiary-fixed": "#1a1c1c",
+                      "on-secondary-fixed": "#1b1b1b",
+                      "primary-fixed": "#ffdad2",
+                      "outline": "#8f7069",
+                      "error": "#ba1a1a",
+                      "on-error-container": "#93000a",
+                      "on-tertiary-container": "#2a2c2c",
+                      "background": "#f9f9f6",
+                      "tertiary-container": "#929393",
+                      "tertiary": "#5d5f5f",
+                      "secondary-fixed-dim": "#c6c6c6",
+                      "secondary": "#5e5e5e",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-highest": "#e2e3e0",
+                      "on-tertiary-fixed-variant": "#454747",
+                      "on-primary-fixed-variant": "#8a1c00"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Space Grotesk"],
+                      "body": ["Inter"],
+                      "label": ["Space Grotesk"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .brutalist-shadow {
+            box-shadow: 4px 4px 0px #1a1c1a;
+        }
+        .brutalist-shadow-primary {
+            box-shadow: 4px 4px 0px #b52701;
+        }
+        .brutalist-shadow-lg {
+            box-shadow: 8px 8px 0px #1a1c1a;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #eeeeeb;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #8f7069;
+            border-radius: 0;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-hidden h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-6 py-4 h-16 bg-[#f9f9f6] dark:bg-[#1a1c1a] border-b-4 border-[#1a1c1a] dark:border-[#f9f9f6] z-50">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black italic tracking-tighter text-[#1a1c1a] dark:text-[#f9f9f6]">CODE_ARENA</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="font-['Space_Grotesk'] font-bold uppercase tracking-wider text-sm text-[#b52701] border-b-2 border-[#b52701] pb-1" href="#">Practice</a>
+<a class="font-['Space_Grotesk'] font-bold uppercase tracking-wider text-sm text-[#5b413a] hover:text-[#1a1c1a]" href="#">Labs</a>
+<a class="font-['Space_Grotesk'] font-bold uppercase tracking-wider text-sm text-[#5b413a] hover:text-[#1a1c1a]" href="#">Compete</a>
+<a class="font-['Space_Grotesk'] font-bold uppercase tracking-wider text-sm text-[#5b413a] hover:text-[#1a1c1a]" href="#">Community</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-surface-container px-3 py-1 border-2 border-on-background">
+<span class="font-label font-bold text-xs uppercase text-on-surface-variant mr-2">LEVEL 24</span>
+<div class="w-24 h-2 bg-secondary-container">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container w-3/4"></div>
+</div>
+<span class="ml-3 font-label font-bold text-xs text-primary">1,250 XP</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-[#eeeeeb] transition-colors duration-150 active:translate-y-[2px]">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-2 hover:bg-[#eeeeeb] transition-colors duration-150 active:translate-y-[2px]">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+<div class="w-8 h-8 bg-primary overflow-hidden border-2 border-on-background">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="close-up portrait of a professional software engineer with glasses, soft studio lighting, sharp focus on eyes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwWtHFfOiNCPbhASEy7IcldXU_U6eUH5xj543h50y5g-6616uUSFFPtgBtbRN-QrNnXsfPzgtP0YWQcYEZmgKviK5L_5mpBY3jnP5lhgxfvGovJvkr8p5TxxPNkvJIkxNkJYvZAyq0RVd7KRCtfWfYiDShylPhk1w3rU1WV39Zya_kW1x2d2mm1kpR7Oy9soVrAtTZGvIJ21S80_Z-qwdNfkR1Oy0op3IhEcCRV7NR9pIDWXprbdDSzS18NWzQbi1DcjLbBcivP2s"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-20 flex flex-col items-center py-6 z-40 bg-[#eeeeeb] dark:bg-[#1a1c1a] border-r-4 border-[#1a1c1a] dark:border-[#f9f9f6]">
+<div class="flex flex-col items-center gap-1 mb-8">
+<div class="w-10 h-10 border-2 border-on-background bg-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-primary font-bold">terminal</span>
+</div>
+<span class="font-['Inter'] text-[10px] font-semibold uppercase text-center leading-tight">Fullstack<br/>JS</span>
+</div>
+<div class="flex flex-col gap-6 w-full items-center">
+<button class="p-3 bg-[#b52701] text-white border-2 border-black shadow-[4px_4px_0px_#1a1c1a] active:scale-95 duration-75">
+<span class="material-symbols-outlined">folder</span>
+</button>
+<button class="p-3 text-[#5b413a] opacity-70 hover:bg-[#e8e8e5] hover:opacity-100 transition-all">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-3 text-[#5b413a] opacity-70 hover:bg-[#e8e8e5] hover:opacity-100 transition-all">
+<span class="material-symbols-outlined">account_tree</span>
+</button>
+<button class="p-3 text-[#5b413a] opacity-70 hover:bg-[#e8e8e5] hover:opacity-100 transition-all">
+<span class="material-symbols-outlined">extension</span>
+</button>
+<button class="p-3 text-[#5b413a] opacity-70 hover:bg-[#e8e8e5] hover:opacity-100 transition-all">
+<span class="material-symbols-outlined">bug_report</span>
+</button>
+</div>
+<div class="mt-auto flex flex-col gap-4 w-full items-center border-t-2 border-outline-variant pt-4">
+<button class="p-2 text-[#5b413a] opacity-70 hover:bg-[#e8e8e5] transition-all">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-[#5b413a] opacity-70 hover:bg-[#e8e8e5] transition-all">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</aside>
+<!-- Main Workspace Canvas -->
+<main class="ml-20 flex-1 relative flex overflow-hidden">
+<!-- File Explorer (Dimmed/Blurred Background) -->
+<div class="w-64 border-r-2 border-outline-variant bg-surface-container-low flex flex-col opacity-40 select-none">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center">
+<span class="font-label font-bold text-xs uppercase tracking-widest">Explorer</span>
+<span class="material-symbols-outlined text-sm">more_horiz</span>
+</div>
+<div class="p-2 space-y-1">
+<div class="flex items-center gap-2 p-1 text-sm bg-surface-container-high border-l-2 border-primary">
+<span class="material-symbols-outlined text-sm">javascript</span>
+<span>main.js</span>
+</div>
+<div class="flex items-center gap-2 p-1 text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">javascript</span>
+<span>auth-router.js</span>
+</div>
+<div class="flex items-center gap-2 p-1 text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">javascript</span>
+<span>schema.js</span>
+</div>
+<div class="flex items-center gap-2 p-1 text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">css</span>
+<span>styles.css</span>
+</div>
+</div>
+</div>
+<!-- Code Editor (Dimmed/Blurred Background) -->
+<div class="flex-1 bg-surface-container-lowest flex flex-col opacity-30 select-none">
+<div class="flex border-b border-outline-variant bg-surface-container">
+<div class="px-4 py-2 border-r border-outline-variant bg-surface-container-lowest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-primary">javascript</span>
+<span class="text-xs font-mono font-bold">main.js</span>
+</div>
+</div>
+<div class="flex-1 font-mono text-sm p-4 leading-relaxed">
+<div class="flex gap-4">
+<span class="text-on-surface-variant opacity-50">01</span>
+<span>import { Auth } from './auth-router';</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant opacity-50">02</span>
+<span>import { UserSchema } from './schema';</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant opacity-50">03</span>
+<span></span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant opacity-50">04</span>
+<span>const server = Auth.initialize({</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant opacity-50">05</span>
+<span class="ml-4">schema: UserSchema,</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant opacity-50">06</span>
+<span class="ml-4">driver: 'postgres'</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant opacity-50">07</span>
+<span>});</span>
+</div>
+</div>
+</div>
+<!-- SUCCESS RESULT OVERLAY (CRITICAL FOCUS) -->
+<div class="absolute inset-0 z-30 flex items-center justify-center p-12 bg-on-background/20 backdrop-blur-sm">
+<div class="w-full max-w-5xl h-full flex gap-6">
+<!-- LEFT COLUMN: Results & Gamification -->
+<div class="flex-[1.2] flex flex-col gap-6 overflow-y-auto">
+<!-- Success Banner -->
+<div class="bg-[#2e7d32] text-white p-8 brutalist-shadow-lg border-2 border-on-background relative overflow-hidden">
+<div class="absolute right-[-20px] top-[-20px] opacity-20">
+<span class="material-symbols-outlined text-[160px] rotate-12">check_circle</span>
+</div>
+<h2 class="font-headline font-black text-4xl italic uppercase tracking-tighter mb-2">EXECUÇÃO CONCLUÍDA</h2>
+<div class="flex items-center gap-4">
+<span class="bg-on-background text-white px-3 py-1 font-headline font-bold text-xl">100% PASSOU</span>
+<span class="font-body text-sm font-medium uppercase tracking-widest opacity-90 italic">Lab: Multi-file Auth Logic</span>
+</div>
+</div>
+<!-- Gamification Card -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-bright p-6 border-2 border-on-background brutalist-shadow flex flex-col items-center justify-center text-center relative">
+<div class="absolute -top-3 -left-3 bg-primary text-on-primary px-2 py-1 font-label text-[10px] font-black uppercase">Reward</div>
+<span class="text-primary font-headline font-black text-5xl mb-1">+250 XP</span>
+<span class="text-on-surface-variant font-label text-xs font-bold uppercase">Experience Gained</span>
+<div class="mt-4 w-full h-1 bg-surface-container relative overflow-hidden">
+<div class="absolute inset-0 bg-primary w-full origin-left"></div>
+</div>
+</div>
+<div class="bg-on-background text-white p-6 border-2 border-on-background brutalist-shadow flex flex-col items-center justify-center text-center">
+<span class="text-primary-container font-headline font-black text-5xl mb-1">LVL 25</span>
+<span class="text-surface-dim font-label text-xs font-bold uppercase">RANK: ARCHITECT I</span>
+<div class="mt-2 text-[10px] bg-primary text-white px-2 py-0.5 rounded-full animate-pulse">NEW RANK UNLOCKED</div>
+</div>
+</div>
+<!-- Test Breakdown -->
+<div class="bg-surface-container-lowest border-2 border-on-background brutalist-shadow p-6">
+<h3 class="font-headline font-bold text-lg uppercase mb-4 border-b-2 border-on-background pb-2 flex justify-between">
+                                Testes Unitários
+                                <span class="text-primary">5 / 5</span>
+</h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#2e7d32]">check_circle</span>
+<span class="text-sm font-mono">Schema validation for auth payload</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant opacity-60">12ms</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#2e7d32]">check_circle</span>
+<span class="text-sm font-mono">Module export mapping integrity</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant opacity-60">8ms</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#2e7d32]">check_circle</span>
+<span class="text-sm font-mono">JWT creation on multi-file route</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant opacity-60">24ms</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#2e7d32]">check_circle</span>
+<span class="text-sm font-mono">Cross-module state persistence</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant opacity-60">15ms</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#2e7d32]">check_circle</span>
+<span class="text-sm font-mono">Database driver injection test</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant opacity-60">31ms</span>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: AI Review & Actions -->
+<div class="flex-1 flex flex-col gap-6">
+<!-- AI Analysis Section -->
+<div class="flex-1 bg-on-background text-white border-2 border-on-background brutalist-shadow-primary p-6 flex flex-col relative">
+<div class="absolute top-4 right-4 flex items-center gap-2">
+<span class="text-[10px] font-label font-bold text-primary-container">AI_REVIEW_ENGAGED</span>
+<span class="material-symbols-outlined text-primary text-sm animate-pulse">bolt</span>
+</div>
+<h3 class="font-headline font-bold text-xl mb-4 text-primary-container">ARCHITECTURAL ANALYSIS</h3>
+<div class="flex-1 overflow-y-auto pr-2 space-y-4">
+<p class="text-sm leading-relaxed text-surface-dim font-light">
+                                    Your implementation demonstrates a strong understanding of **Separation of Concerns**. By isolating the <span class="text-primary-container font-mono">AuthRouter</span> logic from the <span class="text-primary-container font-mono">Schema</span> definition, you've reduced cognitive load for future maintainers.
+                                </p>
+<div class="border-l-2 border-primary pl-4 py-2 bg-white/5">
+<span class="text-[10px] font-label font-bold text-primary uppercase block mb-1">Efficiency Insight</span>
+<p class="text-xs text-surface-variant italic">
+                                        Dependency Injection detected in <span class="font-mono">main.js:05</span>. This allows for seamless mocking during advanced unit testing phases.
+                                    </p>
+</div>
+<div>
+<span class="text-xs font-label font-bold uppercase tracking-widest text-primary-container mb-2 block">Refactoring Suggestion (Diff)</span>
+<div class="bg-surface-container-lowest/10 p-3 font-mono text-[11px] border border-white/20">
+<div class="text-error opacity-70">- schema: UserSchema,</div>
+<div class="text-[#2e7d32]">+ schema: { ...UserSchema, strict: true },</div>
+<div class="mt-2 text-surface-dim opacity-50">// Use strict mode for production payloads</div>
+</div>
+</div>
+</div>
+<button class="mt-6 w-full py-4 bg-primary text-on-primary font-headline font-black uppercase tracking-widest brutalist-shadow border-2 border-on-background active:translate-y-[2px] active:shadow-none transition-all">
+                                Próximo Lab
+                            </button>
+</div>
+<!-- Secondary Actions -->
+<div class="flex flex-col gap-3">
+<button class="w-full py-3 bg-surface border-2 border-on-background font-label font-bold text-sm uppercase flex items-center justify-center gap-2 hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm">bar_chart</span>
+                                Ver Detalhes
+                            </button>
+<button class="w-full py-3 bg-surface border-2 border-on-background font-label font-bold text-sm uppercase flex items-center justify-center gap-2 hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm">history</span>
+                                Revisar Histórico
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

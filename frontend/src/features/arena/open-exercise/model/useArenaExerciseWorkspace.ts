@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { catalogApi } from '@/entities/catalog/api/catalog.api'
 import { exerciseApi, type ExerciseDetail, type ExerciseSummary } from '@/entities/exercise'
-import { submissionApi, type ReviewChatMessage, type Submission, type SubmissionSummary } from '@/entities/submission'
+import { submissionApi, type ReviewChatMessage, type SessionConfig, type Submission, type SubmissionSummary } from '@/entities/submission'
 import type { TrackDetail, TrackExercise } from '@/entities/track'
 
 type ArenaExerciseWorkspaceOptions = {
@@ -28,9 +28,13 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
 
   const exercises = ref<ExerciseSummary[]>([])
   const activeExercise = ref<ExerciseDetail | null>(null)
+  const activeSessionId = ref<number | null>(null)
+  const activeSessionConfig = ref<SessionConfig | null>(null)
   const submissions = ref<SubmissionSummary[]>([])
   const trackContext = ref<TrackDetail | null>(null)
   const code = ref('')
+  const selectedOptions = ref<string[]>([])
+  const responseText = ref('')
   const latestSubmission = ref<Submission | null>(null)
   const chatMessages = ref<ReviewChatMessage[]>([])
   const isBooting = ref(false)
@@ -93,15 +97,20 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     options.onStopFeedbackPolling?.()
     latestSubmission.value = null
     code.value = ''
+    selectedOptions.value = []
+    responseText.value = ''
     chatMessages.value = []
   }
 
   function setHydratedSubmission(submission: Submission) {
     latestSubmission.value = submission
+    activeSessionId.value = submission.session_id
     code.value = submission.source_code
+    selectedOptions.value = [...(submission.selected_options ?? [])]
+    responseText.value = submission.response_text ?? ''
     chatMessages.value = submission.review_chat_history ?? []
-    if (submission.feedback_status === 'pending') {
-      options.onStartFeedbackPolling?.(submission.id)
+    if (submission.feedback_status === 'pending' && submission.session_id) {
+      options.onStartFeedbackPolling?.(submission.session_id)
     } else {
       options.onStopFeedbackPolling?.()
     }
@@ -115,8 +124,12 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     return exerciseApi.getBySlug(slug, options.authHeader() ?? undefined)
   }
 
-  async function fetchSubmission(submissionId: number) {
-    return submissionApi.getById(submissionId, options.authHeader() ?? undefined)
+  async function fetchSessionConfig(slug: string) {
+    return submissionApi.getSessionConfig(slug, options.authHeader() ?? undefined)
+  }
+
+  async function fetchSubmission(sessionId: number) {
+    return submissionApi.getById(sessionId, options.authHeader() ?? undefined)
   }
 
   async function loadExercises() {
@@ -215,9 +228,20 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     pendingRestoreSubmission.value = null
 
     try {
-      const exercise = await fetchExercise(slug)
+      const [exercise, sessionConfig, initialSession] = await Promise.all([
+        fetchExercise(slug),
+        fetchSessionConfig(slug),
+        submissionApi.openExerciseSession(slug, options.authHeader() ?? undefined),
+      ])
       activeExercise.value = exercise
+      activeSessionId.value = initialSession.id
+      activeSessionConfig.value = sessionConfig
       clearDraftForExercise()
+      code.value = String(initialSession.answer_state?.source_code ?? exercise.starter_code ?? '')
+      selectedOptions.value = Array.isArray(initialSession.answer_state?.selected_options)
+        ? [...(initialSession.answer_state.selected_options as string[])]
+        : []
+      responseText.value = String(initialSession.answer_state?.response_text ?? '')
       if (route.query.exercise !== slug) {
         await router.replace({
           name: 'arena',
@@ -250,11 +274,13 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     pendingRestoreSubmission.value = null
 
     try {
-      const [exercise, submission] = await Promise.all([
+      const [exercise, sessionConfig, submission] = await Promise.all([
         fetchExercise(submissionSummary.exercise_slug),
+        fetchSessionConfig(submissionSummary.exercise_slug),
         fetchSubmission(submissionSummary.id),
       ])
       activeExercise.value = exercise
+      activeSessionConfig.value = sessionConfig
       setHydratedSubmission(submission)
       options.onSubmissionHydrated?.(submission)
     } catch (error) {
@@ -282,9 +308,13 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
   return {
     exercises,
     activeExercise,
+    activeSessionId,
+    activeSessionConfig,
     submissions,
     trackContext,
     code,
+    selectedOptions,
+    responseText,
     latestSubmission,
     chatMessages,
     isBooting,
@@ -304,6 +334,7 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     loadSubmissions,
     fetchExercise,
     fetchSubmission,
+    fetchSessionConfig,
     selectExercise,
     navigateTrackExercise,
     openSubmissionSession,

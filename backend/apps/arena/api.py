@@ -30,11 +30,11 @@ from apps.accounts.interface.api import router as accounts_router
 from apps.learning.interface.api import router as learning_router
 from apps.catalog.interface.api import catalog_admin_router as catalog_admin_app_router
 from apps.catalog.interface.api import catalog_router as catalog_app_router
-from apps.practice.interface.api import exercise_router as practice_exercise_router
-from apps.practice.interface.api import submission_router as practice_submission_router
+from apps.practice.interface.api import assessment_router as practice_assessment_router
+from apps.practice.interface.api import practice_router
 from apps.progress.interface.api import router as progress_router
 from apps.progress.application.services import build_module_progress_summary, build_track_progress_summary
-from apps.review.interface.api import router as review_router
+from apps.review.interface.api import evaluation_router as review_evaluation_router
 
 
 api = NinjaAPI(
@@ -75,6 +75,8 @@ def serialize_exercise_summary(exercise: Exercise) -> dict:
         'id': exercise.id,
         'slug': exercise.slug,
         'title': exercise.title,
+        'learning_objectives': list(exercise.learning_objectives or []),
+        'family_key': meta['family_key'],
         'difficulty': exercise.difficulty,
         'language': exercise.language,
         'professor_note': exercise.professor_note,
@@ -566,9 +568,9 @@ def update_exercise_catalog(request, slug: str, payload: ExerciseCatalogUpdateSc
 
 
 api.add_router('/auth', accounts_router)
-api.add_router('/exercises', practice_exercise_router)
-api.add_router('/submissions', practice_submission_router)
-api.add_router('/submissions', review_router)
+api.add_router('/practice', practice_router)
+api.add_router('/assessments', practice_assessment_router)
+api.add_router('/review', review_evaluation_router)
 api.add_router('/progress', progress_router)
 api.add_router('/catalog', catalog_app_router)
 api.add_router('/catalog-admin', catalog_admin_app_router)

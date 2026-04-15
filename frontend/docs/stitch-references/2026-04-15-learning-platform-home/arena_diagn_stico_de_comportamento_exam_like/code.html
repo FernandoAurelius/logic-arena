@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ARENA_COMPILER - Behavioral Classification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#eeeeeb",
+                        "outline": "#8f7069",
+                        "surface": "#f9f9f6",
+                        "primary": "#b52701",
+                        "on-surface": "#1a1c1a",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-tertiary": "#ffffff",
+                        "surface-bright": "#f9f9f6",
+                        "surface-container-high": "#e8e8e5",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e2e3e0",
+                        "secondary-container": "#e2e2e2",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "surface-container-low": "#f4f4f1",
+                        "outline-variant": "#e3beb6",
+                        "on-secondary-container": "#646464",
+                        "on-surface-variant": "#5b413a",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "tertiary-container": "#929393",
+                        "background": "#f9f9f6",
+                        "inverse-on-surface": "#f1f1ee",
+                        "on-primary-fixed-variant": "#8a1c00",
+                        "tertiary": "#5d5f5f",
+                        "secondary": "#5e5e5e",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#c6c6c6",
+                        "surface-variant": "#e2e3e0",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "inverse-surface": "#2f312f",
+                        "primary-fixed": "#ffdad2",
+                        "surface-tint": "#b52701",
+                        "secondary-fixed": "#e2e2e2",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-background": "#1a1c1a",
+                        "on-tertiary-container": "#2a2c2c",
+                        "on-primary-container": "#5a0e00",
+                        "primary-container": "#ff5c35",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#dadad7",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "on-primary-fixed": "#3d0700",
+                        "inverse-primary": "#ffb4a3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neo-shadow { box-shadow: 4px 4px 0px 0px #1a1c1a; }
+        .neo-shadow-primary { box-shadow: 4px 4px 0px 0px #b52701; }
+        .blueprint-bg {
+            background-image: radial-gradient(#8f7069 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+            background-position: -0.5px -0.5px;
+            opacity: 0.05;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- TopNavBar -->
+<nav class="flex justify-between items-center w-full px-6 py-3 h-16 bg-[#f9f9f6] dark:bg-[#1a1c1a] border-b-4 border-[#1a1c1a] dark:border-[#f9f9f6] shadow-[4px_4px_0px_0px_rgba(26,28,26,1)] sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black italic tracking-tighter text-[#1a1c1a] dark:text-[#f9f9f6]">ARENA_COMPILER</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#b52701] dark:text-[#ff5c35] border-b-2 border-[#b52701] pb-1 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all" href="#">WORKSPACE</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#5b413a] dark:text-[#a3a3a3] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all" href="#">CHALLENGES</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#5b413a] dark:text-[#a3a3a3] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all" href="#">LEADERBOARD</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#5b413a] dark:text-[#a3a3a3] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all" href="#">DOCS</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-4 py-1 font-bold text-sm tracking-widest neo-shadow uppercase font-headline hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">UPGRADE</button>
+<div class="flex gap-2">
+<span class="material-symbols-outlined cursor-pointer text-[#1a1c1a]" data-icon="terminal">terminal</span>
+<span class="material-symbols-outlined cursor-pointer text-[#1a1c1a]" data-icon="settings">settings</span>
+</div>
+<img alt="User profile" class="w-8 h-8 border-2 border-on-surface" data-alt="professional headshot of a software engineer in a clean modern office environment with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZyYz3fdQ0NUCWU_WkiOwrGnWep2Zo9jkYLgKoCkzXAAKbs7i8ErfnP5j5ZXo6GgEnJucws26dnuuF5NqBfyTlHFNweWzGX-S0-4X-QC-TpaU4K_WSuNsMXXtInId89eV9Yr2lUjP0OqJJJzWculAfyg0e4v1baKtg3iv7pgJ7AOiTvw24tQmAzIUTUNH6nG9L1I_WphoHM5f6h9ZkKc9Lislj9vXciKUXxLVc8syPohdDcWG2Wsa9Rhh1lsJk09KXUJmKJGKfllI"/>
+</div>
+</nav>
+<div class="flex min-h-[calc(100vh-64px)]">
+<!-- SideNavBar -->
+<aside class="flex flex-col h-[calc(100vh-64px)] w-64 bg-[#eeeeeb] dark:bg-[#1a1c1a] border-r-4 border-[#1a1c1a] dark:border-[#f9f9f6] sticky top-16">
+<div class="p-6 border-b-2 border-on-surface/10">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 bg-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-surface" data-icon="code">code</span>
+</div>
+<div>
+<p class="font-['Space_Grotesk'] font-bold text-sm uppercase text-[#1a1c1a]">CURRENT_TRACK</p>
+<p class="font-['Space_Grotesk'] font-medium text-xs uppercase text-primary">LVL_04_ARCHITECT</p>
+</div>
+</div>
+<button class="w-full bg-on-surface text-surface py-2 text-xs font-bold font-headline uppercase tracking-tighter neo-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">RESUME_MISSION</button>
+</div>
+<nav class="flex-1 overflow-y-auto py-4">
+<div class="space-y-1">
+<a class="flex items-center gap-3 bg-[#b52701] text-white font-bold p-3 border-2 border-black mx-2 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">PYTHON_TRACK</span>
+</a>
+<a class="flex items-center gap-3 text-[#1a1c1a] p-3 hover:bg-[#e8e8e5] mx-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">ALGORITHMS</span>
+</a>
+<a class="flex items-center gap-3 text-[#1a1c1a] p-3 hover:bg-[#e8e8e5] mx-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">DATA_STRUCTURES</span>
+</a>
+<a class="flex items-center gap-3 text-[#1a1c1a] p-3 hover:bg-[#e8e8e5] mx-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">HISTORY</span>
+</a>
+<a class="flex items-center gap-3 text-[#1a1c1a] p-3 hover:bg-[#e8e8e5] mx-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">RESOURCES</span>
+</a>
+</div>
+</nav>
+<div class="mt-auto p-4 bg-surface-container border-t-2 border-on-surface">
+<div class="flex flex-col gap-2">
+<a class="flex items-center gap-2 text-[10px] font-bold uppercase text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="sensors">sensors</span> SYSTEM_STATUS: OK
+                    </a>
+<a class="flex items-center gap-2 text-[10px] font-bold uppercase text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="help_outline">help_outline</span> SUPPORT
+                    </a>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 relative overflow-y-auto">
+<div class="absolute inset-0 blueprint-bg pointer-events-none"></div>
+<div class="p-8 max-w-7xl mx-auto space-y-8 relative z-10">
+<!-- Page Header & Contextual Info -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+<div class="space-y-2">
+<div class="flex items-center gap-2">
+<span class="bg-primary-container text-on-primary-container text-[10px] font-black px-2 py-0.5 uppercase tracking-tighter">DIAGNOSTIC_MODE</span>
+<span class="text-on-surface-variant text-[10px] font-bold font-headline uppercase tracking-widest">SESSION_ID: J-AX_882</span>
+</div>
+<h1 class="text-5xl font-black font-headline uppercase tracking-tighter text-on-surface">BEHAVIORAL_CLASSIFICATION</h1>
+<div class="flex gap-4 items-center">
+<div class="flex items-center gap-1 text-on-surface-variant text-xs font-bold uppercase">
+<span class="material-symbols-outlined text-sm" data-icon="timer">timer</span> EST_TIME: 03:45
+                            </div>
+<div class="flex items-center gap-1 text-on-surface-variant text-xs font-bold uppercase">
+<span class="material-symbols-outlined text-sm" data-icon="bolt">bolt</span> COMPLEXITY: LVL_04
+                            </div>
+<div class="flex items-center gap-1 text-on-surface-variant text-xs font-bold uppercase border-l-2 border-outline/30 pl-4">
+                                TOPIC: <span class="text-primary">POLYMORPHISM &amp; EXCEPTIONS</span>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+<!-- Java Code Editor (Read-Only) -->
+<div class="xl:col-span-8 space-y-4">
+<div class="bg-surface-container-lowest border-2 border-outline neo-shadow overflow-hidden">
+<div class="bg-surface-container border-b-2 border-outline px-4 py-2 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="data_object">data_object</span>
+<span class="text-xs font-black font-headline uppercase">Main.java</span>
+</div>
+<div class="flex gap-1">
+<div class="w-2 h-2 rounded-full bg-outline/40"></div>
+<div class="w-2 h-2 rounded-full bg-outline/40"></div>
+<div class="w-2 h-2 rounded-full bg-outline/40"></div>
+</div>
+</div>
+<div class="flex font-mono text-sm leading-relaxed overflow-x-auto">
+<div class="bg-surface-container-high px-4 py-4 text-on-surface-variant text-right border-r-2 border-outline/20 select-none">
+                                    01<br/>02<br/>03<br/>04<br/>05<br/>06<br/>07<br/>08<br/>09<br/>10<br/>11<br/>12<br/>13<br/>14<br/>15<br/>16
+                                </div>
+<div class="px-6 py-4 flex-1 whitespace-pre">
+<span class="text-primary font-bold">class</span> Base {
+    <span class="text-primary font-bold">void</span> execute() <span class="text-primary font-bold">throws</span> Exception {
+        System.out.println(<span class="text-on-surface-variant">"BASE_START"</span>);
+    }
+}
+
+<span class="text-primary font-bold">public class</span> Main <span class="text-primary font-bold">extends</span> Base {
+    <span class="text-primary font-bold">@Override</span>
+<span class="text-primary font-bold">void</span> execute() {
+        System.out.println(<span class="text-on-surface-variant">"CHILD_EXEC"</span>);
+    }
+
+    <span class="text-primary font-bold">public static void</span> main(String[] args) {
+        Base b = <span class="text-primary font-bold">new</span> Main();
+        b.execute();
+    }
+}</div>
+</div>
+</div>
+</div>
+<!-- Technical Classifier Tool -->
+<div class="xl:col-span-4 space-y-6">
+<div class="bg-surface-container-low border-2 border-on-surface p-6 neo-shadow space-y-6">
+<h2 class="font-black font-headline text-lg uppercase border-b-2 border-on-surface pb-2 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span> CLASSIFIER_TOOL
+                            </h2>
+<div class="space-y-4">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">SELECT_PREDICTED_BEHAVIOR</p>
+<label class="flex items-center p-3 border-2 border-on-surface cursor-pointer hover:bg-surface-container-high transition-colors group">
+<input class="w-4 h-4 text-primary focus:ring-primary border-on-surface" name="classifier" type="radio"/>
+<span class="ml-3 text-xs font-bold font-headline uppercase group-hover:text-primary">Compila e executa</span>
+</label>
+<label class="flex items-center p-3 border-2 border-on-surface cursor-pointer hover:bg-surface-container-high transition-colors group">
+<input class="w-4 h-4 text-primary focus:ring-primary border-on-surface" name="classifier" type="radio"/>
+<span class="ml-3 text-xs font-bold font-headline uppercase group-hover:text-primary">Compile error</span>
+</label>
+<label class="flex items-center p-3 border-2 border-on-surface cursor-pointer hover:bg-surface-container-high transition-colors group">
+<input class="w-4 h-4 text-primary focus:ring-primary border-on-surface" name="classifier" type="radio"/>
+<span class="ml-3 text-xs font-bold font-headline uppercase group-hover:text-primary">Runtime exception</span>
+</label>
+<div class="space-y-2 pt-2">
+<label class="flex items-center p-3 border-2 border-on-surface cursor-pointer hover:bg-surface-container-high transition-colors group">
+<input class="w-4 h-4 text-primary focus:ring-primary border-on-surface" name="classifier" type="radio"/>
+<span class="ml-3 text-xs font-bold font-headline uppercase group-hover:text-primary">Saída específica</span>
+</label>
+<input class="w-full bg-surface-container-lowest border-2 border-on-surface p-2 text-xs font-mono focus:outline-none focus:neo-shadow transition-all placeholder:text-outline/40" placeholder="INSIRA A SAÍDA ESPERADA..." type="text"/>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary py-4 font-black font-headline text-lg uppercase tracking-widest neo-shadow-primary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all mt-4">
+                                CLASSIFICAR
+                            </button>
+</div>
+<!-- Result Panel (Placeholder/Static example of after action) -->
+<div class="bg-[#e8f5e9] border-2 border-[#2e7d32] p-6 neo-shadow space-y-4">
+<div class="flex items-center justify-between border-b-2 border-[#2e7d32] pb-2">
+<span class="font-black font-headline text-lg uppercase text-[#2e7d32]">VEREDICT: SUCCESS</span>
+<span class="material-symbols-outlined text-[#2e7d32]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="space-y-4">
+<section>
+<p class="text-[10px] font-bold text-[#2e7d32] uppercase tracking-widest mb-1">CONCEPTUAL_EXPLANATION</p>
+<p class="text-xs leading-relaxed text-on-surface">O código demonstra <strong>Dynamic Method Dispatch</strong>. Embora a referência <code class="bg-white/50 px-1 italic">b</code> seja do tipo <code class="bg-white/50 px-1">Base</code>, o objeto instanciado é <code class="bg-white/50 px-1">Main</code>.</p>
+</section>
+<section>
+<p class="text-[10px] font-bold text-[#2e7d32] uppercase tracking-widest mb-1">TECHNICAL_CITATION</p>
+<p class="text-[11px] italic border-l-4 border-[#2e7d32] pl-3 text-on-surface-variant">
+                                        "An instance method m1 declared in a class C overrides another instance method m2 if C is a subclass of the class in which m2 is declared..." (JLS §8.4.8.1)
+                                    </p>
+</section>
+<div class="bg-white/40 p-4 border border-[#2e7d32]/20">
+<p class="text-[10px] font-bold text-primary uppercase tracking-widest mb-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="smart_toy">smart_toy</span> AI_REVIEW
+                                    </p>
+<p class="text-[11px] leading-tight text-on-surface-variant">O compilador Java não exige que o método que sobrescreve declare as mesmas exceções que o método pai, desde que a nova declaração seja mais restritiva ou igual. Como <code class="text-primary font-bold">Main.execute()</code> remove a cláusula <code class="italic">throws</code>, o código é válido.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Diagnostic Data -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-12 border-t-2 border-outline/10">
+<div class="space-y-1">
+<p class="text-[10px] font-black font-headline uppercase text-outline">HARDWARE_SIM</p>
+<p class="text-xs font-mono">JVM_HOTSPOT_21.0.2</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-black font-headline uppercase text-outline">MEMORY_USAGE</p>
+<p class="text-xs font-mono">42MB / 512MB</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-black font-headline uppercase text-outline">LATENCY</p>
+<p class="text-xs font-mono">14ms</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-black font-headline uppercase text-outline">ENV_HASH</p>
+<p class="text-xs font-mono">X882-AF90-COMP</p>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

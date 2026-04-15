@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Arena - Falha de Reatividade UI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#f4f4f1",
+                    "surface-bright": "#f9f9f6",
+                    "on-surface-variant": "#5b413a",
+                    "outline": "#8f7069",
+                    "background": "#f9f9f6",
+                    "surface-tint": "#b52701",
+                    "tertiary-container": "#929393",
+                    "primary": "#b52701",
+                    "surface-container": "#eeeeeb",
+                    "primary-container": "#ff5c35",
+                    "tertiary-fixed": "#e2e2e2",
+                    "on-error": "#ffffff",
+                    "surface": "#f9f9f6",
+                    "primary-fixed-dim": "#ffb4a3",
+                    "outline-variant": "#e3beb6",
+                    "on-background": "#1a1c1a",
+                    "on-primary-container": "#5a0e00",
+                    "surface-container-high": "#e8e8e5",
+                    "error-container": "#ffdad6",
+                    "secondary-fixed": "#e2e2e2",
+                    "secondary-container": "#e2e2e2",
+                    "tertiary": "#5d5f5f",
+                    "on-primary-fixed-variant": "#8a1c00",
+                    "secondary-fixed-dim": "#c6c6c6",
+                    "on-secondary-fixed-variant": "#474747",
+                    "on-secondary-container": "#646464",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#1b1b1b",
+                    "on-tertiary-container": "#2a2c2c",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed-variant": "#454747",
+                    "on-tertiary-fixed": "#1a1c1c",
+                    "inverse-surface": "#2f312f",
+                    "inverse-on-surface": "#f1f1ee",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#1a1c1a",
+                    "surface-dim": "#dadad7",
+                    "secondary": "#5e5e5e",
+                    "surface-variant": "#e2e3e0",
+                    "on-primary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#ffdad2",
+                    "on-primary-fixed": "#3d0700",
+                    "inverse-primary": "#ffb4a3",
+                    "tertiary-fixed-dim": "#c6c6c7",
+                    "surface-container-highest": "#e2e3e0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Inter"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Space Grotesk', sans-serif; }
+        .brutalist-shadow { box-shadow: 4px 4px 0px #1a1c1a; }
+        .brutalist-shadow-primary { box-shadow: 4px 4px 0px #b52701; }
+        .brutalist-shadow-error { box-shadow: 4px 4px 0px #ba1a1a; }
+    </style>
+</head>
+<body class="bg-background text-on-background overflow-hidden h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-[#f9f9f6] dark:bg-[#1a1c1a] border-b-2 border-[#1a1c1a] dark:border-[#f9f9f6] shadow-[4px_4px_0px_#1a1c1a] flex justify-between items-center px-6 h-16 w-full fixed top-0 z-50">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black italic text-[#1a1c1a] dark:text-[#f9f9f6] font-headline uppercase tracking-wider">LOGIC_ARENA</span>
+<nav class="hidden md:flex gap-6">
+<a class="text-[#5b413a] dark:text-[#e3beb6] font-headline uppercase tracking-wider text-sm hover:translate-x-[2px] hover:translate-y-[2px] transition-all" href="#">Documentation</a>
+<a class="text-[#b52701] border-b-4 border-[#b52701] pb-1 font-headline uppercase tracking-wider text-sm" href="#">Challenges</a>
+<a class="text-[#5b413a] dark:text-[#e3beb6] font-headline uppercase tracking-wider text-sm hover:translate-x-[2px] hover:translate-y-[2px] transition-all" href="#">Community</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-4 py-1 font-headline font-black border-2 border-on-background brutalist-shadow hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all text-sm">UPGRADE</button>
+<span class="material-symbols-outlined text-on-background cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-background cursor-pointer" data-icon="settings">settings</span>
+<div class="w-8 h-8 bg-surface-container border-2 border-on-background flex items-center justify-center overflow-hidden">
+<img alt="User avatar with level indicator" class="w-full h-full object-cover" data-alt="Stylized pixel art avatar of a technical architect with a glowing orange orange headset and metallic background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_L4E4bRvYJxcN5pga1PlCPFZSl5A3PXtOGj8rikyPIe_anFeYmWogZcIjTrnOuyVbA9qm0yqZ6Wsv6JjUr7JcIY6c7Tvsw5VQEKcOl9wOrmj0W83lkH95M96KO5EAvCfV7TJad3nPBl5SBnzCZx96Kepdkzq75fv4mTthSoBHjIKMNv9L1V9LHPnrtggTlLEy2gOm2nR571qBBDcvupNV9-_gxZCwUXyv2naN2nAfm-QtyWWQu9-5x_IynQV2Rqdyp8qErxih1WI"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 pt-16 h-full overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-[#eeeeeb] dark:bg-[#1a1c1a] h-full w-64 border-r-2 border-[#1a1c1a] dark:border-[#f9f9f6] fixed left-0 top-16 bottom-0 flex flex-col p-4 z-40">
+<div class="mb-8 p-3 border-2 border-on-background bg-surface-bright brutalist-shadow">
+<div class="text-[10px] font-headline font-black text-on-surface-variant mb-1">ARCHITECT_LEVEL_04</div>
+<div class="w-full h-2 bg-secondary-container border border-on-background mb-1">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container" style="width: 90%;"></div>
+</div>
+<div class="text-[10px] font-headline text-on-surface-variant">XP: 4500 / 5000</div>
+</div>
+<nav class="flex flex-col gap-2 flex-1">
+<button class="flex items-center gap-3 p-3 bg-[#b52701] text-[#f9f9f6] border-2 border-[#1a1c1a] shadow-[4px_4px_0px_#1a1c1a] font-headline font-bold text-xs uppercase tracking-tight">
+<span class="material-symbols-outlined" data-icon="architecture">architecture</span>
+                    Current Track
+                </button>
+<button class="flex items-center gap-3 p-3 text-[#1a1c1a] dark:text-[#f9f9f6] hover:bg-[#e8e8e5] font-headline font-bold text-xs uppercase tracking-tight transition-all">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                    History
+                </button>
+<button class="flex items-center gap-3 p-3 text-[#1a1c1a] dark:text-[#f9f9f6] hover:bg-[#e8e8e5] font-headline font-bold text-xs uppercase tracking-tight transition-all">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+                    Achievements
+                </button>
+<button class="flex items-center gap-3 p-3 text-[#1a1c1a] dark:text-[#f9f9f6] hover:bg-[#e8e8e5] font-headline font-bold text-xs uppercase tracking-tight transition-all">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+                    Leaderboard
+                </button>
+<button class="flex items-center gap-3 p-3 text-[#1a1c1a] dark:text-[#f9f9f6] hover:bg-[#e8e8e5] font-headline font-bold text-xs uppercase tracking-tight transition-all">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+                    Settings
+                </button>
+</nav>
+<div class="mt-auto border-t-2 border-on-background pt-4 flex flex-col gap-2">
+<button class="flex items-center gap-3 p-2 text-on-surface font-headline font-bold text-[10px] uppercase">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span> Help
+                </button>
+<button class="flex items-center gap-3 p-2 text-primary font-headline font-bold text-[10px] uppercase">
+<span class="material-symbols-outlined" data-icon="logout">logout</span> Logout
+                </button>
+</div>
+</aside>
+<!-- Main Workspace Canvas -->
+<main class="ml-64 flex-1 h-full flex flex-col bg-surface overflow-hidden">
+<!-- Header Bar Area -->
+<div class="h-12 flex items-center justify-between px-6 border-b border-outline-variant bg-surface-container-low">
+<div class="flex items-center gap-4">
+<span class="font-headline font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="science">science</span>
+                        Lab de Contrato e Comportamento - UI/Component
+                    </span>
+<span class="px-2 py-0.5 bg-error-container text-error text-[10px] font-headline font-black border border-error">FAILURE_STATE</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-1 hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-sm" data-icon="refresh">refresh</span></button>
+<button class="bg-on-background text-surface px-4 py-1 text-xs font-headline font-bold brutalist-shadow hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all">RUN_TESTS</button>
+</div>
+</div>
+<!-- Editor and Result Side-by-Side -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Code Editor Column -->
+<div class="flex-[3] border-r border-outline-variant flex flex-col overflow-hidden">
+<div class="flex-1 bg-surface-container-lowest p-0 flex flex-col font-mono text-sm">
+<div class="flex items-center justify-between bg-surface-container p-2 px-4 border-b border-on-background">
+<span class="text-[10px] font-headline font-bold text-on-surface-variant uppercase tracking-tighter">COUNTER_COMPONENT.JS</span>
+<span class="text-[10px] text-on-surface-variant">UTF-8</span>
+</div>
+<div class="flex flex-1 overflow-auto">
+<!-- Line numbers gutter -->
+<div class="w-12 bg-surface-container flex flex-col items-center py-4 text-on-surface-variant select-none">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span class="bg-error-container text-error w-full text-center">6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span>
+</div>
+<!-- Code Area -->
+<div class="flex-1 p-4 bg-surface-container-lowest relative">
+<pre class="text-on-background leading-relaxed"><code><span class="text-tertiary">import</span> { defineComponent } <span class="text-tertiary">from</span> <span class="text-primary-container">'@logic/core'</span>;
+
+<span class="text-tertiary">export default</span> defineComponent({
+  setup() {
+    <span class="text-tertiary">let</span> count = 0; <span class="text-error-container bg-error text-surface-bright px-1">// ⚡ BUG: Missing reactivity wrapper</span>
+
+    <span class="text-tertiary">const</span> increment = () =&gt; {
+      count++;
+      console.log(<span class="text-primary-container">'Count is now:'</span>, count);
+    };
+
+    <span class="text-tertiary">return</span> { count, increment };
+  }
+});</code></pre>
+<!-- Floating Error Cursor -->
+<div class="absolute top-[138px] left-0 w-full h-6 bg-error/10 border-y border-error/20 pointer-events-none"></div>
+</div>
+</div>
+</div>
+<!-- Assertions Panel -->
+<div class="h-1/3 border-t-2 border-on-background bg-surface-container flex flex-col">
+<div class="p-2 px-4 border-b border-on-background flex justify-between items-center bg-surface-dim">
+<span class="text-[10px] font-headline font-bold text-on-background uppercase">Assertions Panel</span>
+<span class="text-[10px] text-error font-black uppercase">1 Failed / 2 Total</span>
+</div>
+<div class="flex-1 p-4 space-y-3 overflow-y-auto">
+<div class="flex items-start gap-4 p-3 bg-surface-bright border-2 border-on-background brutalist-shadow">
+<span class="material-symbols-outlined text-error font-bold" data-icon="close">close</span>
+<div>
+<p class="font-headline font-bold text-xs">Increments on click</p>
+<p class="text-[10px] text-on-surface-variant mt-1">Expected component state to increment when DOM button is triggered.</p>
+</div>
+</div>
+<div class="flex items-start gap-4 p-3 bg-surface-bright border-2 border-on-background opacity-60">
+<span class="material-symbols-outlined text-green-600 font-bold" data-icon="check">check</span>
+<div>
+<p class="font-headline font-bold text-xs">Initializes at 0</p>
+<p class="text-[10px] text-on-surface-variant mt-1">Component data must start with count value of zero.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Results Drawer (OPEN) -->
+<div class="flex-[2] bg-surface border-l-2 border-on-background flex flex-col overflow-hidden brutalist-shadow-error relative z-10">
+<div class="p-4 bg-error text-on-primary flex justify-between items-center">
+<h2 class="font-headline font-black uppercase text-lg italic tracking-tighter flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+                            Divergência Detectada
+                        </h2>
+<button class="hover:rotate-90 transition-transform"><span class="material-symbols-outlined" data-icon="close">close</span></button>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-8 bg-surface-container-low">
+<!-- Technical Evidence Section -->
+<section>
+<h3 class="text-[10px] font-headline font-black text-on-surface-variant uppercase mb-3 flex items-center gap-2">
+<span class="w-2 h-2 bg-primary"></span> Technical Evidence: DOM Snapshots
+                            </h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="border-2 border-on-background bg-surface-bright p-3">
+<p class="text-[8px] font-headline font-bold uppercase mb-2">BEFORE_CLICK</p>
+<div class="bg-surface-container p-2 text-[10px] font-mono rounded">
+                                        &lt;div&gt;0&lt;/div&gt;
+                                    </div>
+</div>
+<div class="border-2 border-error bg-error-container p-3">
+<p class="text-[8px] font-headline font-bold uppercase text-error mb-2">AFTER_CLICK (ACTUAL)</p>
+<div class="bg-white/50 p-2 text-[10px] font-mono rounded border border-error/20">
+                                        &lt;div&gt;0&lt;/div&gt;
+                                    </div>
+</div>
+</div>
+<div class="mt-4 p-3 border-2 border-dashed border-primary bg-primary/5">
+<p class="text-xs font-headline font-bold text-primary">Divergence Report:</p>
+<p class="text-[11px] font-body mt-1">Expected state change from <span class="font-bold">0</span> to <span class="font-bold">1</span>, but observed <span class="font-bold text-error">0</span> in the Virtual DOM tree.</p>
+</div>
+</section>
+<!-- AI Review Section -->
+<section class="bg-surface-bright border-2 border-on-background brutalist-shadow p-5 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-6xl" data-icon="psychology">psychology</span>
+</div>
+<h3 class="font-headline font-black uppercase text-sm mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="auto_awesome">auto_awesome</span>
+                                AI_ARCHITECT_REVIEW
+                            </h3>
+<div class="space-y-4 text-xs leading-relaxed">
+<p><strong>Issue:</strong> Shallow reference mutation detected at Line 6.</p>
+<p><strong>Analysis:</strong> The variable <code class="bg-surface-container px-1">count</code> is declared as a primitive literal using <code class="bg-surface-container px-1">let</code>. In our architectural compiler, primitives are not tracked for UI updates unless wrapped in a reactivity container.</p>
+<p><strong>Recommendation:</strong> Wrap the declaration in a <code class="bg-error-container text-error px-1">ref()</code> or <code class="bg-error-container text-error px-1">reactive()</code> wrapper to initialize the proxy listener.</p>
+<div class="bg-on-background text-surface p-3 mt-4">
+<p class="text-[9px] font-headline font-bold uppercase mb-2 text-primary-container">Proposed Refactor:</p>
+<code class="text-[10px] block">const count = ref(0);</code>
+</div>
+</div>
+</section>
+<!-- Call to Action -->
+<div class="pt-4">
+<button class="w-full bg-primary text-on-primary font-headline font-black p-4 border-2 border-on-background shadow-[4px_4px_0px_#1a1c1a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all uppercase text-sm">
+                                APPLY_AUTO_PATCH
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Contextual FAB - suppressed based on Screen: Details/Workspace -->
+</body></html>

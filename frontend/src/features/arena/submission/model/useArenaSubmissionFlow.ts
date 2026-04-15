@@ -2,13 +2,17 @@ import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 
 import { submissionApi, type ProgressReward, type ReviewChatMessage, type Submission } from '@/entities/submission'
+import type { SessionConfig } from '@/entities/practice-session'
 
 type ResultsTab = 'saida' | 'testes' | 'revisao' | 'chat'
 
 type UseArenaSubmissionFlowOptions = {
   authHeader: () => string | null
-  activeExerciseSlug: Ref<string | null>
+  activeSessionId: Ref<number | null>
+  activeSessionConfig: Ref<SessionConfig | null>
   code: Ref<string>
+  selectedOptions: Ref<string[]>
+  responseText: Ref<string>
   latestSubmission: Ref<Submission | null>
   chatMessages: Ref<ReviewChatMessage[]>
   onSubmissionHydrated: (submission: Submission) => void
@@ -48,7 +52,7 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
   })
   const submissionOutcomeCopy = computed(() => {
     const submission = options.latestSubmission.value
-    if (!submission) return 'Execute um exercício para receber o diagnóstico desta rodada.'
+    if (!submission) return 'Execute uma tentativa para receber o diagnóstico desta rodada.'
     if (submission.status === 'passed' && submission.xp_awarded > 0) {
       return 'Você concluiu o exercício e desbloqueou um marco real de progresso.'
     }
@@ -81,8 +85,8 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
     resultsDialogOpen.value = true
   }
 
-  async function refreshSubmission(submissionId: number) {
-    const refreshed = await submissionApi.getById(submissionId, options.authHeader() ?? undefined)
+  async function refreshSubmission(sessionId: number) {
+    const refreshed = await submissionApi.getById(sessionId, options.authHeader() ?? undefined)
     options.latestSubmission.value = {
       ...refreshed,
       results: refreshed.results.length ? refreshed.results : options.latestSubmission.value?.results ?? [],
@@ -100,10 +104,10 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
     }
   }
 
-  function startFeedbackPolling(submissionId: number) {
+  function startFeedbackPolling(sessionId: number) {
     stopFeedbackPolling()
     feedbackPollTimer.value = window.setInterval(() => {
-      void refreshSubmission(submissionId).catch((error) => {
+      void refreshSubmission(sessionId).catch((error) => {
         console.error(error)
         stopFeedbackPolling()
       })
@@ -111,16 +115,22 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
   }
 
   async function submitSolution() {
-    if (!options.activeExerciseSlug.value) return false
+    if (!options.activeSessionId.value) return false
 
     isSubmitting.value = true
     resultsDialogOpen.value = false
     options.chatMessages.value = []
 
     try {
+      const payload = {
+        source_code: options.code.value,
+        selected_options: [...options.selectedOptions.value],
+        response_text: options.responseText.value,
+        files: {},
+      }
       const submission = await submissionApi.submit(
-        options.activeExerciseSlug.value,
-        options.code.value,
+        options.activeSessionId.value,
+        payload,
         options.authHeader() ?? undefined,
       )
       options.onSubmissionHydrated(submission)
@@ -138,7 +148,7 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
 
   async function sendReviewChat(chatInput: Ref<string>) {
     const submission = options.latestSubmission.value
-    if (!submission || !chatInput.value.trim()) return
+    if (!submission || !chatInput.value.trim() || !submission.evaluation_run_id) return
 
     const message = chatInput.value.trim()
     options.chatMessages.value.push({ role: 'user', content: message })
@@ -147,7 +157,7 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
 
     try {
       const response = await submissionApi.sendReviewChat(
-        submission.id,
+        submission.evaluation_run_id,
         message,
         options.chatMessages.value,
         options.authHeader() ?? undefined,
@@ -171,10 +181,11 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
     const submission = options.latestSubmission.value
     if (!submission) return
     if (options.chatMessages.value.length === 0) {
+      const completionUnit = submission.total_tests === 1 ? 'critério' : 'critérios'
       options.chatMessages.value = [
         {
           role: 'assistant',
-          content: `Vamos revisar essa submissão. Você passou ${submission.passed_tests} de ${submission.total_tests} testes. Me pergunte sobre um erro específico, uma melhoria de código ou o raciocínio esperado.`,
+          content: `Vamos revisar essa tentativa. Você passou ${submission.passed_tests} de ${submission.total_tests} ${completionUnit}. Me pergunte sobre um erro específico, uma melhoria de código ou o raciocínio esperado.`,
         },
       ]
     }

@@ -127,16 +127,38 @@ class ExerciseTrackPrerequisite(TimestampedModel):
         return f'{self.track.name}: {self.label}'
 
 
-class Exercise(TimestampedModel):
+class ExerciseDefinition(TimestampedModel):
+    FAMILY_CODE_LAB = 'code_lab'
+    FAMILY_OBJECTIVE_ITEM = 'objective_item'
+    FAMILY_RESTRICTED_CODE = 'restricted_code'
+    FAMILY_CONTRACT_BEHAVIOR_LAB = 'contract_behavior_lab'
+    FAMILY_GUIDED_RESPONSE = 'guided_response'
+    FAMILY_CHOICES = [
+        (FAMILY_CODE_LAB, 'Code lab'),
+        (FAMILY_OBJECTIVE_ITEM, 'Objective item'),
+        (FAMILY_RESTRICTED_CODE, 'Restricted code'),
+        (FAMILY_CONTRACT_BEHAVIOR_LAB, 'Contract and behavior lab'),
+        (FAMILY_GUIDED_RESPONSE, 'Guided response'),
+    ]
+
     slug = models.SlugField(unique=True)
     title = models.CharField(max_length=140)
     statement = models.TextField()
+    learning_objectives = models.JSONField(default=list, blank=True)
+    family_key = models.CharField(max_length=40, choices=FAMILY_CHOICES, default=FAMILY_CODE_LAB)
     difficulty = models.CharField(max_length=20, default='iniciante')
     language = models.CharField(max_length=20, default='python')
     category = models.ForeignKey(ExerciseCategory, null=True, blank=True, on_delete=models.SET_NULL, related_name='exercises')
     track = models.ForeignKey(ExerciseTrack, null=True, blank=True, on_delete=models.SET_NULL, related_name='exercises')
     exercise_type = models.ForeignKey('ExerciseType', null=True, blank=True, on_delete=models.SET_NULL, related_name='exercises')
     estimated_time_minutes = models.PositiveIntegerField(default=15)
+    version = models.PositiveIntegerField(default=1)
+    content_blocks = models.JSONField(default=list, blank=True)
+    workspace_spec = models.JSONField(default=dict, blank=True)
+    evaluation_plan = models.JSONField(default=dict, blank=True)
+    review_profile = models.CharField(max_length=80, default='code_lab_default')
+    misconception_tags = models.JSONField(default=list, blank=True)
+    progression_rules = models.JSONField(default=dict, blank=True)
     track_position = models.PositiveIntegerField(default=0)
     concept_summary = models.TextField(blank=True)
     pedagogical_brief = models.TextField(blank=True)
@@ -148,13 +170,14 @@ class Exercise(TimestampedModel):
 
     class Meta:
         ordering = ['title']
+        db_table = 'arena_exercise'
 
     def __str__(self) -> str:
         return self.title
 
 
 class ExerciseExplanation(TimestampedModel):
-    exercise = models.OneToOneField(Exercise, on_delete=models.CASCADE, related_name='explanation')
+    exercise = models.OneToOneField(ExerciseDefinition, on_delete=models.CASCADE, related_name='explanation')
     learning_goal = models.TextField(blank=True)
     concept_focus_markdown = models.TextField(blank=True)
     reading_strategy_markdown = models.TextField(blank=True)
@@ -192,7 +215,7 @@ class ExerciseExplanationCodeExample(TimestampedModel):
 
 
 class ExerciseTestCase(TimestampedModel):
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='test_cases')
+    exercise = models.ForeignKey(ExerciseDefinition, on_delete=models.CASCADE, related_name='test_cases')
     input_data = models.TextField()
     expected_output = models.TextField()
     is_hidden = models.BooleanField(default=True)
@@ -222,7 +245,7 @@ class Submission(TimestampedModel):
     ]
 
     user = models.ForeignKey(ArenaUser, on_delete=models.CASCADE, related_name='submissions')
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='submissions')
+    exercise = models.ForeignKey(ExerciseDefinition, on_delete=models.CASCADE, related_name='submissions')
     source_code = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     passed_tests = models.PositiveIntegerField(default=0)
@@ -243,7 +266,7 @@ class Submission(TimestampedModel):
 
 class UserExerciseProgress(TimestampedModel):
     user = models.ForeignKey(ArenaUser, on_delete=models.CASCADE, related_name='exercise_progress')
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='user_progress')
+    exercise = models.ForeignKey(ExerciseDefinition, on_delete=models.CASCADE, related_name='user_progress')
     attempts_count = models.PositiveIntegerField(default=0)
     last_submission = models.ForeignKey('Submission', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     best_progress_submission = models.ForeignKey('Submission', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
@@ -258,3 +281,137 @@ class UserExerciseProgress(TimestampedModel):
     class Meta:
         ordering = ['exercise__title']
         unique_together = [('user', 'exercise')]
+
+
+class AssessmentContainer(TimestampedModel):
+    MODE_PRACTICE = 'practice'
+    MODE_CHECKPOINT = 'checkpoint'
+    MODE_EXAM = 'exam'
+    MODE_REVIEW = 'review'
+    MODE_CHOICES = [
+        (MODE_PRACTICE, 'Practice'),
+        (MODE_CHECKPOINT, 'Checkpoint'),
+        (MODE_EXAM, 'Exam'),
+        (MODE_REVIEW, 'Review'),
+    ]
+
+    slug = models.SlugField(unique=True)
+    title = models.CharField(max_length=160)
+    mode = models.CharField(max_length=20, choices=MODE_CHOICES, default=MODE_PRACTICE)
+    scoring_rules = models.JSONField(default=dict, blank=True)
+    timing_rules = models.JSONField(default=dict, blank=True)
+    reveal_rules = models.JSONField(default=dict, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['title']
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class AssessmentContainerPart(TimestampedModel):
+    container = models.ForeignKey(AssessmentContainer, on_delete=models.CASCADE, related_name='parts')
+    exercise = models.ForeignKey(ExerciseDefinition, null=True, blank=True, on_delete=models.CASCADE, related_name='assessment_parts')
+    title = models.CharField(max_length=160, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    scoring_rules = models.JSONField(default=dict, blank=True)
+    timing_rules = models.JSONField(default=dict, blank=True)
+    reveal_rules = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+
+class AttemptSession(TimestampedModel):
+    TARGET_EXERCISE = 'exercise'
+    TARGET_ASSESSMENT = 'assessment'
+    TARGET_TYPE_CHOICES = [
+        (TARGET_EXERCISE, 'Exercise'),
+        (TARGET_ASSESSMENT, 'Assessment'),
+    ]
+    MODE_PRACTICE = 'practice'
+    MODE_CHECKPOINT = 'checkpoint'
+    MODE_EXAM = 'exam'
+    MODE_REVIEW = 'review'
+    MODE_CHOICES = AssessmentContainer.MODE_CHOICES
+    STATUS_ACTIVE = 'active'
+    STATUS_COMPLETED = 'completed'
+    STATUS_ABANDONED = 'abandoned'
+    STATUS_CHOICES = [
+        (STATUS_ACTIVE, 'Active'),
+        (STATUS_COMPLETED, 'Completed'),
+        (STATUS_ABANDONED, 'Abandoned'),
+    ]
+
+    user = models.ForeignKey(ArenaUser, on_delete=models.CASCADE, related_name='attempt_sessions')
+    target_type = models.CharField(max_length=20, choices=TARGET_TYPE_CHOICES, default=TARGET_EXERCISE)
+    exercise = models.ForeignKey(ExerciseDefinition, null=True, blank=True, on_delete=models.CASCADE, related_name='attempt_sessions')
+    assessment = models.ForeignKey(AssessmentContainer, null=True, blank=True, on_delete=models.CASCADE, related_name='attempt_sessions')
+    mode = models.CharField(max_length=20, choices=MODE_CHOICES, default=MODE_PRACTICE)
+    state = models.JSONField(default=dict, blank=True)
+    current_workspace_state = models.JSONField(default=dict, blank=True)
+    answer_state = models.JSONField(default=dict, blank=True)
+    attempt_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class SubmissionSnapshot(TimestampedModel):
+    TYPE_RUN = 'run'
+    TYPE_CHECK = 'check'
+    TYPE_SUBMIT = 'submit'
+    TYPE_CHOICES = [
+        (TYPE_RUN, 'Run'),
+        (TYPE_CHECK, 'Check'),
+        (TYPE_SUBMIT, 'Submit'),
+    ]
+
+    session = models.ForeignKey(AttemptSession, on_delete=models.CASCADE, related_name='snapshots')
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    payload = models.JSONField(default=dict, blank=True)
+    files = models.JSONField(default=dict, blank=True)
+    selected_options = models.JSONField(default=list, blank=True)
+    legacy_submission = models.ForeignKey(Submission, null=True, blank=True, on_delete=models.SET_NULL, related_name='snapshots')
+
+    class Meta:
+        ordering = ['created_at', 'id']
+
+
+class EvaluationRun(TimestampedModel):
+    VERDICT_PASSED = 'passed'
+    VERDICT_FAILED = 'failed'
+    VERDICT_PARTIAL = 'partial'
+    VERDICT_ERROR = 'error'
+    VERDICT_CHOICES = [
+        (VERDICT_PASSED, 'Passed'),
+        (VERDICT_FAILED, 'Failed'),
+        (VERDICT_PARTIAL, 'Partial'),
+        (VERDICT_ERROR, 'Error'),
+    ]
+
+    submission = models.ForeignKey(SubmissionSnapshot, on_delete=models.CASCADE, related_name='evaluation_runs')
+    evaluator_results = models.JSONField(default=dict, blank=True)
+    normalized_score = models.FloatField(default=0)
+    verdict = models.CharField(max_length=20, choices=VERDICT_CHOICES, default=VERDICT_FAILED)
+    evidence_bundle = models.JSONField(default=dict, blank=True)
+    misconception_inference = models.JSONField(default=list, blank=True)
+    raw_artifacts = models.JSONField(default=dict, blank=True)
+    legacy_submission = models.ForeignKey(Submission, null=True, blank=True, on_delete=models.SET_NULL, related_name='evaluation_runs')
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class AIReview(TimestampedModel):
+    evaluation_run = models.OneToOneField(EvaluationRun, on_delete=models.CASCADE, related_name='ai_review')
+    profile_key = models.CharField(max_length=80)
+    explanation = models.TextField(blank=True)
+    next_steps = models.JSONField(default=list, blank=True)
+    conversation_thread = models.JSONField(default=list, blank=True)
+
+
+# Temporary compatibility alias while the rest of the codebase migrates to the
+# new domain language.
+Exercise = ExerciseDefinition

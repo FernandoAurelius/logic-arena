@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ARENA_COMPILER - Objective Item</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neo-brutal-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(26,28,26,1);
+        }
+        .neo-brutal-shadow-primary {
+            box-shadow: 4px 4px 0px 0px #b52701;
+        }
+        .active-depress:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container": "#eeeeeb",
+                        "outline": "#8f7069",
+                        "surface": "#f9f9f6",
+                        "primary": "#b52701",
+                        "on-surface": "#1a1c1a",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-tertiary": "#ffffff",
+                        "surface-bright": "#f9f9f6",
+                        "surface-container-high": "#e8e8e5",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e2e3e0",
+                        "secondary-container": "#e2e2e2",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "surface-container-low": "#f4f4f1",
+                        "outline-variant": "#e3beb6",
+                        "on-secondary-container": "#646464",
+                        "on-surface-variant": "#5b413a",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "tertiary-container": "#929393",
+                        "background": "#f9f9f6",
+                        "inverse-on-surface": "#f1f1ee",
+                        "on-primary-fixed-variant": "#8a1c00",
+                        "tertiary": "#5d5f5f",
+                        "secondary": "#5e5e5e",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#c6c6c6",
+                        "surface-variant": "#e2e3e0",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "inverse-surface": "#2f312f",
+                        "primary-fixed": "#ffdad2",
+                        "surface-tint": "#b52701",
+                        "secondary-fixed": "#e2e2e2",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-background": "#1a1c1a",
+                        "on-tertiary-container": "#2a2c2c",
+                        "on-primary-container": "#5a0e00",
+                        "primary-container": "#ff5c35",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#dadad7",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "on-primary-fixed": "#3d0700",
+                        "inverse-primary": "#ffb4a3"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-6 py-3 h-16 bg-[#f9f9f6] dark:bg-[#1a1c1a] border-b-4 border-[#1a1c1a] dark:border-[#f9f9f6] shadow-[4px_4px_0px_0px_rgba(26,28,26,1)] z-50 fixed top-0 left-0">
+<div class="flex items-center gap-8">
+<h1 class="text-2xl font-black italic tracking-tighter text-[#1a1c1a] dark:text-[#f9f9f6] uppercase">ARENA_COMPILER</h1>
+<nav class="hidden md:flex items-center gap-6">
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#b52701] dark:text-[#ff5c35] border-b-2 border-[#b52701] pb-1 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all" href="#">WORKSPACE</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#5b413a] dark:text-[#a3a3a3] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all" href="#">CHALLENGES</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#5b413a] dark:text-[#a3a3a3] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all" href="#">LEADERBOARD</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#5b413a] dark:text-[#a3a3a3] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all" href="#">DOCS</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-4 py-1 font-label font-bold text-xs uppercase tracking-tighter neo-brutal-shadow active-depress">UPGRADE</button>
+<span class="material-symbols-outlined text-on-surface cursor-pointer p-1" data-icon="terminal">terminal</span>
+<span class="material-symbols-outlined text-on-surface cursor-pointer p-1" data-icon="settings">settings</span>
+<div class="w-8 h-8 bg-surface-container border-2 border-on-surface overflow-hidden">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Stylized geometric avatar icon of a software engineer in high contrast black and white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqcsOUEdyhUek5SPnXoIUb3N5RY7V64VdS1qttk-HAXLKWaOKuPbqO6CCYaA8lX_6bkAI5KPHrG0L3Ww90t9OtDqkYJ9vkpXEMtj9FDMMTQqoa-PTsioq5u5Y7z1Hh-bf59-ank3fQitns2o5ZDxbSO8wgJS8ZaV8JSFKAashfu5-odaIbX74c-zL8gdZqgGXfqEO3_ScL0QEJOkkiIvpdkBPv3HY7tdEOaD0bDLa9OHVNC5KkxQF8iz3EtWUdvwBKpQODFtxiUCE"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="flex flex-col h-screen w-64 fixed left-0 top-16 z-40 bg-[#eeeeeb] dark:bg-[#1a1c1a] border-r-4 border-[#1a1c1a] dark:border-[#f9f9f6]">
+<div class="p-6 border-b-2 border-on-surface">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 bg-primary-container border-2 border-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="code" data-weight="fill" style="font-variation-settings: 'FILL' 1;">code</span>
+</div>
+<div>
+<p class="font-headline font-bold text-lg text-[#1a1c1a] dark:text-[#f9f9f6] leading-none uppercase">CURRENT_TRACK</p>
+<p class="font-['Space_Grotesk'] font-medium text-[10px] uppercase text-on-surface-variant">LVL_04_ARCHITECT</p>
+</div>
+</div>
+<button class="w-full bg-on-surface text-surface py-2 font-label font-black text-xs tracking-widest neo-brutal-shadow active-depress uppercase">RESUME_MISSION</button>
+</div>
+<nav class="flex-1 py-4">
+<div class="space-y-1">
+<a class="flex items-center gap-3 bg-[#b52701] text-white font-bold p-3 border-2 border-black mx-2 scale-95 duration-75" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="code">code</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">PYTHON_TRACK</span>
+</a>
+<a class="flex items-center gap-3 text-[#1a1c1a] dark:text-[#f9f9f6] p-3 hover:bg-[#e8e8e5] dark:hover:bg-[#333533] mx-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="account_tree">account_tree</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">ALGORITHMS</span>
+</a>
+<a class="flex items-center gap-3 text-[#1a1c1a] dark:text-[#f9f9f6] p-3 hover:bg-[#e8e8e5] dark:hover:bg-[#333533] mx-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="database">database</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">DATA_STRUCTURES</span>
+</a>
+<a class="flex items-center gap-3 text-[#1a1c1a] dark:text-[#f9f9f6] p-3 hover:bg-[#e8e8e5] dark:hover:bg-[#333533] mx-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="history">history</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">HISTORY</span>
+</a>
+<a class="flex items-center gap-3 text-[#1a1c1a] dark:text-[#f9f9f6] p-3 hover:bg-[#e8e8e5] dark:hover:bg-[#333533] mx-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="menu_book">menu_book</span>
+<span class="font-['Space_Grotesk'] font-medium text-xs uppercase">RESOURCES</span>
+</a>
+</div>
+</nav>
+<div class="mt-auto p-4 space-y-2 border-t-2 border-on-surface">
+<a class="flex items-center gap-3 text-on-surface-variant font-label text-[10px] uppercase font-bold px-2" href="#">
+<span class="material-symbols-outlined text-base" data-icon="sensors">sensors</span>
+                SYSTEM_STATUS
+            </a>
+<a class="flex items-center gap-3 text-on-surface-variant font-label text-[10px] uppercase font-bold px-2" href="#">
+<span class="material-symbols-outlined text-base" data-icon="help_outline">help_outline</span>
+                SUPPORT
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-8 grid grid-cols-12 gap-8 bg-surface-container-low min-h-[calc(100vh-64px)]">
+<!-- Left Panel: Exercise Context -->
+<section class="col-span-3 space-y-6">
+<div class="bg-surface p-6 border-2 border-on-surface neo-brutal-shadow">
+<span class="font-label font-bold text-xs text-primary uppercase tracking-widest mb-2 block">PEDAGOGICAL_OBJECTIVE</span>
+<h2 class="font-headline font-bold text-xl leading-tight mb-4 uppercase">Logic Circuit Persistence Analysis</h2>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6 font-medium">
+                    Analyze the provided asynchronous loop structure and identify the state of the heap memory after the final garbage collection cycle.
+                </p>
+<div class="space-y-4 border-t-2 border-surface-container py-4">
+<div class="flex justify-between items-center">
+<span class="font-label text-xs uppercase text-on-surface-variant">Difficulty</span>
+<span class="bg-primary-container text-on-primary-container font-black text-[10px] px-2 py-0.5 border border-on-surface">MEDIUM</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label text-xs uppercase text-on-surface-variant">Est. Time</span>
+<span class="font-bold text-xs uppercase">05 MIN</span>
+</div>
+</div>
+<div class="bg-surface-container p-3 flex gap-3 items-start border-l-4 border-primary mt-4">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="lightbulb">lightbulb</span>
+<p class="text-[11px] font-medium leading-snug">
+<span class="font-bold uppercase block mb-1">Misconception Hint</span>
+                        Watch out for the shadow variable in line 4. Scope leakage is intentionally simulated.
+                    </p>
+</div>
+</div>
+<!-- Progress Card -->
+<div class="bg-on-surface p-6 border-2 border-on-surface text-surface">
+<div class="flex justify-between items-end mb-2">
+<span class="font-label text-xs uppercase tracking-widest opacity-70">Current Mission</span>
+<span class="font-headline font-black text-xl">84%</span>
+</div>
+<div class="h-4 bg-on-surface-variant p-0.5">
+<div class="h-full bg-primary-container w-[84%]"></div>
+</div>
+<p class="text-[10px] font-label uppercase mt-3 opacity-60 tracking-wider">3 exercises remaining for Rank: Architect</p>
+</div>
+</section>
+<!-- Central Area: Code Stimulus & Alternatives -->
+<section class="col-span-6 space-y-6">
+<!-- Code Block -->
+<div class="bg-on-surface p-0 border-2 border-on-surface neo-brutal-shadow overflow-hidden">
+<div class="bg-[#2a2c2a] px-4 py-2 flex items-center justify-between border-b border-on-surface-variant">
+<div class="flex gap-1.5">
+<div class="w-2.5 h-2.5 rounded-full bg-error opacity-50"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-primary opacity-50"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-tertiary-container opacity-50"></div>
+</div>
+<span class="font-label text-[10px] uppercase font-bold text-surface opacity-50 tracking-widest">MEMORY_LEAK_TEST.PY</span>
+<span class="material-symbols-outlined text-surface opacity-50 text-sm" data-icon="content_copy">content_copy</span>
+</div>
+<div class="p-6 font-mono text-sm leading-relaxed overflow-x-auto text-[#e2e3e0]">
+<pre><code><span class="text-primary-container">def</span> <span class="text-[#89ddff]">solve_complexity</span>(data, factor):
+    state = []
+    <span class="text-primary-container">for</span> i <span class="text-primary-container">in</span> range(len(data)):
+        <span class="text-on-surface-variant"># State tracking logic</span>
+        val = (data[i] * factor) % 255
+        state.append(val)
+        
+        <span class="text-primary-container">if</span> len(state) &gt; <span class="text-[#f78c6c]">3</span>:
+            <span class="text-on-surface-variant underline">state = state[1:]</span> <span class="text-primary-container"># Line 8</span>
+            
+    <span class="text-primary-container">return</span> state
+
+<span class="text-on-surface-variant"># Stimulus Call:</span>
+print(solve_complexity([10, 20, 30, 40, 50], 2))</code></pre>
+</div>
+<div class="bg-[#1a1c1a] px-4 py-1.5 border-t border-on-surface-variant">
+<p class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest">Terminal Output Placeholder</p>
+</div>
+</div>
+<!-- Question Prompt -->
+<div class="py-2">
+<h3 class="font-headline font-bold text-lg uppercase tracking-tight">Select the correct output of the Stimulus Call:</h3>
+</div>
+<!-- Alternatives -->
+<div class="space-y-4">
+<!-- Option A -->
+<button class="w-full text-left bg-surface-container-lowest border-2 border-on-surface p-5 flex items-center gap-6 hover:bg-surface-container transition-all group active-depress">
+<div class="w-10 h-10 border-2 border-on-surface flex items-center justify-center font-headline font-bold text-lg group-hover:bg-on-surface group-hover:text-surface transition-colors">A</div>
+<code class="font-mono text-sm flex-1">[20, 40, 60, 80, 100]</code>
+<span class="material-symbols-outlined opacity-0 group-focus:opacity-100 text-primary" data-icon="check_circle">check_circle</span>
+</button>
+<!-- Option B (Selected) -->
+<button class="w-full text-left bg-surface-container-lowest border-2 border-primary p-5 flex items-center gap-6 neo-brutal-shadow-primary active-depress">
+<div class="w-10 h-10 border-2 border-primary bg-primary text-on-primary flex items-center justify-center font-headline font-bold text-lg">B</div>
+<code class="font-mono text-sm flex-1">[60, 80, 100]</code>
+<span class="material-symbols-outlined text-primary" data-icon="radio_button_checked" data-weight="fill" style="font-variation-settings: 'FILL' 1;">radio_button_checked</span>
+</button>
+<!-- Option C -->
+<button class="w-full text-left bg-surface-container-lowest border-2 border-on-surface p-5 flex items-center gap-6 hover:bg-surface-container transition-all group active-depress">
+<div class="w-10 h-10 border-2 border-on-surface flex items-center justify-center font-headline font-bold text-lg group-hover:bg-on-surface group-hover:text-surface transition-colors">C</div>
+<code class="font-mono text-sm flex-1">[40, 60, 80, 100]</code>
+<span class="material-symbols-outlined opacity-0 text-primary" data-icon="check_circle">check_circle</span>
+</button>
+<!-- Option D -->
+<button class="w-full text-left bg-surface-container-lowest border-2 border-on-surface p-5 flex items-center gap-6 hover:bg-surface-container transition-all group active-depress">
+<div class="w-10 h-10 border-2 border-on-surface flex items-center justify-center font-headline font-bold text-lg group-hover:bg-on-surface group-hover:text-surface transition-colors">D</div>
+<code class="font-mono text-sm flex-1">[80, 100]</code>
+<span class="material-symbols-outlined opacity-0 text-primary" data-icon="check_circle">check_circle</span>
+</button>
+</div>
+<!-- Main Actions -->
+<div class="flex gap-4 pt-4 pb-12">
+<button class="flex-1 bg-primary text-on-primary py-4 font-headline font-black text-lg uppercase tracking-widest neo-brutal-shadow active-depress border-2 border-on-surface">
+                    RESPONDER
+                </button>
+<button class="px-8 border-2 border-on-surface font-headline font-bold text-lg uppercase tracking-tight active-depress hover:bg-surface-container">
+                    VERIFICAR
+                </button>
+</div>
+</section>
+<!-- Right Panel: Result & AI Analysis -->
+<section class="col-span-3 space-y-6">
+<div class="sticky top-24">
+<div class="bg-surface border-2 border-on-surface neo-brutal-shadow overflow-hidden">
+<div class="bg-on-surface-variant p-3 flex justify-between items-center text-surface">
+<span class="font-label text-[10px] font-black uppercase tracking-widest">Live_Analysis</span>
+<span class="bg-primary text-[9px] px-1.5 py-0.5 font-black">AI_CORE_ACTIVE</span>
+</div>
+<!-- Result Summary -->
+<div class="p-6 space-y-4">
+<div class="text-center py-4 border-b-2 border-surface-container">
+<p class="font-label text-xs uppercase text-on-surface-variant mb-1">Analysis Result</p>
+<h4 class="text-4xl font-headline font-black text-primary uppercase">PENDING</h4>
+</div>
+<!-- AI Revision Block -->
+<div class="space-y-4">
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-primary-container" data-icon="psychology">psychology</span>
+<h5 class="font-headline font-bold text-sm uppercase">Reasoning Anchor</h5>
+</div>
+<p class="text-xs font-medium text-on-surface-variant leading-relaxed italic">
+                                "The candidate often confuses slice operations with element removal. If Option B is selected, it implies an understanding of sliding window persistence."
+                            </p>
+<div class="bg-surface-container-high p-4 border-2 border-on-surface">
+<span class="font-label text-[9px] font-black text-on-surface block mb-2 uppercase">Common Failure Modes:</span>
+<ul class="space-y-2">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-xs text-error mt-0.5" data-icon="warning">warning</span>
+<span class="text-[10px] leading-tight">Index Out of Bounds during slicing (Line 8).</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-xs text-error mt-0.5" data-icon="warning">warning</span>
+<span class="text-[10px] leading-tight">Incorrect modulo calculation on zero state.</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container border-t-2 border-on-surface">
+<button class="w-full text-center font-label text-[10px] font-black uppercase underline tracking-tighter text-on-surface-variant hover:text-primary transition-colors">
+                            View Detailed Memory Visualization
+                        </button>
+</div>
+</div>
+<!-- Secondary Track Info -->
+<div class="mt-6 border-2 border-on-surface p-4 flex items-center justify-between">
+<div>
+<p class="font-label text-[10px] uppercase font-bold text-on-surface-variant">Global Accuracy</p>
+<p class="font-headline font-black text-xl">72.4%</p>
+</div>
+<div class="text-right">
+<p class="font-label text-[10px] uppercase font-bold text-on-surface-variant">Your Rank</p>
+<p class="font-headline font-black text-xl text-primary">#14</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB Suppression Logic: Not rendering FAB as per task instructions for Detail/Task-Focused screens -->
+</body></html>

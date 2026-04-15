@@ -8,6 +8,7 @@ from apps.arena.models import (
 )
 from apps.arena.services import sync_exercise_explanation
 from apps.progress.application.services import build_module_progress_summary, build_track_progress_summary
+from apps.practice.application.registry import get_family_spec
 
 
 DEFAULT_EXERCISE_TYPE_SLUG = 'drill-de-implementacao'
@@ -17,6 +18,7 @@ DEFAULT_EXERCISE_TYPE_LABEL = 'Drill de implementação'
 def build_exercise_catalog_meta(exercise: Exercise) -> dict:
     exercise_type = exercise.exercise_type.slug if exercise.exercise_type else DEFAULT_EXERCISE_TYPE_SLUG
     return {
+        'family_key': exercise.family_key or 'code_lab',
         'exercise_type': exercise_type,
         'exercise_type_label': exercise.exercise_type.name if exercise.exercise_type else DEFAULT_EXERCISE_TYPE_LABEL,
         'estimated_time_minutes': exercise.estimated_time_minutes or 15,
@@ -31,6 +33,8 @@ def serialize_exercise_summary(exercise: Exercise) -> dict:
         'id': exercise.id,
         'slug': exercise.slug,
         'title': exercise.title,
+        'learning_objectives': list(exercise.learning_objectives or []),
+        'family_key': meta['family_key'],
         'difficulty': exercise.difficulty,
         'language': exercise.language,
         'professor_note': exercise.professor_note,
@@ -49,6 +53,8 @@ def serialize_exercise_summary(exercise: Exercise) -> dict:
 
 
 def create_exercise(payload) -> Exercise:
+    family_spec = get_family_spec(payload.family_key)
+
     category = None
     track = None
     module = None
@@ -86,16 +92,29 @@ def create_exercise(payload) -> Exercise:
     if exercise_type is None:
         exercise_type = ExerciseType.objects.filter(slug=DEFAULT_EXERCISE_TYPE_SLUG).first()
 
+    review_profile = payload.review_profile
+    if not review_profile or (review_profile == 'code_lab_default' and payload.family_key != Exercise.FAMILY_CODE_LAB):
+        review_profile = family_spec.default_review_profile
+
     exercise = Exercise.objects.create(
         slug=payload.slug,
         title=payload.title,
         statement=payload.statement,
+        learning_objectives=payload.learning_objectives,
+        family_key=payload.family_key,
         difficulty=payload.difficulty,
         language=payload.language,
         category=category or (track.category if track else None),
         track=track,
         exercise_type=exercise_type,
         estimated_time_minutes=payload.estimated_time_minutes,
+        version=payload.version,
+        content_blocks=payload.content_blocks,
+        workspace_spec=payload.workspace_spec,
+        evaluation_plan=payload.evaluation_plan,
+        review_profile=review_profile,
+        misconception_tags=payload.misconception_tags,
+        progression_rules=payload.progression_rules,
         track_position=payload.track_position,
         concept_summary=payload.concept_summary,
         pedagogical_brief=payload.pedagogical_brief,
