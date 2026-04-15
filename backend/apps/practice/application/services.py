@@ -37,6 +37,19 @@ DEFAULT_EXERCISE_TYPE_LABEL = 'Drill de implementação'
 DEFAULT_OBJECTIVE_ITEM_XP = 35
 
 
+def _resolve_objective_choice_mode(template_key: str, evaluation_plan: dict, correct_options: list[object], workspace_spec: dict | None = None) -> str:
+    workspace_spec = workspace_spec or {}
+    choice_mode = str(
+        workspace_spec.get('choice_mode')
+        or evaluation_plan.get('choice_mode')
+        or evaluation_plan.get('selection_mode')
+        or ('multiple' if template_key == 'multi-select' or len(correct_options) > 1 else 'single')
+    ).strip().lower()
+    if choice_mode not in {'single', 'multiple'}:
+        return 'single'
+    return choice_mode
+
+
 def _build_objective_template_meta(
     exercise: ExerciseDefinition,
     *,
@@ -118,6 +131,58 @@ def _build_objective_template_meta(
     }
 
 
+def _build_objective_workspace_spec(exercise: ExerciseDefinition) -> dict:
+    family_spec = get_family_spec(exercise.family_key)
+    evaluation_plan = exercise.evaluation_plan or {}
+    base_workspace_spec = dict(exercise.workspace_spec or {})
+    option_catalog = build_objective_option_catalog(evaluation_plan, exercise.content_blocks or [])
+    correct_options = evaluation_plan.get('correct_options') or evaluation_plan.get('correct_answers') or evaluation_plan.get('correct_answer') or evaluation_plan.get('answer_key') or []
+    if not isinstance(correct_options, (list, tuple, set)):
+        correct_options = [correct_options]
+    snippet_block = _extract_objective_snippet_block(exercise)
+    snippet_code = base_workspace_spec.get('snippet')
+    if snippet_block is None and snippet_code not in (None, ''):
+        snippet_block = {
+            'kind': 'snippet',
+            'title': base_workspace_spec.get('snippet_title') or base_workspace_spec.get('snippet_filename') or 'Trecho de código',
+            'language': base_workspace_spec.get('snippet_language') or exercise.language or 'python',
+            'read_only': bool(base_workspace_spec.get('snippet_read_only', True)),
+            'code': str(snippet_code),
+        }
+
+    template_key = normalize_objective_template_key(
+        base_workspace_spec.get('template')
+        or evaluation_plan.get('template')
+        or evaluation_plan.get('kind')
+        or 'single-choice'
+    )
+    choice_mode = _resolve_objective_choice_mode(template_key, evaluation_plan, list(correct_options), base_workspace_spec)
+    template_meta = _build_objective_template_meta(
+        exercise,
+        template_key=template_key,
+        choice_mode=choice_mode,
+        option_catalog=option_catalog,
+        snippet_block=snippet_block,
+    )
+
+    return {
+        **base_workspace_spec,
+        'surface_key': base_workspace_spec.get('surface_key') or family_spec.default_surface_key,
+        'workspace_kind': base_workspace_spec.get('workspace_kind') or 'objective_form',
+        'stimulus_kind': base_workspace_spec.get('stimulus_kind') or ('snippet' if snippet_block is not None else 'statement'),
+        'choice_mode': choice_mode,
+        'template': template_key,
+        'template_meta': template_meta,
+        'snippet': base_workspace_spec.get('snippet', snippet_block['code'] if snippet_block is not None else ''),
+        'snippet_language': base_workspace_spec.get('snippet_language', snippet_block['language'] if snippet_block is not None else exercise.language),
+        'snippet_read_only': base_workspace_spec.get('snippet_read_only', bool(snippet_block)),
+        'options': base_workspace_spec.get('options') or option_catalog,
+        'selected_options': list(base_workspace_spec.get('selected_options') or []),
+        'response_text': str(base_workspace_spec.get('response_text') or ''),
+        'allow_multiple': bool(base_workspace_spec.get('allow_multiple')) or choice_mode == 'multiple',
+    }
+
+
 def _extract_objective_snippet_block(exercise: ExerciseDefinition) -> dict | None:
     evaluation_plan = exercise.evaluation_plan or {}
     template = normalize_objective_template_key(evaluation_plan.get('template') or evaluation_plan.get('kind') or '')
@@ -157,13 +222,7 @@ def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
         if not isinstance(correct_options, (list, tuple, set)):
             correct_options = [correct_options]
         template_key = normalize_objective_template_key(evaluation_plan.get('template') or evaluation_plan.get('kind') or 'single-choice')
-        choice_mode = str(
-            evaluation_plan.get('choice_mode')
-            or evaluation_plan.get('selection_mode')
-            or ('multiple' if template_key == 'multi-select' or len(correct_options) > 1 else 'single')
-        ).strip().lower()
-        if choice_mode not in {'single', 'multiple'}:
-            choice_mode = 'single'
+        choice_mode = _resolve_objective_choice_mode(template_key, evaluation_plan, list(correct_options))
         blocks = [
             {
                 'kind': 'statement',
@@ -193,47 +252,13 @@ def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
 
 
 def build_default_workspace_spec(exercise: ExerciseDefinition) -> dict:
-    if exercise.workspace_spec:
+    if exercise.workspace_spec and exercise.family_key != ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
         return dict(exercise.workspace_spec)
 
-    family_spec = get_family_spec(exercise.family_key)
     if exercise.family_key == ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
-        evaluation_plan = exercise.evaluation_plan or {}
-        option_catalog = build_objective_option_catalog(evaluation_plan, exercise.content_blocks or [])
-        correct_options = evaluation_plan.get('correct_options') or evaluation_plan.get('correct_answers') or evaluation_plan.get('correct_answer') or evaluation_plan.get('answer_key') or []
-        if not isinstance(correct_options, (list, tuple, set)):
-            correct_options = [correct_options]
-        snippet_block = _extract_objective_snippet_block(exercise)
-        template_key = normalize_objective_template_key(evaluation_plan.get('template') or evaluation_plan.get('kind') or 'single-choice')
-        choice_mode = str(
-            evaluation_plan.get('choice_mode')
-            or evaluation_plan.get('selection_mode')
-            or ('multiple' if template_key == 'multi-select' or len(correct_options) > 1 else 'single')
-        ).strip().lower()
-        if choice_mode not in {'single', 'multiple'}:
-            choice_mode = 'single'
-        template_meta = _build_objective_template_meta(
-            exercise,
-            template_key=template_key,
-            choice_mode=choice_mode,
-            option_catalog=option_catalog,
-            snippet_block=snippet_block,
-        )
-        return {
-            'surface_key': family_spec.default_surface_key,
-            'workspace_kind': 'objective_form',
-            'stimulus_kind': 'snippet' if snippet_block is not None else 'statement',
-            'choice_mode': choice_mode,
-            'template': template_key,
-            'template_meta': template_meta,
-            'snippet': snippet_block['code'] if snippet_block is not None else '',
-            'snippet_language': snippet_block['language'] if snippet_block is not None else exercise.language,
-            'snippet_read_only': bool(snippet_block),
-            'options': option_catalog,
-            'selected_options': [],
-            'response_text': '',
-            'allow_multiple': choice_mode == 'multiple',
-        }
+        return _build_objective_workspace_spec(exercise)
+
+    family_spec = get_family_spec(exercise.family_key)
     if exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
         file_name = 'main.py' if exercise.language == 'python' else f'main.{exercise.language}'
         return {

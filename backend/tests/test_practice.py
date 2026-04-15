@@ -421,11 +421,11 @@ def test_objective_item_compile_runtime_output_can_require_output_text(client, a
         statement='O snippet compila e produz uma saída específica.',
         template='compile-runtime-output',
         choice_mode='single',
-        correct_options=['output'],
+        correct_options=['saida-correta'],
         options=[
             {'key': 'compile-error', 'label': 'Compile error'},
             {'key': 'runtime-exception', 'label': 'Runtime exception'},
-            {'key': 'output', 'label': 'Saída correta', 'is_correct': True},
+            {'key': 'saida-correta', 'label': 'Saída correta', 'is_correct': True},
         ],
     )
     exercise.evaluation_plan = {
@@ -446,7 +446,7 @@ def test_objective_item_compile_runtime_output_can_require_output_text(client, a
 
     partial_submit = client.post(
         f'/api/practice/sessions/{session_id}/submit',
-        data='{"selected_options":["output"],"response_text":"41"}',
+        data='{"selected_options":["saida-correta"],"response_text":"41"}',
         content_type='application/json',
         **auth_headers,
     )
@@ -460,7 +460,7 @@ def test_objective_item_compile_runtime_output_can_require_output_text(client, a
     assert second_session.status_code == 201
     passed_submit = client.post(
         f"/api/practice/sessions/{second_session.json()['id']}/submit",
-        data='{"selected_options":["output"],"response_text":"42"}',
+        data='{"selected_options":["saida-correta"],"response_text":"42"}',
         content_type='application/json',
         **auth_headers,
     )
@@ -468,6 +468,70 @@ def test_objective_item_compile_runtime_output_can_require_output_text(client, a
     passed_payload = passed_submit.json()
     assert passed_payload['evaluation']['verdict'] == 'passed'
     assert passed_payload['evaluation']['evaluator_results']['output_text_matches'] is True
+
+
+def test_objective_item_template_alias_still_resolves_classifier_surface(client, auth_headers, catalog_graph):
+    exercise = _create_objective_item_exercise(
+        catalog_graph,
+        slug='objective-item-template-alias-teste',
+        title='Alias de template',
+        statement='Classifique o comportamento do snippet.',
+        template='compile_runtime_output',
+        choice_mode='single',
+        correct_options=['runtime-exception'],
+        options=[
+            {'key': 'compile-error', 'label': 'Compile error'},
+            {'key': 'runtime-exception', 'label': 'Runtime exception', 'is_correct': True},
+            {'key': 'saida-correta', 'label': 'Saída correta'},
+        ],
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    config_payload = config_response.json()
+    assert config_payload['surface_key'] == 'objective_classifier'
+    assert config_payload['workspace_spec']['template'] == 'compile-runtime-output'
+
+
+def test_objective_item_persisted_workspace_spec_is_enriched_with_phase3_template_meta(client, auth_headers, catalog_graph):
+    exercise = _create_objective_item_exercise(
+        catalog_graph,
+        slug='objective-item-persisted-workspace-spec-teste',
+        title='Workspace persistido',
+        statement='Classifique o resultado e preencha a saída quando necessário.',
+        template='compile-runtime-output',
+        choice_mode='single',
+        correct_options=['saida-correta'],
+        options=[
+            {'key': 'compile-error', 'label': 'Compile error'},
+            {'key': 'runtime-exception', 'label': 'Runtime exception'},
+            {'key': 'saida-correta', 'label': 'Saída correta', 'is_correct': True},
+        ],
+    )
+    exercise.workspace_spec = {
+        'workspace_kind': 'objective_form',
+        'template': 'compile_runtime_output',
+        'snippet': 'System.out.println(42);',
+        'snippet_language': 'java',
+        'options': [
+            {'key': 'compile-error', 'label': 'Compile error'},
+            {'key': 'runtime-exception', 'label': 'Runtime exception'},
+            {'key': 'saida-correta', 'label': 'Saída correta'},
+        ],
+    }
+    exercise.evaluation_plan = {
+        **exercise.evaluation_plan,
+        'expected_output_text': '42',
+    }
+    exercise.save(update_fields=['workspace_spec', 'evaluation_plan', 'updated_at'])
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    config_payload = config_response.json()
+    assert config_payload['surface_key'] == 'objective_classifier'
+    assert config_payload['workspace_spec']['template'] == 'compile-runtime-output'
+    assert config_payload['workspace_spec']['template_meta']['requires_output_text'] is True
+    assert config_payload['workspace_spec']['template_meta']['analysis_steps']
 
 
 def test_objective_item_scoring_can_vary_by_mode(client, auth_headers, arena_user, catalog_graph):

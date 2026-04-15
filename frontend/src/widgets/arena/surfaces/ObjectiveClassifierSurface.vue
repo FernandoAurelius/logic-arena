@@ -61,7 +61,10 @@ const templateLabel = computed(() => {
   if (snippet.value.template === 'snippet-read-only') return 'Snippet read-only'
   return objectiveInfo.value.badge
 })
-const expectsOutputText = computed(() => Boolean(templateMeta.value.requires_output_text))
+const expectsOutputText = computed(() =>
+  Boolean(templateMeta.value.requires_output_text)
+  || snippet.value.template === 'compile-runtime-output'
+)
 const selectedLabel = computed(() => selectedLabels.value[0] ?? '')
 const analysisSteps = computed(() => templateMeta.value.analysis_steps ?? [])
 const responseInputLabel = computed(() => templateMeta.value.response_input_label || 'Saída esperada')

@@ -187,6 +187,7 @@ def build_objective_option_catalog(
                 'is_correct': bool(raw_option.get('is_correct', False)),
                 'explanation': str(raw_option.get('explanation') or raw_option.get('rationale') or ''),
                 'misconception_tag': str(raw_option.get('misconception_tag') or raw_option.get('misconception') or raw_option.get('tag') or ''),
+                'semantic': str(raw_option.get('semantic') or raw_option.get('option_kind') or raw_option.get('verdict_kind') or ''),
                 'aliases': [str(alias) for alias in aliases if alias not in (None, '')],
             }
         )
@@ -260,6 +261,44 @@ def _resolve_expected_output_text(evaluation_plan: dict | None) -> str:
     return ''
 
 
+def _resolve_output_option_keys(
+    evaluation_plan: dict | None,
+    option_catalog: list[dict],
+    correct_options: list[str],
+) -> set[str]:
+    evaluation_plan = evaluation_plan or {}
+    explicit_output_options = (
+        evaluation_plan.get('output_option_keys')
+        or evaluation_plan.get('output_options')
+        or evaluation_plan.get('output_verdict_keys')
+        or []
+    )
+    if not isinstance(explicit_output_options, (list, tuple, set)):
+        explicit_output_options = [explicit_output_options]
+
+    resolved_keys = {
+        normalize_choice_key(value)
+        for value in explicit_output_options
+        if value not in (None, '')
+    }
+    if resolved_keys:
+        return resolved_keys
+
+    semantic_keys = {
+        option['canonical_key']
+        for option in option_catalog
+        if normalize_choice_key(option.get('semantic') or '') == 'output'
+    }
+    if semantic_keys:
+        return semantic_keys
+
+    expected_output_text = _resolve_expected_output_text(evaluation_plan)
+    if expected_output_text:
+        return set(correct_options)
+
+    return set()
+
+
 def evaluate_objective_selection(
     *,
     evaluation_plan: dict | None,
@@ -308,11 +347,7 @@ def evaluate_objective_selection(
     passing_score = float(raw_passing_score)
 
     expected_output_text = _resolve_expected_output_text(evaluation_plan)
-    output_option_keys = {
-        option['canonical_key']
-        for option in option_catalog
-        if 'output' in option['canonical_key']
-    }
+    output_option_keys = _resolve_output_option_keys(evaluation_plan, option_catalog, correct_options)
     requires_output_text = bool(expected_output_text) and bool(correct_set & output_option_keys) and template == 'compile-runtime-output'
     output_text_matches = None
     if requires_output_text and bool(selected_set & output_option_keys):
