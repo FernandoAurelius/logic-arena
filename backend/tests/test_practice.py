@@ -782,3 +782,45 @@ def test_restricted_code_fill_in_the_blanks_uses_blank_template_and_partial_feed
     assert payload['evaluation']['evaluator_results']['total_tests'] == 2
     assert payload['evaluation']['evidence_bundle']['blank_answers']['acao'] == 'print(valor)'
     assert 'Lacunas que ainda precisam de ajuste' in payload['review']['explanation']
+
+
+def test_restricted_code_persisted_workspace_spec_is_enriched_with_phase4_defaults(
+    client,
+    auth_headers,
+    catalog_graph,
+):
+    exercise = _create_restricted_code_exercise(
+        catalog_graph,
+        slug='restricted-persisted-workspace-spec-teste',
+        title='Workspace persistido restricted',
+        statement='Corrija o snippet sem perder os metadados derivados.',
+        template='fill-in-the-blanks',
+        starter_code='def dobrar(valor):\n    [[blank:acao]]\n',
+        evaluation_plan={
+            'mechanism': 'structural_checker',
+            'template': 'fill_in_the_blanks',
+            'blank_template': 'def dobrar(valor):\n    [[blank:acao]]\n',
+            'blanks': [
+                {
+                    'key': 'acao',
+                    'label': 'Ação principal',
+                    'expected_answers': ['print(valor * 2)'],
+                }
+            ],
+        },
+        workspace_spec={
+            'workspace_kind': 'restricted_code',
+            'template': 'fill_in_the_blanks',
+            'editable_code': 'def dobrar(valor):\n    \n',
+            'blank_template': 'def dobrar(valor):\n    [[blank:acao]]\n',
+            'blanks': [{'key': 'acao', 'label': 'Ação principal'}],
+        },
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    config_payload = config_response.json()
+    assert config_payload['surface_key'] == 'restricted_fill_blanks'
+    assert config_payload['workspace_spec']['template'] == 'fill-in-the-blanks'
+    assert config_payload['workspace_spec']['template_meta']['key'] == 'fill-in-the-blanks'
+    assert config_payload['workspace_spec']['template_meta']['blank_count'] == 1

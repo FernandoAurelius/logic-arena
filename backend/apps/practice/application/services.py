@@ -28,6 +28,7 @@ from apps.practice.domain import (
     normalize_objective_template_key,
     normalize_restricted_template_key,
     normalize_text,
+    outputs_match_robust,
     render_blank_template,
 )
 from apps.progress.application.services import apply_submission_progress, build_exercise_progress_payload, build_user_progress_summary
@@ -418,7 +419,10 @@ def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
 
 
 def build_default_workspace_spec(exercise: ExerciseDefinition) -> dict:
-    if exercise.workspace_spec and exercise.family_key != ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
+    if exercise.workspace_spec and exercise.family_key not in {
+        ExerciseDefinition.FAMILY_OBJECTIVE_ITEM,
+        ExerciseDefinition.FAMILY_RESTRICTED_CODE,
+    }:
         return dict(exercise.workspace_spec)
 
     if exercise.family_key == ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
