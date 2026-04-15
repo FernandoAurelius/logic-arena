@@ -9,6 +9,7 @@ from .evaluation import (
     format_execution_results_console,
     line_matches,
     normalize_choice_key,
+    normalize_objective_template_key,
     normalize_text,
     outputs_match_robust,
 )

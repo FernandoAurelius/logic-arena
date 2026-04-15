@@ -17,6 +17,20 @@ export type ObjectiveTemplateKey =
   | 'snippet-read-only'
   | 'compile-runtime-output'
   | 'behavior-classification'
+  | 'output-prediction'
+
+export type ObjectiveTemplateMeta = {
+  key?: string
+  title?: string
+  stimulus_kind?: string
+  response_shape?: string
+  requires_output_text?: boolean
+  response_input_label?: string
+  response_input_placeholder?: string
+  expected_output_text?: string
+  analysis_steps?: string[]
+  verdict_options?: Array<{ key: string; label: string }>
+}
 
 export type ObjectiveTemplateInfo = {
   key: ObjectiveTemplateKey
@@ -92,6 +106,18 @@ const objectiveTemplateInfo: Record<ObjectiveTemplateKey, ObjectiveTemplateInfo>
     action_title: 'Veredito',
     action_copy: 'A resposta precisa capturar o comportamento emergente, não apenas a leitura superficial.',
   },
+  'output-prediction': {
+    key: 'output-prediction',
+    badge: 'Output prediction',
+    title: 'Previsão de saída',
+    subtitle: 'Simule a execução e escolha a saída observável correta.',
+    lens_title: 'Execução mental',
+    lens_copy: 'O objetivo é prever a saída final com precisão, linha a linha, sem editar o código.',
+    review_title: 'O que a IA observa',
+    review_copy: 'A ordem da execução, os valores intermediários e o ponto exato em que a previsão se desvia.',
+    action_title: 'Saída esperada',
+    action_copy: 'A resposta deve refletir a saída real do snippet, não a intenção aparente do código.',
+  },
 }
 
 export function getObjectiveWorkspace(sessionConfig?: SessionConfig | null) {
@@ -122,6 +148,7 @@ export function getObjectiveTemplateKey(sessionConfig?: SessionConfig | null): O
   }
   if (template === 'compile-runtime-output') return 'compile-runtime-output'
   if (template === 'behavior-classification') return 'behavior-classification'
+  if (template === 'output-prediction' || template === 'output_prediction') return 'output-prediction'
   if (template === 'single-choice' || template === 'single_choice') return 'single-choice'
 
   return Boolean(workspace.allow_multiple) || String(workspace.choice_mode ?? '') === 'multiple'
@@ -131,6 +158,13 @@ export function getObjectiveTemplateKey(sessionConfig?: SessionConfig | null): O
 
 export function getObjectiveTemplateInfo(sessionConfig?: SessionConfig | null): ObjectiveTemplateInfo {
   return objectiveTemplateInfo[getObjectiveTemplateKey(sessionConfig)]
+}
+
+export function getObjectiveTemplateMeta(sessionConfig?: SessionConfig | null): ObjectiveTemplateMeta {
+  const workspace = getObjectiveWorkspace(sessionConfig)
+  const templateMeta = workspace.template_meta
+  if (!templateMeta || typeof templateMeta !== 'object') return {}
+  return templateMeta as ObjectiveTemplateMeta
 }
 
 export function getObjectiveOptions(sessionConfig?: SessionConfig | null): ObjectiveOption[] {

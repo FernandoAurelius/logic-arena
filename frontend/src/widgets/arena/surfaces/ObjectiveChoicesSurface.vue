@@ -22,6 +22,7 @@ import {
   getObjectiveSnippet,
   getObjectiveStatement,
   getObjectiveTemplateInfo,
+  getObjectiveTemplateMeta,
   isObjectiveMultiple,
   toggleObjectiveSelection,
 } from './objectiveSurfaceShared'
@@ -43,6 +44,7 @@ const options = computed(() => getObjectiveOptions(props.sessionConfig))
 const snippet = computed(() => getObjectiveSnippet(props.sessionConfig))
 const allowMultiple = computed(() => isObjectiveMultiple(props.sessionConfig))
 const objectiveInfo = computed(() => getObjectiveTemplateInfo(props.sessionConfig))
+const templateMeta = computed(() => getObjectiveTemplateMeta(props.sessionConfig))
 const objectiveStatement = computed(() => getObjectiveStatement(props.sessionConfig))
 const learningObjectives = computed(() => getObjectiveLearningObjectives(props.sessionConfig))
 const contextTags = computed(() => getObjectiveContextTags(props.sessionConfig))
@@ -56,10 +58,12 @@ const selectedMisconceptions = computed(() =>
 const difficulty = computed(() => props.sessionConfig?.exercise?.difficulty ?? 'intermediário')
 const estimatedTime = computed(() => props.sessionConfig?.exercise?.estimated_time_minutes ?? 10)
 const modeLabel = computed(() => formatAttemptMode(props.sessionConfig?.mode))
+const analysisSteps = computed(() => templateMeta.value.analysis_steps ?? [])
 const snippetTone = computed(() => {
   if (snippet.value.template === 'compile-runtime-output') return 'diagnóstico de execução'
   if (snippet.value.template === 'behavior-classification') return 'comportamento observável'
   if (snippet.value.template === 'snippet-read-only') return 'leitura read-only'
+  if (snippet.value.template === 'output-prediction') return 'previsão de saída'
   return allowMultiple.value ? 'discriminação múltipla' : 'resposta única'
 })
 
@@ -74,7 +78,7 @@ function toggleOption(key: string) {
     <Card class="objective-surface__hero">
       <CardHeader class="objective-surface__hero-header">
         <div class="objective-surface__hero-copy">
-          <p class="eyebrow">Fase 2 · objective_item</p>
+          <p class="eyebrow">Fase 3 · objective_item</p>
           <CardTitle class="objective-surface__hero-title">{{ props.exerciseTitle }}</CardTitle>
           <CardDescription class="objective-surface__hero-description">
             {{ objectiveInfo.subtitle }}
@@ -118,6 +122,9 @@ function toggleOption(key: string) {
           </CardHeader>
           <CardContent>
             <p class="objective-copy">{{ objectiveStatement }}</p>
+            <ol v-if="analysisSteps.length" class="objective-analysis-steps">
+              <li v-for="step in analysisSteps" :key="step">{{ step }}</li>
+            </ol>
           </CardContent>
         </Card>
 
@@ -616,6 +623,15 @@ function toggleOption(key: string) {
 .objective-progress {
   display: grid;
   gap: 0.7rem;
+}
+
+.objective-analysis-steps {
+  margin: 0.9rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  color: var(--on-surface-variant);
 }
 
 .objective-progress__row {

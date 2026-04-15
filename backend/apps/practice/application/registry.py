@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from apps.practice.domain import normalize_objective_template_key
+
 
 @dataclass(frozen=True)
 class ExerciseFamilySpec:
@@ -54,6 +56,7 @@ OBJECTIVE_SNIPPET_TEMPLATES = {
     'read-only-snippet',
     'snippet-analysis',
     'code-snippet',
+    'output-prediction',
 }
 
 
@@ -79,7 +82,12 @@ def resolve_surface_key(exercise) -> str:
     family_spec = get_family_spec(exercise.family_key)
     workspace_spec = exercise.workspace_spec or {}
     evaluation_plan = exercise.evaluation_plan or {}
-    template = str(evaluation_plan.get('template', '')).strip().lower()
+    template = normalize_objective_template_key(
+        workspace_spec.get('template')
+        or evaluation_plan.get('template')
+        or evaluation_plan.get('kind')
+        or ''
+    )
 
     if exercise.family_key == 'code_lab':
         if workspace_spec.get('workspace_kind') == 'multifile':
