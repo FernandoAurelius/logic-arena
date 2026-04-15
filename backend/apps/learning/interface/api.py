@@ -105,6 +105,8 @@ def serialize_exercise_summary(exercise):
         'id': exercise.id,
         'slug': exercise.slug,
         'title': exercise.title,
+        'learning_objectives': list(exercise.learning_objectives or []),
+        'family_key': meta['family_key'],
         'difficulty': exercise.difficulty,
         'language': exercise.language,
         'professor_note': exercise.professor_note,

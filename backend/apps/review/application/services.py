@@ -3,13 +3,22 @@ import threading
 from django.db import close_old_connections
 
 from apps.arena.feedback import build_feedback_error_payload, generate_feedback, review_submission_chat as arena_review_submission_chat
-from apps.arena.models import Submission
+from apps.arena.models import AIReview, Submission
 
 
 def serialize_review_submission(submission: Submission) -> dict:
     from apps.practice.application.services import serialize_submission
 
     return serialize_submission(submission)
+
+
+def serialize_review_evaluation(evaluation_run) -> dict:
+    from apps.practice.application.services import serialize_ai_review, serialize_evaluation_run
+
+    return {
+        'evaluation': serialize_evaluation_run(evaluation_run),
+        'review': serialize_ai_review(evaluation_run.ai_review) if hasattr(evaluation_run, 'ai_review') else None,
+    }
 
 
 def schedule_submission_feedback(
@@ -20,6 +29,7 @@ def schedule_submission_feedback(
     passed_tests: int,
     total_tests: int,
     results: list[dict],
+    evaluation_run_id: int | None = None,
 ) -> None:
     def job() -> None:
         close_old_connections()
@@ -58,6 +68,31 @@ def schedule_submission_feedback(
                     }
                 ],
             )
+            if evaluation_run_id is not None:
+                AIReview.objects.filter(evaluation_run_id=evaluation_run_id).update(
+                    explanation=feedback_payload.summary,
+                    next_steps=feedback_payload.next_steps,
+                    conversation_thread=[
+                        {
+                            'role': 'assistant',
+                            'content': '\n'.join(
+                                [
+                                    '### Revisão automática',
+                                    feedback_payload.summary,
+                                    '',
+                                    '**Pontos fortes**',
+                                    *[f"- {item}" for item in feedback_payload.strengths],
+                                    '',
+                                    '**Ajustes**',
+                                    *[f"- {item}" for item in feedback_payload.issues],
+                                    '',
+                                    '**Próximos passos**',
+                                    *[f"- {item}" for item in feedback_payload.next_steps],
+                                ]
+                            ).strip(),
+                        }
+                    ],
+                )
         except Exception as error:
             payload = build_feedback_error_payload(error)
             Submission.objects.filter(id=submission_id).update(
@@ -72,6 +107,17 @@ def schedule_submission_feedback(
                     }
                 ],
             )
+            if evaluation_run_id is not None:
+                AIReview.objects.filter(evaluation_run_id=evaluation_run_id).update(
+                    explanation=payload.summary,
+                    next_steps=[],
+                    conversation_thread=[
+                        {
+                            'role': 'assistant',
+                            'content': payload.summary,
+                        }
+                    ],
+                )
         finally:
             close_old_connections()
 
@@ -87,4 +133,15 @@ def review_submission_chat_response(submission: Submission, user_message: str, h
         feedback_summary=submission.feedback,
         user_message=user_message,
         history=history,
+    )
+
+
+def review_evaluation_chat_response(evaluation_run, user_message: str, history: list[dict[str, str]]) -> str:
+    legacy_submission = evaluation_run.legacy_submission
+    if legacy_submission is not None:
+        return review_submission_chat_response(legacy_submission, user_message, history)
+
+    return (
+        'Ainda não há uma revisão especializada para esta família. '
+        'Use a evidência objetiva desta avaliação como base e retorne depois para uma revisão mais profunda.'
     )

@@ -6,662 +6,9 @@
     "description": "API do MVP do Logic Arena com autenticação simples, exercícios persistidos e submissões avaliadas."
   },
   "paths": {
-    "/api/auth/login": {
-      "post": {
-        "operationId": "arena_api_login",
-        "summary": "Faz login ou cria o usuário automaticamente.",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LoginResponseSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "auth"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginInputSchema"
-              }
-            }
-          },
-          "required": true
-        }
-      }
-    },
-    "/api/auth/me": {
-      "get": {
-        "operationId": "arena_api_me",
-        "summary": "Retorna o usuário autenticado.",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "auth"
-        ]
-      }
-    },
-    "/api/exercises/": {
-      "get": {
-        "operationId": "arena_api_list_exercises",
-        "summary": "Lista exercícios ativos.",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ExerciseSummarySchema"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "exercises"
-        ]
-      },
-      "post": {
-        "operationId": "arena_api_post_exercise",
-        "summary": "Cadastra um exercício novo via API.",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExerciseDetailSchema"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "exercises"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExerciseCreateSchema"
-              }
-            }
-          },
-          "required": true
-        }
-      }
-    },
-    "/api/exercises/{slug}": {
-      "get": {
-        "operationId": "arena_api_get_exercise",
-        "summary": "Detalha um exercício específico.",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "slug",
-            "schema": {
-              "title": "Slug",
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExerciseDetailSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "exercises"
-        ]
-      }
-    },
-    "/api/submissions/exercises/{slug}/submit": {
-      "post": {
-        "operationId": "arena_api_submit_exercise",
-        "summary": "Executa os testes, persiste a submissão e devolve o resultado.",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "slug",
-            "schema": {
-              "title": "Slug",
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubmissionSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "submissions"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmissionInputSchema"
-              }
-            }
-          },
-          "required": true
-        }
-      }
-    },
-    "/api/submissions/me": {
-      "get": {
-        "operationId": "arena_api_list_my_submissions",
-        "summary": "Lista as submissões do usuário autenticado.",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/SubmissionSummarySchema"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "submissions"
-        ]
-      }
-    },
-    "/api/submissions/{submission_id}": {
-      "get": {
-        "operationId": "arena_api_get_submission",
-        "summary": "Retorna a submissão atualizada para polling do feedback.",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "submission_id",
-            "schema": {
-              "title": "Submission Id",
-              "type": "integer"
-            },
-            "required": true
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubmissionSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "submissions"
-        ]
-      }
-    },
-    "/api/submissions/{submission_id}/review-chat": {
-      "post": {
-        "operationId": "arena_api_review_chat",
-        "summary": "Continua a revisão com IA sobre uma submissão específica.",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "submission_id",
-            "schema": {
-              "title": "Submission Id",
-              "type": "integer"
-            },
-            "required": true
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReviewChatResponseSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "submissions"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewChatInputSchema"
-              }
-            }
-          },
-          "required": true
-        }
-      }
-    },
-    "/api/catalog/navigator": {
-      "get": {
-        "operationId": "arena_api_get_navigator",
-        "summary": "Retorna a visão autenticada do catálogo por módulo e trilha.",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NavigatorResponseSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "catalog"
-        ]
-      }
-    },
-    "/api/catalog/modules/{module_slug}": {
-      "get": {
-        "operationId": "arena_api_get_module_detail",
-        "summary": "Retorna o detalhe de um módulo com suas trilhas.",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "module_slug",
-            "schema": {
-              "title": "Module Slug",
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModuleDetailSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "catalog"
-        ]
-      }
-    },
     "/api/catalog/tracks/{track_slug}": {
       "get": {
-        "operationId": "arena_api_get_track_detail",
+        "operationId": "apps_catalog_interface_api_get_track_detail",
         "summary": "Retorna a página de trilha com progresso, conceitos e exercícios.",
         "parameters": [
           {
@@ -729,7 +76,7 @@
     },
     "/api/catalog/tracks/{track_slug}/explanations/{exercise_slug}": {
       "get": {
-        "operationId": "arena_api_get_track_explanation",
+        "operationId": "apps_catalog_interface_api_get_track_explanation",
         "summary": "Retorna a documentação técnica progressiva de um módulo específico da trilha.",
         "parameters": [
           {
@@ -804,9 +151,1371 @@
         ]
       }
     },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "apps_accounts_interface_api_login",
+        "summary": "Faz login ou cria o usuário automaticamente.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "apps_accounts_interface_api_me",
+        "summary": "Retorna o usuário autenticado.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/practice/exercises": {
+      "get": {
+        "operationId": "apps_practice_interface_api_list_exercises",
+        "summary": "Lista exercícios ativos disponíveis para prática.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExerciseSummarySchema"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ]
+      },
+      "post": {
+        "operationId": "apps_practice_interface_api_post_exercise",
+        "summary": "Cadastra um exercício novo via API canônica.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseDetailSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseCreateSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/practice/exercises/{slug}": {
+      "get": {
+        "operationId": "apps_practice_interface_api_get_exercise",
+        "summary": "Detalha um exercício específico.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseDetailSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/exercises/{slug}/session-config": {
+      "get": {
+        "operationId": "apps_practice_interface_api_get_exercise_session_config",
+        "summary": "Retorna a configuração da sessão de prática para um exercício.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionConfigSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/exercises/{slug}/sessions": {
+      "post": {
+        "operationId": "apps_practice_interface_api_create_exercise_session",
+        "summary": "Abre uma nova sessão de prática para um exercício.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptSessionSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions": {
+      "get": {
+        "operationId": "apps_practice_interface_api_list_practice_sessions",
+        "summary": "Lista o histórico canônico de sessões do usuário autenticado.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AttemptSessionSchema"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}": {
+      "get": {
+        "operationId": "apps_practice_interface_api_get_practice_session",
+        "summary": "Retorna uma sessão de prática existente.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "schema": {
+              "title": "Session Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptSessionSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ]
+      },
+      "patch": {
+        "operationId": "apps_practice_interface_api_patch_practice_session",
+        "summary": "Atualiza o estado local da sessão.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "schema": {
+              "title": "Session Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "payload",
+            "schema": {
+              "additionalProperties": true,
+              "title": "Payload",
+              "type": "object"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptSessionSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}/run": {
+      "post": {
+        "operationId": "apps_practice_interface_api_run_practice_session",
+        "summary": "Executa um run intermediário dentro da sessão.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "schema": {
+              "title": "Session Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptEvaluationResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeAnswerInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/practice/sessions/{session_id}/check": {
+      "post": {
+        "operationId": "apps_practice_interface_api_check_practice_session",
+        "summary": "Executa uma checagem estruturada dentro da sessão.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "schema": {
+              "title": "Session Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptEvaluationResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeAnswerInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/practice/sessions/{session_id}/submit": {
+      "post": {
+        "operationId": "apps_practice_interface_api_submit_practice_session",
+        "summary": "Submete a sessão de prática e gera avaliação persistida.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "schema": {
+              "title": "Session Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptEvaluationResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "practice"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeAnswerInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/assessments/{slug}": {
+      "get": {
+        "operationId": "apps_practice_interface_api_get_assessment",
+        "summary": "Retorna o detalhe de um assessment container ativo.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentContainerSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "assessments"
+        ]
+      }
+    },
+    "/api/assessments/{slug}/sessions": {
+      "post": {
+        "operationId": "apps_practice_interface_api_create_assessment_session",
+        "summary": "Abre uma nova sessão para um assessment container.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptSessionSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "assessments"
+        ]
+      }
+    },
+    "/api/review/evaluations/{evaluation_run_id}": {
+      "get": {
+        "operationId": "apps_review_interface_api_get_evaluation",
+        "summary": "Retorna o resultado objetivo de uma avaliação por evaluation run.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_run_id",
+            "schema": {
+              "title": "Evaluation Run Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationRunSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "review"
+        ]
+      }
+    },
+    "/api/review/evaluations/{evaluation_run_id}/review": {
+      "get": {
+        "operationId": "apps_review_interface_api_get_evaluation_review",
+        "summary": "Retorna a revisão ancorada na evaluation run.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_run_id",
+            "schema": {
+              "title": "Evaluation Run Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIReviewSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "review"
+        ]
+      }
+    },
+    "/api/review/evaluations/{evaluation_run_id}/chat": {
+      "post": {
+        "operationId": "apps_review_interface_api_review_evaluation_chat",
+        "summary": "Continua a revisão com IA sobre uma evaluation run específica.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_run_id",
+            "schema": {
+              "title": "Evaluation Run Id",
+              "type": "integer"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewChatResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "review"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewChatInputSchema"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/progress/me": {
+      "get": {
+        "operationId": "apps_progress_interface_api_get_my_progress",
+        "summary": "Retorna o resumo de progresso do usuário autenticado.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProgressSummarySchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/catalog/navigator": {
+      "get": {
+        "operationId": "apps_catalog_interface_api_get_navigator",
+        "summary": "Retorna a visão autenticada do catálogo por módulo e trilha.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NavigatorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/catalog/modules/{module_slug}": {
+      "get": {
+        "operationId": "apps_catalog_interface_api_get_module_detail",
+        "summary": "Retorna o detalhe de um módulo com suas trilhas.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "module_slug",
+            "schema": {
+              "title": "Module Slug",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleDetailSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
     "/api/catalog-admin/reference": {
       "get": {
-        "operationId": "arena_api_get_catalog_reference",
+        "operationId": "apps_catalog_interface_api_get_catalog_reference",
         "summary": "Retorna as referências básicas para administração do catálogo.",
         "parameters": [
           {
@@ -855,7 +1564,7 @@
     },
     "/api/catalog-admin/modules": {
       "get": {
-        "operationId": "arena_api_list_modules",
+        "operationId": "apps_catalog_interface_api_list_modules",
         "summary": "Lista módulos administráveis.",
         "parameters": [
           {
@@ -906,7 +1615,7 @@
         ]
       },
       "post": {
-        "operationId": "arena_api_upsert_module",
+        "operationId": "apps_catalog_interface_api_upsert_module",
         "summary": "Cria ou atualiza um módulo.",
         "parameters": [
           {
@@ -965,7 +1674,7 @@
     },
     "/api/catalog-admin/exercise-types": {
       "get": {
-        "operationId": "arena_api_list_exercise_types",
+        "operationId": "apps_catalog_interface_api_list_exercise_types",
         "summary": "Lista tipos de exercício administráveis.",
         "parameters": [
           {
@@ -1016,7 +1725,7 @@
         ]
       },
       "post": {
-        "operationId": "arena_api_upsert_exercise_type",
+        "operationId": "apps_catalog_interface_api_upsert_exercise_type",
         "summary": "Cria ou atualiza um tipo de exercício.",
         "parameters": [
           {
@@ -1075,7 +1784,7 @@
     },
     "/api/catalog-admin/tracks": {
       "get": {
-        "operationId": "arena_api_list_tracks",
+        "operationId": "apps_catalog_interface_api_list_tracks",
         "summary": "Lista trilhas administráveis.",
         "parameters": [
           {
@@ -1126,7 +1835,7 @@
         ]
       },
       "post": {
-        "operationId": "arena_api_create_track",
+        "operationId": "apps_catalog_interface_api_create_track",
         "summary": "Cria uma trilha e seus metadados editoriais.",
         "parameters": [
           {
@@ -1195,7 +1904,7 @@
     },
     "/api/catalog-admin/tracks/{track_slug}": {
       "patch": {
-        "operationId": "arena_api_update_track",
+        "operationId": "apps_catalog_interface_api_update_track",
         "summary": "Atualiza metadados de uma trilha.",
         "parameters": [
           {
@@ -1273,7 +1982,7 @@
     },
     "/api/catalog-admin/exercises/{slug}/catalog": {
       "patch": {
-        "operationId": "arena_api_update_exercise_catalog",
+        "operationId": "apps_catalog_interface_api_update_exercise_catalog",
         "summary": "Atualiza metadados catalogais de um exercício.",
         "parameters": [
           {
@@ -1351,7 +2060,7 @@
     },
     "/api/health": {
       "get": {
-        "operationId": "arena_api_health",
+        "operationId": "apps_arena_api_health",
         "summary": "Health check público da API.",
         "parameters": [],
         "responses": {
@@ -1367,6 +2076,610 @@
   },
   "components": {
     "schemas": {
+      "TrackConceptSchema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "why_it_matters": {
+            "title": "Why It Matters",
+            "type": "string"
+          },
+          "common_mistake": {
+            "title": "Common Mistake",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "why_it_matters",
+          "common_mistake"
+        ],
+        "title": "TrackConceptSchema",
+        "type": "object"
+      },
+      "TrackDetailSchema": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Name"
+          },
+          "category_slug": {
+            "title": "Category Slug",
+            "type": "string"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "level_label": {
+            "title": "Level Label",
+            "type": "string"
+          },
+          "progress_percent": {
+            "title": "Progress Percent",
+            "type": "integer"
+          },
+          "completed_exercises": {
+            "title": "Completed Exercises",
+            "type": "integer"
+          },
+          "total_exercises": {
+            "title": "Total Exercises",
+            "type": "integer"
+          },
+          "current_target_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Slug"
+          },
+          "current_target_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Target Title"
+          },
+          "concept_kicker": {
+            "title": "Concept Kicker",
+            "type": "string"
+          },
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/TrackConceptSchema"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "exercises": {
+            "items": {
+              "$ref": "#/components/schemas/TrackExerciseSchema"
+            },
+            "title": "Exercises",
+            "type": "array"
+          },
+          "milestone": {
+            "$ref": "#/components/schemas/TrackMilestoneSchema"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "category_slug",
+          "category_name",
+          "description",
+          "goal",
+          "level_label",
+          "progress_percent",
+          "completed_exercises",
+          "total_exercises",
+          "concept_kicker",
+          "concepts",
+          "prerequisites",
+          "exercises",
+          "milestone"
+        ],
+        "title": "TrackDetailSchema",
+        "type": "object"
+      },
+      "TrackExerciseProgressSchema": {
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "attempts_count": {
+            "title": "Attempts Count",
+            "type": "integer"
+          },
+          "best_passed_tests": {
+            "title": "Best Passed Tests",
+            "type": "integer"
+          },
+          "best_total_tests": {
+            "title": "Best Total Tests",
+            "type": "integer"
+          },
+          "passed_once": {
+            "title": "Passed Once",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status",
+          "attempts_count",
+          "best_passed_tests",
+          "best_total_tests",
+          "passed_once"
+        ],
+        "title": "TrackExerciseProgressSchema",
+        "type": "object"
+      },
+      "TrackExerciseSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "learning_objectives": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Learning Objectives",
+            "type": "array"
+          },
+          "family_key": {
+            "default": "code_lab",
+            "title": "Family Key",
+            "type": "string"
+          },
+          "difficulty": {
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "professor_note": {
+            "title": "Professor Note",
+            "type": "string"
+          },
+          "exercise_type": {
+            "default": "drill-de-implementacao",
+            "title": "Exercise Type",
+            "type": "string"
+          },
+          "exercise_type_label": {
+            "default": "Drill de implementação",
+            "title": "Exercise Type Label",
+            "type": "string"
+          },
+          "estimated_time_minutes": {
+            "default": 15,
+            "title": "Estimated Time Minutes",
+            "type": "integer"
+          },
+          "concept_summary": {
+            "default": "",
+            "title": "Concept Summary",
+            "type": "string"
+          },
+          "track_position": {
+            "default": 0,
+            "title": "Track Position",
+            "type": "integer"
+          },
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Name"
+          },
+          "category_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Slug"
+          },
+          "category_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Name"
+          },
+          "track_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Slug"
+          },
+          "track_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Name"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "pedagogical_brief": {
+            "title": "Pedagogical Brief",
+            "type": "string"
+          },
+          "is_current_target": {
+            "title": "Is Current Target",
+            "type": "boolean"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/TrackExerciseProgressSchema"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "difficulty",
+          "language",
+          "professor_note",
+          "position",
+          "pedagogical_brief",
+          "is_current_target",
+          "progress"
+        ],
+        "title": "TrackExerciseSchema",
+        "type": "object"
+      },
+      "TrackMilestoneSchema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "requirement_label": {
+            "title": "Requirement Label",
+            "type": "string"
+          },
+          "unlocked": {
+            "title": "Unlocked",
+            "type": "boolean"
+          },
+          "remaining_exercises": {
+            "title": "Remaining Exercises",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "requirement_label",
+          "unlocked",
+          "remaining_exercises"
+        ],
+        "title": "TrackMilestoneSchema",
+        "type": "object"
+      },
+      "ErrorSchema": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ErrorSchema",
+        "type": "object"
+      },
+      "ExerciseExplanationSchema": {
+        "properties": {
+          "module_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Slug"
+          },
+          "module_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Name"
+          },
+          "track_slug": {
+            "title": "Track Slug",
+            "type": "string"
+          },
+          "track_name": {
+            "title": "Track Name",
+            "type": "string"
+          },
+          "track_goal": {
+            "title": "Track Goal",
+            "type": "string"
+          },
+          "level_label": {
+            "title": "Level Label",
+            "type": "string"
+          },
+          "exercise_slug": {
+            "title": "Exercise Slug",
+            "type": "string"
+          },
+          "exercise_title": {
+            "title": "Exercise Title",
+            "type": "string"
+          },
+          "exercise_type_label": {
+            "title": "Exercise Type Label",
+            "type": "string"
+          },
+          "estimated_time_minutes": {
+            "title": "Estimated Time Minutes",
+            "type": "integer"
+          },
+          "concept_summary": {
+            "title": "Concept Summary",
+            "type": "string"
+          },
+          "pedagogical_brief": {
+            "title": "Pedagogical Brief",
+            "type": "string"
+          },
+          "learning_goal": {
+            "title": "Learning Goal",
+            "type": "string"
+          },
+          "concept_focus_markdown": {
+            "title": "Concept Focus Markdown",
+            "type": "string"
+          },
+          "reading_strategy_markdown": {
+            "title": "Reading Strategy Markdown",
+            "type": "string"
+          },
+          "implementation_strategy_markdown": {
+            "title": "Implementation Strategy Markdown",
+            "type": "string"
+          },
+          "assessment_notes_markdown": {
+            "title": "Assessment Notes Markdown",
+            "type": "string"
+          },
+          "common_mistakes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Common Mistakes",
+            "type": "array"
+          },
+          "mastery_checklist": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mastery Checklist",
+            "type": "array"
+          },
+          "prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationConceptSchema"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "code_examples": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationCodeExampleSchema"
+            },
+            "title": "Code Examples",
+            "type": "array"
+          }
+        },
+        "required": [
+          "track_slug",
+          "track_name",
+          "track_goal",
+          "level_label",
+          "exercise_slug",
+          "exercise_title",
+          "exercise_type_label",
+          "estimated_time_minutes",
+          "concept_summary",
+          "pedagogical_brief",
+          "learning_goal",
+          "concept_focus_markdown",
+          "reading_strategy_markdown",
+          "implementation_strategy_markdown",
+          "assessment_notes_markdown",
+          "common_mistakes",
+          "mastery_checklist",
+          "prerequisites",
+          "concepts",
+          "code_examples"
+        ],
+        "title": "ExerciseExplanationSchema",
+        "type": "object"
+      },
+      "ExplanationCodeExampleSchema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "rationale",
+          "language",
+          "code"
+        ],
+        "title": "ExplanationCodeExampleSchema",
+        "type": "object"
+      },
+      "ExplanationConceptSchema": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "explanation_text": {
+            "title": "Explanation Text",
+            "type": "string"
+          },
+          "why_it_matters": {
+            "title": "Why It Matters",
+            "type": "string"
+          },
+          "common_mistake": {
+            "title": "Common Mistake",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "explanation_text",
+          "why_it_matters",
+          "common_mistake"
+        ],
+        "title": "ExplanationConceptSchema",
+        "type": "object"
+      },
       "LoginResponseSchema": {
         "properties": {
           "token": {
@@ -1433,19 +2746,6 @@
         "title": "UserSchema",
         "type": "object"
       },
-      "ErrorSchema": {
-        "properties": {
-          "message": {
-            "title": "Message",
-            "type": "string"
-          }
-        },
-        "required": [
-          "message"
-        ],
-        "title": "ErrorSchema",
-        "type": "object"
-      },
       "LoginInputSchema": {
         "properties": {
           "nickname": {
@@ -1476,6 +2776,19 @@
           },
           "title": {
             "title": "Title",
+            "type": "string"
+          },
+          "learning_objectives": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Learning Objectives",
+            "type": "array"
+          },
+          "family_key": {
+            "default": "code_lab",
+            "title": "Family Key",
             "type": "string"
           },
           "difficulty": {
@@ -1607,6 +2920,19 @@
             "title": "Title",
             "type": "string"
           },
+          "learning_objectives": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Learning Objectives",
+            "type": "array"
+          },
+          "family_key": {
+            "default": "code_lab",
+            "title": "Family Key",
+            "type": "string"
+          },
           "difficulty": {
             "title": "Difficulty",
             "type": "string"
@@ -1714,6 +3040,51 @@
             "title": "Statement",
             "type": "string"
           },
+          "version": {
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "content_blocks": {
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Content Blocks",
+            "type": "array"
+          },
+          "workspace_spec": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Workspace Spec",
+            "type": "object"
+          },
+          "evaluation_plan": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Evaluation Plan",
+            "type": "object"
+          },
+          "review_profile": {
+            "default": "code_lab_default",
+            "title": "Review Profile",
+            "type": "string"
+          },
+          "misconception_tags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Misconception Tags",
+            "type": "array"
+          },
+          "progression_rules": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Progression Rules",
+            "type": "object"
+          },
           "starter_code": {
             "title": "Starter Code",
             "type": "string"
@@ -1792,6 +3163,19 @@
             "title": "Statement",
             "type": "string"
           },
+          "learning_objectives": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Learning Objectives",
+            "type": "array"
+          },
+          "family_key": {
+            "default": "code_lab",
+            "title": "Family Key",
+            "type": "string"
+          },
           "difficulty": {
             "default": "iniciante",
             "title": "Difficulty",
@@ -1856,6 +3240,51 @@
             "default": 15,
             "title": "Estimated Time Minutes",
             "type": "integer"
+          },
+          "version": {
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "content_blocks": {
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Content Blocks",
+            "type": "array"
+          },
+          "workspace_spec": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Workspace Spec",
+            "type": "object"
+          },
+          "evaluation_plan": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Evaluation Plan",
+            "type": "object"
+          },
+          "review_profile": {
+            "default": "code_lab_default",
+            "title": "Review Profile",
+            "type": "string"
+          },
+          "misconception_tags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Misconception Tags",
+            "type": "array"
+          },
+          "progression_rules": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Progression Rules",
+            "type": "object"
           },
           "track_position": {
             "default": 0,
@@ -1932,6 +3361,348 @@
         "title": "TestCaseInputSchema",
         "type": "object"
       },
+      "SessionConfigSchema": {
+        "properties": {
+          "exercise": {
+            "$ref": "#/components/schemas/ExerciseDetailSchema"
+          },
+          "family_key": {
+            "title": "Family Key",
+            "type": "string"
+          },
+          "surface_key": {
+            "title": "Surface Key",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "workspace_spec": {
+            "additionalProperties": true,
+            "title": "Workspace Spec",
+            "type": "object"
+          },
+          "review_profile": {
+            "title": "Review Profile",
+            "type": "string"
+          }
+        },
+        "required": [
+          "exercise",
+          "family_key",
+          "surface_key",
+          "mode",
+          "workspace_spec",
+          "review_profile"
+        ],
+        "title": "SessionConfigSchema",
+        "type": "object"
+      },
+      "AIReviewSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "evaluation_run_id": {
+            "title": "Evaluation Run Id",
+            "type": "integer"
+          },
+          "profile_key": {
+            "title": "Profile Key",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "next_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Next Steps",
+            "type": "array"
+          },
+          "conversation_thread": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Conversation Thread",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "evaluation_run_id",
+          "profile_key",
+          "explanation",
+          "next_steps",
+          "conversation_thread",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AIReviewSchema",
+        "type": "object"
+      },
+      "AttemptSessionSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "target_type": {
+            "title": "Target Type",
+            "type": "string"
+          },
+          "exercise_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Slug"
+          },
+          "exercise_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Title"
+          },
+          "assessment_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Slug"
+          },
+          "assessment_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Title"
+          },
+          "family_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Key"
+          },
+          "surface_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surface Key"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "state": {
+            "additionalProperties": true,
+            "title": "State",
+            "type": "object"
+          },
+          "current_workspace_state": {
+            "additionalProperties": true,
+            "title": "Current Workspace State",
+            "type": "object"
+          },
+          "answer_state": {
+            "additionalProperties": true,
+            "title": "Answer State",
+            "type": "object"
+          },
+          "attempt_status": {
+            "title": "Attempt Status",
+            "type": "string"
+          },
+          "latest_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SubmissionSnapshotSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latest_evaluation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvaluationRunSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latest_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AIReviewSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "xp_awarded": {
+            "default": 0,
+            "title": "Xp Awarded",
+            "type": "integer"
+          },
+          "unlocked_progress_rewards": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ProgressRewardSchema"
+            },
+            "title": "Unlocked Progress Rewards",
+            "type": "array"
+          },
+          "exercise_progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExerciseProgressSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user_progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserProgressSummarySchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "target_type",
+          "mode",
+          "state",
+          "current_workspace_state",
+          "answer_state",
+          "attempt_status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AttemptSessionSchema",
+        "type": "object"
+      },
+      "EvaluationRunSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "submission_snapshot_id": {
+            "title": "Submission Snapshot Id",
+            "type": "integer"
+          },
+          "normalized_score": {
+            "title": "Normalized Score",
+            "type": "number"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          },
+          "evaluator_results": {
+            "additionalProperties": true,
+            "title": "Evaluator Results",
+            "type": "object"
+          },
+          "evidence_bundle": {
+            "additionalProperties": true,
+            "title": "Evidence Bundle",
+            "type": "object"
+          },
+          "misconception_inference": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Misconception Inference",
+            "type": "array"
+          },
+          "raw_artifacts": {
+            "additionalProperties": true,
+            "title": "Raw Artifacts",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "submission_snapshot_id",
+          "normalized_score",
+          "verdict",
+          "evaluator_results",
+          "evidence_bundle",
+          "misconception_inference",
+          "raw_artifacts",
+          "created_at"
+        ],
+        "title": "EvaluationRunSchema",
+        "type": "object"
+      },
       "ExerciseProgressSchema": {
         "properties": {
           "attempts_count": {
@@ -1985,48 +3756,6 @@
         "title": "ExerciseProgressSchema",
         "type": "object"
       },
-      "FeedbackPayloadSchema": {
-        "properties": {
-          "summary": {
-            "title": "Summary",
-            "type": "string"
-          },
-          "strengths": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Strengths",
-            "type": "array"
-          },
-          "issues": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Issues",
-            "type": "array"
-          },
-          "next_steps": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Next Steps",
-            "type": "array"
-          },
-          "source": {
-            "title": "Source",
-            "type": "string"
-          }
-        },
-        "required": [
-          "summary",
-          "strengths",
-          "issues",
-          "next_steps",
-          "source"
-        ],
-        "title": "FeedbackPayloadSchema",
-        "type": "object"
-      },
       "ProgressRewardSchema": {
         "properties": {
           "milestone_key": {
@@ -2050,160 +3779,53 @@
         "title": "ProgressRewardSchema",
         "type": "object"
       },
-      "ReviewChatMessageSchema": {
-        "properties": {
-          "role": {
-            "title": "Role",
-            "type": "string"
-          },
-          "content": {
-            "title": "Content",
-            "type": "string"
-          }
-        },
-        "required": [
-          "role",
-          "content"
-        ],
-        "title": "ReviewChatMessageSchema",
-        "type": "object"
-      },
-      "SubmissionSchema": {
+      "SubmissionSnapshotSchema": {
         "properties": {
           "id": {
             "title": "Id",
             "type": "integer"
           },
-          "status": {
-            "title": "Status",
-            "type": "string"
-          },
-          "passed_tests": {
-            "title": "Passed Tests",
+          "session_id": {
+            "title": "Session Id",
             "type": "integer"
           },
-          "total_tests": {
-            "title": "Total Tests",
-            "type": "integer"
-          },
-          "source_code": {
-            "title": "Source Code",
+          "type": {
+            "title": "Type",
             "type": "string"
           },
-          "console_output": {
-            "title": "Console Output",
-            "type": "string"
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
           },
-          "feedback": {
-            "title": "Feedback",
-            "type": "string"
+          "files": {
+            "additionalProperties": true,
+            "title": "Files",
+            "type": "object"
           },
-          "feedback_status": {
-            "title": "Feedback Status",
-            "type": "string"
-          },
-          "feedback_source": {
-            "title": "Feedback Source",
-            "type": "string"
-          },
-          "feedback_payload": {
-            "$ref": "#/components/schemas/FeedbackPayloadSchema"
-          },
-          "review_chat_history": {
+          "selected_options": {
             "items": {
-              "$ref": "#/components/schemas/ReviewChatMessageSchema"
+              "type": "string"
             },
-            "title": "Review Chat History",
+            "title": "Selected Options",
             "type": "array"
           },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
             "type": "string"
-          },
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/TestResultSchema"
-            },
-            "title": "Results",
-            "type": "array"
-          },
-          "xp_awarded": {
-            "title": "Xp Awarded",
-            "type": "integer"
-          },
-          "unlocked_progress_rewards": {
-            "items": {
-              "$ref": "#/components/schemas/ProgressRewardSchema"
-            },
-            "title": "Unlocked Progress Rewards",
-            "type": "array"
-          },
-          "exercise_progress": {
-            "$ref": "#/components/schemas/ExerciseProgressSchema"
-          },
-          "user_progress": {
-            "$ref": "#/components/schemas/UserProgressSummarySchema"
           }
         },
         "required": [
           "id",
-          "status",
-          "passed_tests",
-          "total_tests",
-          "source_code",
-          "console_output",
-          "feedback",
-          "feedback_status",
-          "feedback_source",
-          "feedback_payload",
-          "review_chat_history",
-          "created_at",
-          "results",
-          "xp_awarded",
-          "unlocked_progress_rewards",
-          "exercise_progress",
-          "user_progress"
+          "session_id",
+          "type",
+          "payload",
+          "files",
+          "selected_options",
+          "created_at"
         ],
-        "title": "SubmissionSchema",
-        "type": "object"
-      },
-      "TestResultSchema": {
-        "properties": {
-          "index": {
-            "title": "Index",
-            "type": "integer"
-          },
-          "input_data": {
-            "title": "Input Data",
-            "type": "string"
-          },
-          "expected_output": {
-            "title": "Expected Output",
-            "type": "string"
-          },
-          "actual_output": {
-            "title": "Actual Output",
-            "type": "string"
-          },
-          "passed": {
-            "title": "Passed",
-            "type": "boolean"
-          },
-          "stderr": {
-            "title": "Stderr",
-            "type": "string"
-          }
-        },
-        "required": [
-          "index",
-          "input_data",
-          "expected_output",
-          "actual_output",
-          "passed",
-          "stderr"
-        ],
-        "title": "TestResultSchema",
+        "title": "SubmissionSnapshotSchema",
         "type": "object"
       },
       "UserProgressSummarySchema": {
@@ -2234,71 +3856,203 @@
         "title": "UserProgressSummarySchema",
         "type": "object"
       },
-      "SubmissionInputSchema": {
+      "AttemptEvaluationResponseSchema": {
         "properties": {
-          "source_code": {
-            "title": "Source Code",
-            "type": "string"
+          "session": {
+            "$ref": "#/components/schemas/AttemptSessionSchema"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/SubmissionSnapshotSchema"
+          },
+          "evaluation": {
+            "$ref": "#/components/schemas/EvaluationRunSchema"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AIReviewSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "xp_awarded": {
+            "default": 0,
+            "title": "Xp Awarded",
+            "type": "integer"
+          },
+          "unlocked_progress_rewards": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ProgressRewardSchema"
+            },
+            "title": "Unlocked Progress Rewards",
+            "type": "array"
+          },
+          "exercise_progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExerciseProgressSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user_progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserProgressSummarySchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
-          "source_code"
+          "session",
+          "snapshot",
+          "evaluation"
         ],
-        "title": "SubmissionInputSchema",
+        "title": "AttemptEvaluationResponseSchema",
         "type": "object"
       },
-      "SubmissionSummarySchema": {
+      "PracticeAnswerInputSchema": {
+        "properties": {
+          "source_code": {
+            "default": "",
+            "title": "Source Code",
+            "type": "string"
+          },
+          "selected_options": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Selected Options",
+            "type": "array"
+          },
+          "response_text": {
+            "default": "",
+            "title": "Response Text",
+            "type": "string"
+          },
+          "files": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Files",
+            "type": "object"
+          }
+        },
+        "title": "PracticeAnswerInputSchema",
+        "type": "object"
+      },
+      "AssessmentContainerPartSchema": {
         "properties": {
           "id": {
             "title": "Id",
             "type": "integer"
           },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "sort_order": {
+            "title": "Sort Order",
+            "type": "integer"
+          },
           "exercise_slug": {
-            "title": "Exercise Slug",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Slug"
           },
-          "exercise_title": {
-            "title": "Exercise Title",
-            "type": "string"
+          "scoring_rules": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Scoring Rules",
+            "type": "object"
           },
-          "status": {
-            "title": "Status",
-            "type": "string"
+          "timing_rules": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Timing Rules",
+            "type": "object"
           },
-          "passed_tests": {
-            "title": "Passed Tests",
-            "type": "integer"
-          },
-          "total_tests": {
-            "title": "Total Tests",
-            "type": "integer"
-          },
-          "feedback_status": {
-            "title": "Feedback Status",
-            "type": "string"
-          },
-          "feedback_source": {
-            "title": "Feedback Source",
-            "type": "string"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
+          "reveal_rules": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Reveal Rules",
+            "type": "object"
           }
         },
         "required": [
           "id",
-          "exercise_slug",
-          "exercise_title",
-          "status",
-          "passed_tests",
-          "total_tests",
-          "feedback_status",
-          "feedback_source",
-          "created_at"
+          "title",
+          "sort_order"
         ],
-        "title": "SubmissionSummarySchema",
+        "title": "AssessmentContainerPartSchema",
+        "type": "object"
+      },
+      "AssessmentContainerSchema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "scoring_rules": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Scoring Rules",
+            "type": "object"
+          },
+          "timing_rules": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Timing Rules",
+            "type": "object"
+          },
+          "reveal_rules": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Reveal Rules",
+            "type": "object"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentContainerPartSchema"
+            },
+            "title": "Parts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "mode",
+          "parts"
+        ],
+        "title": "AssessmentContainerSchema",
         "type": "object"
       },
       "ReviewChatResponseSchema": {
@@ -2333,6 +4087,24 @@
           "message"
         ],
         "title": "ReviewChatInputSchema",
+        "type": "object"
+      },
+      "ReviewChatMessageSchema": {
+        "properties": {
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ReviewChatMessageSchema",
         "type": "object"
       },
       "NavigatorModuleSchema": {
@@ -2646,584 +4418,6 @@
           "tracks"
         ],
         "title": "ModuleDetailSchema",
-        "type": "object"
-      },
-      "TrackConceptSchema": {
-        "properties": {
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "summary": {
-            "title": "Summary",
-            "type": "string"
-          },
-          "why_it_matters": {
-            "title": "Why It Matters",
-            "type": "string"
-          },
-          "common_mistake": {
-            "title": "Common Mistake",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "summary",
-          "why_it_matters",
-          "common_mistake"
-        ],
-        "title": "TrackConceptSchema",
-        "type": "object"
-      },
-      "TrackDetailSchema": {
-        "properties": {
-          "slug": {
-            "title": "Slug",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "module_slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Module Slug"
-          },
-          "module_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Module Name"
-          },
-          "category_slug": {
-            "title": "Category Slug",
-            "type": "string"
-          },
-          "category_name": {
-            "title": "Category Name",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "goal": {
-            "title": "Goal",
-            "type": "string"
-          },
-          "level_label": {
-            "title": "Level Label",
-            "type": "string"
-          },
-          "progress_percent": {
-            "title": "Progress Percent",
-            "type": "integer"
-          },
-          "completed_exercises": {
-            "title": "Completed Exercises",
-            "type": "integer"
-          },
-          "total_exercises": {
-            "title": "Total Exercises",
-            "type": "integer"
-          },
-          "current_target_slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Target Slug"
-          },
-          "current_target_title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Target Title"
-          },
-          "concept_kicker": {
-            "title": "Concept Kicker",
-            "type": "string"
-          },
-          "concepts": {
-            "items": {
-              "$ref": "#/components/schemas/TrackConceptSchema"
-            },
-            "title": "Concepts",
-            "type": "array"
-          },
-          "prerequisites": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Prerequisites",
-            "type": "array"
-          },
-          "exercises": {
-            "items": {
-              "$ref": "#/components/schemas/TrackExerciseSchema"
-            },
-            "title": "Exercises",
-            "type": "array"
-          },
-          "milestone": {
-            "$ref": "#/components/schemas/TrackMilestoneSchema"
-          }
-        },
-        "required": [
-          "slug",
-          "name",
-          "category_slug",
-          "category_name",
-          "description",
-          "goal",
-          "level_label",
-          "progress_percent",
-          "completed_exercises",
-          "total_exercises",
-          "concept_kicker",
-          "concepts",
-          "prerequisites",
-          "exercises",
-          "milestone"
-        ],
-        "title": "TrackDetailSchema",
-        "type": "object"
-      },
-      "TrackExerciseProgressSchema": {
-        "properties": {
-          "status": {
-            "title": "Status",
-            "type": "string"
-          },
-          "attempts_count": {
-            "title": "Attempts Count",
-            "type": "integer"
-          },
-          "best_passed_tests": {
-            "title": "Best Passed Tests",
-            "type": "integer"
-          },
-          "best_total_tests": {
-            "title": "Best Total Tests",
-            "type": "integer"
-          },
-          "passed_once": {
-            "title": "Passed Once",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "status",
-          "attempts_count",
-          "best_passed_tests",
-          "best_total_tests",
-          "passed_once"
-        ],
-        "title": "TrackExerciseProgressSchema",
-        "type": "object"
-      },
-      "TrackExerciseSchema": {
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "integer"
-          },
-          "slug": {
-            "title": "Slug",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "difficulty": {
-            "title": "Difficulty",
-            "type": "string"
-          },
-          "language": {
-            "title": "Language",
-            "type": "string"
-          },
-          "professor_note": {
-            "title": "Professor Note",
-            "type": "string"
-          },
-          "exercise_type": {
-            "default": "drill-de-implementacao",
-            "title": "Exercise Type",
-            "type": "string"
-          },
-          "exercise_type_label": {
-            "default": "Drill de implementação",
-            "title": "Exercise Type Label",
-            "type": "string"
-          },
-          "estimated_time_minutes": {
-            "default": 15,
-            "title": "Estimated Time Minutes",
-            "type": "integer"
-          },
-          "concept_summary": {
-            "default": "",
-            "title": "Concept Summary",
-            "type": "string"
-          },
-          "track_position": {
-            "default": 0,
-            "title": "Track Position",
-            "type": "integer"
-          },
-          "module_slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Module Slug"
-          },
-          "module_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Module Name"
-          },
-          "category_slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Slug"
-          },
-          "category_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Name"
-          },
-          "track_slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Track Slug"
-          },
-          "track_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Track Name"
-          },
-          "position": {
-            "title": "Position",
-            "type": "integer"
-          },
-          "pedagogical_brief": {
-            "title": "Pedagogical Brief",
-            "type": "string"
-          },
-          "is_current_target": {
-            "title": "Is Current Target",
-            "type": "boolean"
-          },
-          "progress": {
-            "$ref": "#/components/schemas/TrackExerciseProgressSchema"
-          }
-        },
-        "required": [
-          "id",
-          "slug",
-          "title",
-          "difficulty",
-          "language",
-          "professor_note",
-          "position",
-          "pedagogical_brief",
-          "is_current_target",
-          "progress"
-        ],
-        "title": "TrackExerciseSchema",
-        "type": "object"
-      },
-      "TrackMilestoneSchema": {
-        "properties": {
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "summary": {
-            "title": "Summary",
-            "type": "string"
-          },
-          "requirement_label": {
-            "title": "Requirement Label",
-            "type": "string"
-          },
-          "unlocked": {
-            "title": "Unlocked",
-            "type": "boolean"
-          },
-          "remaining_exercises": {
-            "title": "Remaining Exercises",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "title",
-          "summary",
-          "requirement_label",
-          "unlocked",
-          "remaining_exercises"
-        ],
-        "title": "TrackMilestoneSchema",
-        "type": "object"
-      },
-      "ExerciseExplanationSchema": {
-        "properties": {
-          "module_slug": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Module Slug"
-          },
-          "module_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Module Name"
-          },
-          "track_slug": {
-            "title": "Track Slug",
-            "type": "string"
-          },
-          "track_name": {
-            "title": "Track Name",
-            "type": "string"
-          },
-          "track_goal": {
-            "title": "Track Goal",
-            "type": "string"
-          },
-          "level_label": {
-            "title": "Level Label",
-            "type": "string"
-          },
-          "exercise_slug": {
-            "title": "Exercise Slug",
-            "type": "string"
-          },
-          "exercise_title": {
-            "title": "Exercise Title",
-            "type": "string"
-          },
-          "exercise_type_label": {
-            "title": "Exercise Type Label",
-            "type": "string"
-          },
-          "estimated_time_minutes": {
-            "title": "Estimated Time Minutes",
-            "type": "integer"
-          },
-          "concept_summary": {
-            "title": "Concept Summary",
-            "type": "string"
-          },
-          "pedagogical_brief": {
-            "title": "Pedagogical Brief",
-            "type": "string"
-          },
-          "learning_goal": {
-            "title": "Learning Goal",
-            "type": "string"
-          },
-          "concept_focus_markdown": {
-            "title": "Concept Focus Markdown",
-            "type": "string"
-          },
-          "reading_strategy_markdown": {
-            "title": "Reading Strategy Markdown",
-            "type": "string"
-          },
-          "implementation_strategy_markdown": {
-            "title": "Implementation Strategy Markdown",
-            "type": "string"
-          },
-          "assessment_notes_markdown": {
-            "title": "Assessment Notes Markdown",
-            "type": "string"
-          },
-          "common_mistakes": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Common Mistakes",
-            "type": "array"
-          },
-          "mastery_checklist": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Mastery Checklist",
-            "type": "array"
-          },
-          "prerequisites": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Prerequisites",
-            "type": "array"
-          },
-          "concepts": {
-            "items": {
-              "$ref": "#/components/schemas/ExplanationConceptSchema"
-            },
-            "title": "Concepts",
-            "type": "array"
-          },
-          "code_examples": {
-            "items": {
-              "$ref": "#/components/schemas/ExplanationCodeExampleSchema"
-            },
-            "title": "Code Examples",
-            "type": "array"
-          }
-        },
-        "required": [
-          "track_slug",
-          "track_name",
-          "track_goal",
-          "level_label",
-          "exercise_slug",
-          "exercise_title",
-          "exercise_type_label",
-          "estimated_time_minutes",
-          "concept_summary",
-          "pedagogical_brief",
-          "learning_goal",
-          "concept_focus_markdown",
-          "reading_strategy_markdown",
-          "implementation_strategy_markdown",
-          "assessment_notes_markdown",
-          "common_mistakes",
-          "mastery_checklist",
-          "prerequisites",
-          "concepts",
-          "code_examples"
-        ],
-        "title": "ExerciseExplanationSchema",
-        "type": "object"
-      },
-      "ExplanationCodeExampleSchema": {
-        "properties": {
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "rationale": {
-            "title": "Rationale",
-            "type": "string"
-          },
-          "language": {
-            "title": "Language",
-            "type": "string"
-          },
-          "code": {
-            "title": "Code",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "rationale",
-          "language",
-          "code"
-        ],
-        "title": "ExplanationCodeExampleSchema",
-        "type": "object"
-      },
-      "ExplanationConceptSchema": {
-        "properties": {
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "explanation_text": {
-            "title": "Explanation Text",
-            "type": "string"
-          },
-          "why_it_matters": {
-            "title": "Why It Matters",
-            "type": "string"
-          },
-          "common_mistake": {
-            "title": "Common Mistake",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "explanation_text",
-          "why_it_matters",
-          "common_mistake"
-        ],
-        "title": "ExplanationConceptSchema",
         "type": "object"
       },
       "CatalogAdminReferenceSchema": {
