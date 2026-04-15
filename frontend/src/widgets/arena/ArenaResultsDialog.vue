@@ -146,6 +146,10 @@ function consoleTagLabel(line: string) {
   if (line.includes('FALHOU')) return '[FAIL]'
   return '[EXEC]'
 }
+
+function completionUnitLabel(familyKey?: string) {
+  return familyKey === 'objective_item' ? 'critérios' : 'testes'
+}
 </script>
 
 <template>
@@ -350,7 +354,7 @@ function consoleTagLabel(line: string) {
               <div class="feedback-header">
                 <div>
                   <p class="eyebrow">Revisão automática</p>
-                  <CardTitle>{{ submission.passed_tests }}/{{ submission.total_tests }} testes</CardTitle>
+                  <CardTitle>{{ submission.passed_tests }}/{{ submission.total_tests }} {{ completionUnitLabel(familyKey) }}</CardTitle>
                   <CardDescription>Leitura crítica da solução com foco em qualidade, clareza e próximos ganhos.</CardDescription>
                 </div>
                 <div class="feedback-badges">
@@ -368,7 +372,7 @@ function consoleTagLabel(line: string) {
                   <p class="section-label">Resumo executivo</p>
                   <strong>{{ feedbackSummary }}</strong>
                   <span>
-                    {{ submission.passed_tests }}/{{ submission.total_tests }} testes concluídos · {{ rewardSummary }}
+                    {{ submission.passed_tests }}/{{ submission.total_tests }} {{ completionUnitLabel(familyKey) }} concluídos · {{ rewardSummary }}
                   </span>
                 </div>
               </div>

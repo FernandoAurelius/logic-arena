@@ -358,6 +358,13 @@ const AttemptSessionSchema = z
     updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough();
+const AttemptSessionPatchSchema = z
+  .object({
+    state: z.union([z.object({}).passthrough(), z.null()]),
+    current_workspace_state: z.union([z.object({}).passthrough(), z.null()]),
+    answer_state: z.union([z.object({}).passthrough(), z.null()]),
+  })
+  .passthrough();
 const PracticeAnswerInputSchema = z
   .object({
     source_code: z.string().default(""),
@@ -585,6 +592,7 @@ export const schemas = {
   ExerciseProgressSchema,
   UserProgressSummarySchema,
   AttemptSessionSchema,
+  AttemptSessionPatchSchema,
   PracticeAnswerInputSchema,
   AttemptEvaluationResponseSchema,
   AssessmentContainerPartSchema,
@@ -982,14 +990,14 @@ export const practiceEndpoints = makeApi([
     requestFormat: "json",
     parameters: [
       {
+        name: "body",
+        type: "Body",
+        schema: AttemptSessionPatchSchema,
+      },
+      {
         name: "session_id",
         type: "Path",
         schema: z.number().int(),
-      },
-      {
-        name: "payload",
-        type: "Query",
-        schema: z.object({}).passthrough(),
       },
       {
         name: "authorization",
@@ -1036,6 +1044,11 @@ export const practiceEndpoints = makeApi([
     response: AttemptEvaluationResponseSchema,
     errors: [
       {
+        status: 400,
+        description: `Bad Request`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
         status: 401,
         description: `Unauthorized`,
         schema: z.object({ message: z.string() }).passthrough(),
@@ -1072,6 +1085,11 @@ export const practiceEndpoints = makeApi([
     response: AttemptEvaluationResponseSchema,
     errors: [
       {
+        status: 400,
+        description: `Bad Request`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
         status: 401,
         description: `Unauthorized`,
         schema: z.object({ message: z.string() }).passthrough(),
@@ -1107,6 +1125,11 @@ export const practiceEndpoints = makeApi([
     ],
     response: AttemptEvaluationResponseSchema,
     errors: [
+      {
+        status: 400,
+        description: `Bad Request`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
       {
         status: 401,
         description: `Unauthorized`,

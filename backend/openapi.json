@@ -700,16 +700,6 @@
             "required": true
           },
           {
-            "in": "query",
-            "name": "payload",
-            "schema": {
-              "additionalProperties": true,
-              "title": "Payload",
-              "type": "object"
-            },
-            "required": true
-          },
-          {
             "in": "header",
             "name": "authorization",
             "schema": {
@@ -760,7 +750,17 @@
         },
         "tags": [
           "practice"
-        ]
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptSessionPatchSchema"
+              }
+            }
+          },
+          "required": true
+        }
       }
     },
     "/api/practice/sessions/{session_id}/run": {
@@ -801,6 +801,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AttemptEvaluationResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
                 }
               }
             }
@@ -883,6 +893,16 @@
               }
             }
           },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Unauthorized",
             "content": {
@@ -957,6 +977,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AttemptEvaluationResponseSchema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
                 }
               }
             }
@@ -3854,6 +3884,48 @@
           "xp_to_next_level"
         ],
         "title": "UserProgressSummarySchema",
+        "type": "object"
+      },
+      "AttemptSessionPatchSchema": {
+        "properties": {
+          "state": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "current_workspace_state": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Workspace State"
+          },
+          "answer_state": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer State"
+          }
+        },
+        "title": "AttemptSessionPatchSchema",
         "type": "object"
       },
       "AttemptEvaluationResponseSchema": {

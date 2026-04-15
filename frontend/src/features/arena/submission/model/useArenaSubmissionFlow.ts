@@ -181,10 +181,11 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
     const submission = options.latestSubmission.value
     if (!submission) return
     if (options.chatMessages.value.length === 0) {
+      const completionUnit = submission.total_tests === 1 ? 'critério' : 'critérios'
       options.chatMessages.value = [
         {
           role: 'assistant',
-          content: `Vamos revisar essa tentativa. Você passou ${submission.passed_tests} de ${submission.total_tests} testes. Me pergunte sobre um erro específico, uma melhoria de código ou o raciocínio esperado.`,
+          content: `Vamos revisar essa tentativa. Você passou ${submission.passed_tests} de ${submission.total_tests} ${completionUnit}. Me pergunte sobre um erro específico, uma melhoria de código ou o raciocínio esperado.`,
         },
       ]
     }

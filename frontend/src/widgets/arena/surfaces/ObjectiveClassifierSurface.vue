@@ -218,7 +218,6 @@ function selectOption(key: string) {
               <component :is="iconForOption(option.canonical_key ?? option.key)" :size="18" />
               <div class="classifier-option__body">
                 <strong>{{ option.label }}</strong>
-                <small v-if="option.explanation">{{ option.explanation }}</small>
               </div>
             </button>
 

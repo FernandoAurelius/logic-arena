@@ -125,6 +125,12 @@ class PracticeAnswerInputSchema(Schema):
     files: dict = {}
 
 
+class AttemptSessionPatchSchema(Schema):
+    state: dict | None = None
+    current_workspace_state: dict | None = None
+    answer_state: dict | None = None
+
+
 class FeedbackPayloadSchema(Schema):
     summary: str
     strengths: list[str]

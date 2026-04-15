@@ -247,7 +247,6 @@ function toggleOption(key: string) {
                   </Badge>
                 </div>
                 <p>{{ option.label }}</p>
-                <small v-if="option.explanation">{{ option.explanation }}</small>
               </div>
             </button>
           </CardContent>

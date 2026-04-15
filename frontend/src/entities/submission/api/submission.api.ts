@@ -37,16 +37,46 @@ function mapReviewToFeedbackPayload(session: AttemptSession): FeedbackPayload | 
   }
 }
 
+function deriveEvaluationCounts(session: AttemptSession) {
+  const evaluation = session.latest_evaluation
+  const rawPassed = Number(evaluation?.evaluator_results?.passed_tests)
+  const rawTotal = Number(evaluation?.evaluator_results?.total_tests)
+
+  if (Number.isFinite(rawPassed) && Number.isFinite(rawTotal) && rawTotal > 0) {
+    return {
+      passed_tests: rawPassed,
+      total_tests: rawTotal,
+    }
+  }
+
+  const isObjectiveEvaluation =
+    session.family_key === 'objective_item'
+    || evaluation?.evaluator_results?.family_key === 'objective_item'
+
+  if (isObjectiveEvaluation && evaluation) {
+    return {
+      passed_tests: evaluation.evaluator_results?.passed ? 1 : 0,
+      total_tests: 1,
+    }
+  }
+
+  return {
+    passed_tests: 0,
+    total_tests: 0,
+  }
+}
+
 function mapSessionToSubmissionSummary(session: AttemptSession): SubmissionSummary {
   const evaluation = session.latest_evaluation
   const review = session.latest_review
+  const evaluationCounts = deriveEvaluationCounts(session)
   return {
     id: session.id,
     exercise_slug: session.exercise_slug ?? '',
     exercise_title: session.exercise_title ?? session.exercise_slug ?? 'Exercício',
     status: mapVerdictToStatus(evaluation?.verdict),
-    passed_tests: Number(evaluation?.evaluator_results?.passed_tests ?? 0),
-    total_tests: Number(evaluation?.evaluator_results?.total_tests ?? 0),
+    passed_tests: evaluationCounts.passed_tests,
+    total_tests: evaluationCounts.total_tests,
     feedback_status: review ? (review.explanation === 'Revisão com IA em processamento...' ? 'pending' : 'ready') : 'pending',
     feedback_source: review?.profile_key ?? 'review',
     created_at: session.updated_at,
@@ -58,6 +88,7 @@ function mapSessionToSubmission(session: AttemptSession): Submission {
   const evaluation = session.latest_evaluation
   const review = session.latest_review
   const feedbackPayload = mapReviewToFeedbackPayload(session)
+  const evaluationCounts = deriveEvaluationCounts(session)
   return {
     id: session.id,
     session_id: session.id,
@@ -65,8 +96,8 @@ function mapSessionToSubmission(session: AttemptSession): Submission {
     exercise_slug: session.exercise_slug ?? null,
     exercise_title: session.exercise_title ?? null,
     status: mapVerdictToStatus(evaluation?.verdict),
-    passed_tests: Number(evaluation?.evaluator_results?.passed_tests ?? 0),
-    total_tests: Number(evaluation?.evaluator_results?.total_tests ?? 0),
+    passed_tests: evaluationCounts.passed_tests,
+    total_tests: evaluationCounts.total_tests,
     source_code: String(
       session.answer_state?.source_code
       ?? session.latest_snapshot?.payload?.source_code

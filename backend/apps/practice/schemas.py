@@ -3,6 +3,7 @@ from apps.arena.schemas import (
     AssessmentContainerSchema,
     AttemptEvaluationResponseSchema,
     AttemptSessionSchema,
+    AttemptSessionPatchSchema,
     ErrorSchema,
     EvaluationRunSchema,
     ExerciseDetailSchema,

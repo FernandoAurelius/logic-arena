@@ -86,7 +86,7 @@ export const practiceSessionApi = {
   async patchState(sessionId: number, payload: Record<string, unknown>, authorization?: string): Promise<AttemptSession> {
     return apiClients.practice.patch(
       '/api/practice/sessions/:session_id',
-      { payload },
+      payload,
       {
         params: { session_id: sessionId },
         headers: buildAuthHeaders(authorization),

@@ -279,7 +279,10 @@ def evaluate_objective_selection(
             raw_score = (hits / len(correct_set)) - (wrong * 0.25) - (misses * 0.0)
             normalized_score = max(0.0, min(1.0, raw_score))
 
-    passing_score = float(score_rule.get('passing_score', evaluation_plan.get('passing_score', 1.0)) or 1.0)
+    raw_passing_score = score_rule.get('passing_score', evaluation_plan.get('passing_score', 1.0))
+    if raw_passing_score is None:
+        raw_passing_score = 1.0
+    passing_score = float(raw_passing_score)
     passed = normalized_score >= passing_score and bool(correct_set)
     verdict = 'passed' if passed else ('partial' if normalized_score > 0 else 'failed')
     if not correct_set:

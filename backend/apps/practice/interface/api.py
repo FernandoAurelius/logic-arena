@@ -26,6 +26,7 @@ from apps.practice.schemas import (
     AssessmentContainerSchema,
     AttemptEvaluationResponseSchema,
     AttemptSessionSchema,
+    AttemptSessionPatchSchema,
     ErrorSchema,
     ExerciseDetailSchema,
     ExerciseSummarySchema,
@@ -154,7 +155,12 @@ def get_practice_session(request, session_id: int, authorization: str | None = H
     response={200: AttemptSessionSchema, 401: ErrorSchema, 404: ErrorSchema},
     summary='Atualiza o estado local da sessão.',
 )
-def patch_practice_session(request, session_id: int, payload: dict, authorization: str | None = Header(default=None)):
+def patch_practice_session(
+    request,
+    session_id: int,
+    payload: AttemptSessionPatchSchema,
+    authorization: str | None = Header(default=None),
+):
     try:
         session = require_session(authorization)
     except PermissionError as error:
@@ -166,9 +172,9 @@ def patch_practice_session(request, session_id: int, payload: dict, authorizatio
 
     updated = update_attempt_session_state(
         attempt_session,
-        state=payload.get('state'),
-        current_workspace_state=payload.get('current_workspace_state'),
-        answer_state=payload.get('answer_state'),
+        state=payload.state,
+        current_workspace_state=payload.current_workspace_state,
+        answer_state=payload.answer_state,
     )
     return 200, serialize_attempt_session(updated)
 
