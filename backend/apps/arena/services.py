@@ -112,7 +112,7 @@ def get_or_create_session(nickname: str, password: str) -> tuple[AuthSession, bo
 
 
 def create_exercise(payload) -> Exercise:
-    get_family_spec(payload.family_key)
+    family_spec = get_family_spec(payload.family_key)
 
     category = None
     track = None
@@ -151,6 +151,10 @@ def create_exercise(payload) -> Exercise:
     if exercise_type is None:
         exercise_type = ExerciseType.objects.filter(slug=DEFAULT_EXERCISE_TYPE_SLUG).first()
 
+    review_profile = payload.review_profile
+    if not review_profile or (review_profile == 'code_lab_default' and payload.family_key != Exercise.FAMILY_CODE_LAB):
+        review_profile = family_spec.default_review_profile
+
     exercise = Exercise.objects.create(
         slug=payload.slug,
         title=payload.title,
@@ -167,7 +171,7 @@ def create_exercise(payload) -> Exercise:
         content_blocks=payload.content_blocks,
         workspace_spec=payload.workspace_spec,
         evaluation_plan=payload.evaluation_plan,
-        review_profile=payload.review_profile,
+        review_profile=review_profile,
         misconception_tags=payload.misconception_tags,
         progression_rules=payload.progression_rules,
         track_position=payload.track_position,

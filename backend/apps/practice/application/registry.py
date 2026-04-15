@@ -49,6 +49,14 @@ OBJECTIVE_CLASSIFIER_TEMPLATES = {
 }
 
 
+OBJECTIVE_SNIPPET_TEMPLATES = {
+    'snippet-read-only',
+    'read-only-snippet',
+    'snippet-analysis',
+    'code-snippet',
+}
+
+
 RESTRICTED_FILL_TEMPLATES = {
     'fill-in-the-blanks',
 }

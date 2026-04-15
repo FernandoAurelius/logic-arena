@@ -4,6 +4,8 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from django.conf import settings
+from django.db import transaction
+from django.utils import timezone
 
 from apps.arena.models import (
     AIReview,
@@ -17,19 +19,87 @@ from apps.arena.models import (
     SubmissionSnapshot,
     UserExerciseProgress,
 )
-from apps.practice.application.registry import get_family_spec, resolve_surface_key
-from apps.practice.domain import format_execution_results_console, normalize_text, outputs_match_robust
+from apps.practice.application.registry import OBJECTIVE_SNIPPET_TEMPLATES, get_family_spec, resolve_surface_key
+from apps.practice.domain import (
+    build_objective_option_catalog,
+    evaluate_objective_selection,
+    format_execution_results_console,
+    normalize_text,
+    outputs_match_robust,
+)
 from apps.progress.application.services import apply_submission_progress, build_exercise_progress_payload, build_user_progress_summary
 from apps.review.application.services import schedule_submission_feedback
 
 
 DEFAULT_EXERCISE_TYPE_SLUG = 'drill-de-implementacao'
 DEFAULT_EXERCISE_TYPE_LABEL = 'Drill de implementação'
+DEFAULT_OBJECTIVE_ITEM_XP = 35
+
+
+def _extract_objective_snippet_block(exercise: ExerciseDefinition) -> dict | None:
+    evaluation_plan = exercise.evaluation_plan or {}
+    template = str(evaluation_plan.get('template') or evaluation_plan.get('kind') or '').strip().lower()
+    snippet = (
+        evaluation_plan.get('snippet')
+        or evaluation_plan.get('snippet_code')
+        or evaluation_plan.get('read_only_snippet')
+        or evaluation_plan.get('code')
+    )
+    if not snippet and template not in OBJECTIVE_SNIPPET_TEMPLATES:
+        return None
+    if not snippet:
+        return None
+
+    snippet_language = (
+        evaluation_plan.get('snippet_language')
+        or evaluation_plan.get('language')
+        or exercise.language
+        or 'python'
+    )
+    return {
+        'kind': 'snippet',
+        'title': evaluation_plan.get('snippet_title') or 'Trecho de código',
+        'language': snippet_language,
+        'read_only': True,
+        'code': str(snippet),
+    }
 
 
 def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
     if exercise.content_blocks:
         return list(exercise.content_blocks)
+    if exercise.family_key == ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
+        evaluation_plan = exercise.evaluation_plan or {}
+        option_catalog = build_objective_option_catalog(evaluation_plan, exercise.content_blocks or [])
+        correct_options = evaluation_plan.get('correct_options') or evaluation_plan.get('correct_answers') or evaluation_plan.get('correct_answer') or evaluation_plan.get('answer_key') or []
+        if not isinstance(correct_options, (list, tuple, set)):
+            correct_options = [correct_options]
+        choice_mode = str(
+            evaluation_plan.get('choice_mode')
+            or evaluation_plan.get('selection_mode')
+            or ('multiple' if evaluation_plan.get('template') == 'multi-select' or len(correct_options) > 1 else 'single')
+        ).strip().lower()
+        if choice_mode not in {'single', 'multiple'}:
+            choice_mode = 'single'
+        blocks = [
+            {
+                'kind': 'statement',
+                'title': exercise.title,
+                'content': exercise.statement,
+            }
+        ]
+        snippet_block = _extract_objective_snippet_block(exercise)
+        if snippet_block is not None:
+            blocks.append(snippet_block)
+        if option_catalog:
+            blocks.append(
+                {
+                    'kind': 'objective-options',
+                    'choice_mode': choice_mode,
+                    'options': option_catalog,
+                }
+            )
+        return blocks
     return [
         {
             'kind': 'statement',
@@ -44,6 +114,34 @@ def build_default_workspace_spec(exercise: ExerciseDefinition) -> dict:
         return dict(exercise.workspace_spec)
 
     family_spec = get_family_spec(exercise.family_key)
+    if exercise.family_key == ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
+        evaluation_plan = exercise.evaluation_plan or {}
+        option_catalog = build_objective_option_catalog(evaluation_plan, exercise.content_blocks or [])
+        correct_options = evaluation_plan.get('correct_options') or evaluation_plan.get('correct_answers') or evaluation_plan.get('correct_answer') or evaluation_plan.get('answer_key') or []
+        if not isinstance(correct_options, (list, tuple, set)):
+            correct_options = [correct_options]
+        snippet_block = _extract_objective_snippet_block(exercise)
+        choice_mode = str(
+            evaluation_plan.get('choice_mode')
+            or evaluation_plan.get('selection_mode')
+            or ('multiple' if evaluation_plan.get('template') == 'multi-select' or len(correct_options) > 1 else 'single')
+        ).strip().lower()
+        if choice_mode not in {'single', 'multiple'}:
+            choice_mode = 'single'
+        return {
+            'surface_key': family_spec.default_surface_key,
+            'workspace_kind': 'objective_form',
+            'stimulus_kind': 'snippet' if snippet_block is not None else 'statement',
+            'choice_mode': choice_mode,
+            'template': evaluation_plan.get('template', 'single-choice'),
+            'snippet': snippet_block['code'] if snippet_block is not None else '',
+            'snippet_language': snippet_block['language'] if snippet_block is not None else exercise.language,
+            'snippet_read_only': bool(snippet_block),
+            'options': option_catalog,
+            'selected_options': [],
+            'response_text': '',
+            'allow_multiple': choice_mode == 'multiple',
+        }
     if exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
         file_name = 'main.py' if exercise.language == 'python' else f'main.{exercise.language}'
         return {
@@ -77,6 +175,7 @@ def build_default_evaluation_plan(exercise: ExerciseDefinition) -> dict:
         return {
             'mechanism': 'objective_key',
             'template': 'single-choice',
+            'choice_mode': 'single',
         }
 
     if exercise.family_key == ExerciseDefinition.FAMILY_RESTRICTED_CODE:
@@ -204,13 +303,10 @@ def serialize_attempt_session(session: AttemptSession) -> dict:
     latest_snapshot = session.snapshots.order_by('-created_at', '-id').select_related('legacy_submission').first()
     latest_evaluation = None
     latest_review = None
-    serialized_progress = None
     if latest_snapshot is not None:
         latest_evaluation = latest_snapshot.evaluation_runs.order_by('-created_at', '-id').first()
         if latest_evaluation is not None:
             latest_review = getattr(latest_evaluation, 'ai_review', None)
-        if latest_snapshot.legacy_submission is not None:
-            serialized_progress = serialize_submission(latest_snapshot.legacy_submission)
 
     exercise = session.exercise
     assessment = session.assessment
@@ -220,6 +316,28 @@ def serialize_attempt_session(session: AttemptSession) -> dict:
         surface_key = resolve_surface_key(exercise)
     elif isinstance(session.state, dict):
         surface_key = session.state.get('surface_key')
+
+    serialized_progress = None
+    if exercise is not None:
+        progress = UserExerciseProgress.objects.filter(user=session.user, exercise=exercise).first()
+        if progress is not None:
+            unlocked_rewards = []
+            if 'passed_once' in (progress.awarded_progress_markers or []):
+                unlocked_rewards.append(
+                    {
+                        'milestone_key': 'passed_once',
+                        'label': 'Primeira aprovação',
+                        'xp_awarded': DEFAULT_OBJECTIVE_ITEM_XP,
+                    }
+                )
+            serialized_progress = {
+                'xp_awarded': progress.xp_awarded_total,
+                'unlocked_progress_rewards': unlocked_rewards,
+                'exercise_progress': build_exercise_progress_payload(progress),
+                'user_progress': build_user_progress_summary(session.user),
+            }
+    if serialized_progress is None and latest_snapshot is not None and latest_snapshot.legacy_submission is not None:
+        serialized_progress = serialize_submission(latest_snapshot.legacy_submission)
 
     return {
         'id': session.id,
@@ -325,6 +443,20 @@ def build_session_config(exercise: ExerciseDefinition, mode: str = AttemptSessio
 
 def create_attempt_session_for_exercise(user: ArenaUser, exercise: ExerciseDefinition, mode: str = AttemptSession.MODE_PRACTICE) -> AttemptSession:
     workspace_spec = build_default_workspace_spec(exercise)
+    if exercise.family_key == ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
+        evaluation_plan = build_default_evaluation_plan(exercise)
+        answer_state = {
+            'selected_options': [],
+            'selected_labels': [],
+            'response_text': '',
+            'template': evaluation_plan.get('template', 'single-choice'),
+            'choice_mode': evaluation_plan.get('choice_mode', 'single'),
+        }
+    elif exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
+        answer_state = {'source_code': exercise.starter_code}
+    else:
+        answer_state = {}
+
     return AttemptSession.objects.create(
         user=user,
         target_type=AttemptSession.TARGET_EXERCISE,
@@ -332,7 +464,7 @@ def create_attempt_session_for_exercise(user: ArenaUser, exercise: ExerciseDefin
         mode=mode,
         state={'family_key': exercise.family_key, 'surface_key': resolve_surface_key(exercise)},
         current_workspace_state=workspace_spec,
-        answer_state={'source_code': exercise.starter_code} if exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB else {},
+        answer_state=answer_state,
     )
 
 
@@ -584,6 +716,149 @@ def evaluate_attempt_session(
         review = AIReview.objects.filter(evaluation_run=evaluation_run).first()
         return snapshot, evaluation_run, review, legacy_submission
 
+    if exercise.family_key == ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
+        evaluation_plan = build_default_evaluation_plan(exercise)
+        content_blocks = build_default_content_blocks(exercise)
+        objective_result = evaluate_objective_selection(
+            evaluation_plan=evaluation_plan,
+            content_blocks=content_blocks,
+            selected_options=selected_options,
+            response_text=response_text,
+            attempt_mode=session.mode,
+        )
+        snapshot = SubmissionSnapshot.objects.create(
+            session=session,
+            type=snapshot_type,
+            payload={
+                'selected_options': objective_result['selected_options'],
+                'selected_labels': objective_result['selected_labels'],
+                'response_text': response_text,
+                'template': objective_result['template'],
+                'choice_mode': objective_result['choice_mode'],
+                'score_rule': objective_result['score_rule'],
+            },
+            files=files or {},
+            selected_options=objective_result['selected_options'],
+        )
+        explanation_lines = [
+            '### Revisão objetiva',
+            f"Template avaliado: {objective_result['template']}",
+            f"Você selecionou: {', '.join(objective_result['selected_labels']) if objective_result['selected_labels'] else '(nenhuma opção)'}",
+            f"Gabarito esperado: {', '.join(objective_result['correct_labels']) if objective_result['correct_labels'] else '(sem gabarito definido)'}",
+            '',
+        ]
+        if objective_result['passed']:
+            explanation_lines.append('Você acertou a leitura conceitual principal dessa questão.')
+        else:
+            explanation_lines.append('A resposta ainda não bate com o gabarito esperado.')
+            if objective_result['correct_labels']:
+                explanation_lines.append(
+                    'Conceitos a revisar: ' + ', '.join(objective_result['correct_labels'])
+                )
+            wrong_explanations = [
+                option.get('explanation')
+                for option in objective_result['option_results']
+                if option.get('selected') and not option.get('correct') and option.get('explanation')
+            ]
+            if wrong_explanations:
+                explanation_lines.append('Explicações dos distratores escolhidos: ' + ' | '.join(dict.fromkeys(wrong_explanations)))
+            if objective_result['misconception_inference']:
+                explanation_lines.append(
+                    'Conceitos a revisar: ' + ', '.join(objective_result['misconception_inference'])
+                )
+        correct_explanations = [
+            option.get('explanation')
+            for option in objective_result['option_results']
+            if option.get('correct') and option.get('explanation')
+        ]
+        if correct_explanations:
+            explanation_lines.append('Explicação da alternativa correta: ' + ' | '.join(dict.fromkeys(correct_explanations)))
+        explanation_lines.extend(
+            [
+                '',
+                'Pense na regra que diferencia a alternativa correta das distratoras e revise o enunciado com foco no ponto de decisão central.',
+            ]
+        )
+        next_steps = [
+            'Releia o enunciado e destaque a regra que decide a resposta correta.',
+            'Compare as alternativas escolhidas com o gabarito e identifique a diferença conceitual principal.',
+        ]
+        if objective_result['misconception_inference']:
+            next_steps.append(f"Revise os conceitos: {', '.join(objective_result['misconception_inference'])}.")
+
+        evaluation_run = EvaluationRun.objects.create(
+            submission=snapshot,
+            evaluator_results={
+                'family_key': exercise.family_key,
+                'mechanism': objective_result['template'],
+                'choice_mode': objective_result['choice_mode'],
+                'selected_options': objective_result['selected_options'],
+                'selected_labels': objective_result['selected_labels'],
+                'correct_options': objective_result['correct_options'],
+                'correct_labels': objective_result['correct_labels'],
+                'passed': objective_result['passed'],
+                'exact_match': objective_result['exact_match'],
+                'score': objective_result['normalized_score'],
+                'passing_score': objective_result['passing_score'],
+                'option_results': objective_result['option_results'],
+            },
+            normalized_score=objective_result['normalized_score'],
+            verdict=objective_result['verdict'],
+            evidence_bundle={
+                'statement': exercise.statement,
+                'content_blocks': content_blocks,
+                'workspace_spec': build_default_workspace_spec(exercise),
+                'evaluation_plan': evaluation_plan,
+                'selected_options': objective_result['selected_options'],
+                'selected_labels': objective_result['selected_labels'],
+                'correct_options': objective_result['correct_options'],
+                'correct_labels': objective_result['correct_labels'],
+                'score_rule': objective_result['score_rule'],
+                'option_results': objective_result['option_results'],
+            },
+            misconception_inference=objective_result['misconception_inference'],
+            raw_artifacts={
+                'response_text': response_text,
+                'payload_selected_options': list(selected_options or []),
+                'payload_files': files or {},
+                'template': objective_result['template'],
+                'choice_mode': objective_result['choice_mode'],
+                'score_rule': objective_result['score_rule'],
+            },
+        )
+        review = AIReview.objects.create(
+            evaluation_run=evaluation_run,
+            profile_key=exercise.review_profile,
+            explanation='\n'.join(explanation_lines).strip(),
+            next_steps=next_steps,
+            conversation_thread=[
+                {
+                    'role': 'assistant',
+                    'content': '\n'.join(explanation_lines).strip(),
+                }
+            ],
+        )
+
+        session.answer_state = {
+            'selected_options': objective_result['selected_options'],
+            'selected_labels': objective_result['selected_labels'],
+            'response_text': response_text,
+            'normalized_score': objective_result['normalized_score'],
+            'verdict': objective_result['verdict'],
+        }
+        session.current_workspace_state = {
+            **(session.current_workspace_state or {}),
+            'selected_options': objective_result['selected_options'],
+            'selected_labels': objective_result['selected_labels'],
+            'response_text': response_text,
+        }
+        session.attempt_status = (
+            AttemptSession.STATUS_COMPLETED if snapshot_type == SubmissionSnapshot.TYPE_SUBMIT else AttemptSession.STATUS_ACTIVE
+        )
+        session.save(update_fields=['answer_state', 'current_workspace_state', 'attempt_status', 'updated_at'])
+        update_objective_item_progress(session.user, exercise, objective_result)
+        return snapshot, evaluation_run, review, None
+
     snapshot = SubmissionSnapshot.objects.create(
         session=session,
         type=snapshot_type,
@@ -614,6 +889,59 @@ def evaluate_attempt_session(
         conversation_thread=[],
     )
     return snapshot, evaluation_run, review, None
+
+
+def update_objective_item_progress(
+    user: ArenaUser,
+    exercise: ExerciseDefinition,
+    objective_result: dict,
+) -> tuple[UserExerciseProgress, list, int]:
+    with transaction.atomic():
+        locked_user = ArenaUser.objects.select_for_update().get(pk=user.pk)
+        progress, _ = UserExerciseProgress.objects.select_for_update().get_or_create(
+            user=locked_user,
+            exercise=exercise,
+        )
+
+        progress.attempts_count += 1
+        current_ratio = float(objective_result.get('normalized_score', 0) or 0)
+        best_ratio = progress.best_ratio or 0
+        improved = (
+            current_ratio > best_ratio
+            or (current_ratio == best_ratio and objective_result.get('passed') and progress.best_total_tests == 0)
+        )
+
+        if improved:
+            progress.best_passed_tests = 1 if objective_result.get('passed') else 0
+            progress.best_total_tests = 1
+            progress.best_ratio = current_ratio
+
+        awarded_progress_markers = list(progress.awarded_progress_markers or [])
+        unlocked_rewards = []
+        xp_awarded = 0
+
+        if objective_result.get('passed') and 'passed_once' not in awarded_progress_markers:
+            awarded_progress_markers.append('passed_once')
+            unlocked_rewards.append(
+                {
+                    'milestone_key': 'passed_once',
+                    'label': 'Primeira aprovação',
+                    'xp_awarded': DEFAULT_OBJECTIVE_ITEM_XP,
+                }
+            )
+            xp_awarded += DEFAULT_OBJECTIVE_ITEM_XP
+            progress.first_passed_at = progress.first_passed_at or timezone.now()
+
+        progress.awarded_progress_markers = awarded_progress_markers
+        progress.xp_awarded_total += xp_awarded
+        progress.save()
+
+        if xp_awarded:
+            locked_user.xp_total += xp_awarded
+            locked_user.save(update_fields=['xp_total', 'updated_at'])
+
+        user.xp_total = locked_user.xp_total
+        return progress, unlocked_rewards, xp_awarded
 
 
 def evaluate_submission(user: ArenaUser, exercise: ExerciseDefinition, source_code: str) -> tuple[Submission, list[dict]]:
