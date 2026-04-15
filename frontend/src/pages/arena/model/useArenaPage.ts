@@ -42,6 +42,7 @@ export function useArenaPage() {
   }
 
   function applySubmissionProgress(submission: Submission) {
+    if (!submission.user_progress) return
     const previousLevel = session.currentUser.value?.level ?? 1
     session.mergeCurrentUserProgress(submission.user_progress)
     if (submission.user_progress.level > previousLevel) {
@@ -59,7 +60,7 @@ export function useArenaPage() {
 
   const submissionFlow = useArenaSubmissionFlow({
     authHeader: () => session.authHeader(),
-    activeExerciseSlug: computed(() => workspace.activeExercise.value?.slug ?? null),
+    activeSessionId: workspace.activeSessionId,
     code: workspace.code,
     latestSubmission: workspace.latestSubmission,
     chatMessages: workspace.chatMessages,
@@ -128,7 +129,7 @@ export function useArenaPage() {
       await submissionFlow.submitSolution()
     } catch (error) {
       console.error(error)
-      workspace.errorMessage.value = 'Não foi possível processar a submissão.'
+      workspace.errorMessage.value = 'Não foi possível processar a tentativa.'
     }
   }
 
@@ -200,6 +201,7 @@ export function useArenaPage() {
     routeTrackSlug: workspace.routeTrackSlug,
     exercises: workspace.exercises,
     activeExercise: workspace.activeExercise,
+    activeSessionConfig: workspace.activeSessionConfig,
     trackContext: workspace.trackContext,
     code: workspace.code,
     latestSubmission: workspace.latestSubmission,

@@ -4,6 +4,7 @@ import { ChevronRight, FileText, FlaskConical, ListChecks } from 'lucide-vue-nex
 import { Badge } from '@/shared/ui/badge'
 import { Card, CardContent, CardHeader } from '@/shared/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
+import type { SessionConfig } from '@/entities/practice-session'
 
 type VisibleTestCase = {
   id: number
@@ -14,6 +15,7 @@ type VisibleTestCase = {
 defineProps<{
   specTab: 'descricao' | 'exemplos' | 'testes'
   routeTrackSlug?: string | null
+  sessionConfig?: SessionConfig | null
   activeExercise?: {
     title: string
     statement: string
@@ -111,6 +113,9 @@ function formatSampleBlock(text: string) {
           <Badge variant="outline">{{ activeExercise?.module_name ?? 'Sem módulo' }}</Badge>
           <Badge variant="outline">{{ activeExercise?.track_name ?? 'Sem trilha' }}</Badge>
           <Badge variant="outline">{{ activeExercise?.difficulty ?? 'Exercício' }}</Badge>
+          <Badge variant="outline">{{ sessionConfig?.family_key ?? 'code_lab' }}</Badge>
+          <Badge variant="outline">{{ sessionConfig?.surface_key ?? 'code_editor_single' }}</Badge>
+          <Badge variant="outline">{{ sessionConfig?.mode ?? 'practice' }}</Badge>
           <Badge variant="outline">Questão {{ activeIndex }}/{{ exerciseCount || 1 }}</Badge>
           <Badge :variant="isSubmitting || isBooting ? 'dark' : 'default'">
             {{ traduzirEstadoArena(isSubmitting, isBooting) }}
@@ -136,6 +141,17 @@ function formatSampleBlock(text: string) {
           <div class="formula-box formula-box--statement">
             <p class="section-label">Enunciado</p>
             <p>{{ activeExercise?.statement }}</p>
+          </div>
+
+          <div class="formula-box">
+            <p class="section-label">Fluxo canônico</p>
+            <strong>
+              {{ sessionConfig?.family_key ?? 'code_lab' }} · {{ sessionConfig?.surface_key ?? 'code_editor_single' }}
+            </strong>
+            <p>
+              A Arena abre uma sessão canônica, recebe snapshots de execução e consolida avaliação e revisão
+              como contratos explícitos da tentativa.
+            </p>
           </div>
 
           <div class="formula-box">

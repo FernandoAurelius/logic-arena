@@ -144,7 +144,7 @@ function consoleTagLabel(line: string) {
   <Dialog v-model:open="openModel">
     <DialogContent v-if="submission" class="results-dialog-content">
       <DialogHeader>
-        <DialogTitle>Central da execução</DialogTitle>
+        <DialogTitle>Central da tentativa</DialogTitle>
         <DialogDescription>
           {{ activeExerciseTitle }} · {{ submission.passed_tests }}/{{ submission.total_tests }} testes
         </DialogDescription>
@@ -153,7 +153,7 @@ function consoleTagLabel(line: string) {
       <div class="results-dialog-topline">
         <Badge>{{ traduzirStatusExecucao(submission.status) }}</Badge>
         <Badge variant="outline">{{ submission.xp_awarded > 0 ? `+${submission.xp_awarded} XP` : '0 XP' }}</Badge>
-        <Badge variant="outline">Nível {{ submission.user_progress.level }}</Badge>
+        <Badge variant="outline">Nível {{ submission.user_progress?.level ?? 1 }}</Badge>
         <Badge variant="outline">{{ traduzirStatusFeedback(submission.feedback_status) }}</Badge>
         <div v-if="isFeedbackLoading" class="results-topline-loader">
           <LoaderCircle :size="14" />
@@ -202,8 +202,8 @@ function consoleTagLabel(line: string) {
                   <p class="section-label">Progressão</p>
                   <strong>{{ rewardSummary }}</strong>
                   <p>
-                    XP total: {{ submission.user_progress.xp_total }} · faltam
-                    {{ submission.user_progress.xp_to_next_level }} XP para o próximo nível
+                    XP total: {{ submission.user_progress?.xp_total ?? 0 }} · faltam
+                    {{ submission.user_progress?.xp_to_next_level ?? 100 }} XP para o próximo nível
                   </p>
                 </div>
               </CardContent>
@@ -276,9 +276,7 @@ function consoleTagLabel(line: string) {
                 <div>
                   <p class="eyebrow">Revisão automática</p>
                   <CardTitle>Analisando sua solução</CardTitle>
-                  <CardDescription>
-                    A IA está consolidando pontos fortes, ajustes e próximos passos desta submissão.
-                  </CardDescription>
+                  <CardDescription>A IA está consolidando pontos fortes, ajustes e próximos passos desta tentativa.</CardDescription>
                 </div>
                 <LoaderCircle class="feedback-loader" :size="22" />
               </div>
@@ -362,7 +360,7 @@ function consoleTagLabel(line: string) {
 
               <div v-else class="feedback-empty-state">
                 <Bot :size="18" />
-                <p>A revisão automática ainda não gerou uma estrutura detalhada para esta rodada.</p>
+              <p>A revisão automática ainda não gerou uma estrutura detalhada para esta tentativa.</p>
               </div>
             </CardContent>
           </Card>

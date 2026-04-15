@@ -1,15 +1,13 @@
-export { submissionApi } from './api/submission.api'
+export { practiceSessionApi } from './api/practice-session.api'
 export type {
   AttemptEvaluationResponse,
   AttemptSession,
   ExerciseProgress,
-  FeedbackPayload,
+  PracticeAnswerInput,
   PracticeEvaluationResponse,
   PracticeSession,
   ProgressReward,
-  ReviewChatMessage,
   SessionConfig,
-  Submission,
-  SubmissionSummary,
+  SubmissionSnapshot,
   UserProgressSummary,
 } from './model/types'
