@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LOGIC_ARENA | Restricted Code Manipulation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neo-grid-bg {
+            background-image: radial-gradient(circle, #1a1c1a 1px, transparent 1px);
+            background-size: 24px 24px;
+            background-color: #f9f9f6;
+            opacity: 0.05;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #eeeeeb;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #8f7069;
+            border: 2px solid #eeeeeb;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-surface": "#2f312f",
+                      "background": "#f9f9f6",
+                      "primary-fixed": "#ffdad2",
+                      "surface-variant": "#e2e3e0",
+                      "secondary-fixed-dim": "#c6c6c6",
+                      "on-tertiary-fixed": "#1a1c1c",
+                      "error": "#ba1a1a",
+                      "surface-container": "#eeeeeb",
+                      "tertiary-container": "#929393",
+                      "on-primary-fixed": "#3d0700",
+                      "on-background": "#1a1c1a",
+                      "outline": "#8f7069",
+                      "surface-container-low": "#f4f4f1",
+                      "surface-dim": "#dadad7",
+                      "secondary-fixed": "#e2e2e2",
+                      "on-surface-variant": "#5b413a",
+                      "error-container": "#ffdad6",
+                      "surface-tint": "#b52701",
+                      "surface-container-lowest": "#ffffff",
+                      "on-surface": "#1a1c1a",
+                      "on-secondary-fixed": "#1b1b1b",
+                      "primary": "#b52701",
+                      "secondary-container": "#e2e2e2",
+                      "on-tertiary-container": "#2a2c2c",
+                      "on-secondary-fixed-variant": "#474747",
+                      "secondary": "#5e5e5e",
+                      "surface-container-highest": "#e2e3e0",
+                      "outline-variant": "#e3beb6",
+                      "on-secondary": "#ffffff",
+                      "inverse-on-surface": "#f1f1ee",
+                      "on-tertiary": "#ffffff",
+                      "surface-bright": "#f9f9f6",
+                      "inverse-primary": "#ffb4a3",
+                      "on-error": "#ffffff",
+                      "on-tertiary-fixed-variant": "#454747",
+                      "on-primary": "#ffffff",
+                      "tertiary": "#5d5f5f",
+                      "primary-fixed-dim": "#ffb4a3",
+                      "primary-container": "#ff5c35",
+                      "surface-container-high": "#e8e8e5",
+                      "surface": "#f9f9f6",
+                      "on-secondary-container": "#646464",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed-dim": "#c6c6c7",
+                      "tertiary-fixed": "#e2e2e2",
+                      "on-primary-fixed-variant": "#8a1c00",
+                      "on-primary-container": "#5a0e00"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Space Grotesk"],
+                      "body": ["Inter"],
+                      "label": ["Space Grotesk"]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex flex-col overflow-hidden">
+<!-- TopNavBar -->
+<header class="bg-stone-50 dark:bg-stone-900 w-full border-b-2 border-stone-900 dark:border-stone-50 shadow-[2px_2px_0px_0px_rgba(26,28,26,1)] flex justify-between items-center px-4 h-12 z-50">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-stone-900 dark:text-stone-50 font-['Space_Grotesk'] uppercase">LOGIC_ARENA</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-orange-700 border-b-2 border-orange-700 font-bold font-['Space_Grotesk'] uppercase tracking-tighter text-sm" href="#">Problems</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium font-['Space_Grotesk'] uppercase tracking-tighter text-sm hover:text-orange-700 transition-colors" href="#">Contests</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium font-['Space_Grotesk'] uppercase tracking-tighter text-sm hover:text-orange-700 transition-colors" href="#">Rankings</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface">settings</button>
+<button class="material-symbols-outlined text-on-surface">notifications</button>
+<img alt="User profile avatar" class="w-8 h-8 border-2 border-on-background" data-alt="close-up portrait of a professional developer in soft studio lighting with a neutral gray background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbR7jGUDdoOa7fojktwXoJJnI64Ewtwl9a5GEYD1QITxsY2YrMehkEZawiSxBS1sWR5-9hqctn642H12XGZ_I3Fq-YRLp-s6aN-LWlur-pTZAmeEw51qq_9K__H2G8al0sXt17zcpuNPAj_ESV4fveiX85T5v045QhkKqJDxCIO_YYOqaSEL2phPY5igtUupXmoPTe4z0ucwvEpY8nscDRkTxGXidohGFB7IsghaRn-Pvy8A10pcvNGqJyYQvgm20DuPIQLBT-9pw"/>
+</div>
+</header>
+<main class="flex flex-1 relative">
+<!-- SideNavBar -->
+<aside class="bg-stone-100 dark:bg-stone-800 h-full w-14 border-r-2 border-stone-900 dark:border-stone-50 fixed left-0 top-12 bottom-0 flex flex-col items-center py-4 z-40 transition-all duration-100">
+<div class="flex flex-col items-center gap-6 flex-1">
+<div class="bg-orange-700 text-stone-50 border-r-4 border-stone-900 p-2 w-full flex justify-center">
+<span class="material-symbols-outlined">description</span>
+</div>
+<button class="text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700 p-2 w-full flex justify-center">
+<span class="material-symbols-outlined">history</span>
+</button>
+<button class="text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700 p-2 w-full flex justify-center">
+<span class="material-symbols-outlined">menu_book</span>
+</button>
+<button class="text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700 p-2 w-full flex justify-center">
+<span class="material-symbols-outlined">psychology</span>
+</button>
+</div>
+<div class="flex flex-col items-center gap-4 mt-auto">
+<span class="material-symbols-outlined text-stone-500">help_outline</span>
+<span class="material-symbols-outlined text-stone-500">analytics</span>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<div class="ml-14 flex-1 flex overflow-hidden">
+<!-- Left Sidebar: Instructional -->
+<section class="w-72 bg-surface-container-low p-6 flex flex-col gap-8 border-r-2 border-stone-900/10 overflow-y-auto custom-scrollbar relative">
+<div class="neo-grid-bg absolute inset-0 pointer-events-none"></div>
+<div class="relative z-10">
+<h2 class="font-headline font-bold text-lg uppercase tracking-tight mb-4 flex items-center gap-2">
+<span class="w-2 h-6 bg-primary"></span>
+                        Objetivo Pedagógico
+                    </h2>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                        Refatorar a lógica de filtragem assíncrona. O candidato deve identificar o <span class="bg-primary-fixed text-on-primary-fixed px-1">Race Condition</span> na implementação original do hook de busca.
+                    </p>
+</div>
+<div class="relative z-10">
+<h2 class="font-headline font-bold text-lg uppercase tracking-tight mb-4 flex items-center gap-2">
+<span class="w-2 h-6 bg-stone-900"></span>
+                        Erros Comuns
+                    </h2>
+<ul class="space-y-3">
+<li class="flex items-start gap-2 text-xs">
+<span class="material-symbols-outlined text-error text-base">close</span>
+<span>Ignorar o bit de cancelamento em efeitos assíncronos.</span>
+</li>
+<li class="flex items-start gap-2 text-xs">
+<span class="material-symbols-outlined text-error text-base">close</span>
+<span>Uso indevido de variáveis globais fora do escopo do closure.</span>
+</li>
+</ul>
+</div>
+<div class="mt-auto relative z-10">
+<button class="w-full bg-surface border-2 border-on-surface p-3 font-headline font-bold uppercase text-xs flex items-center justify-center gap-2 shadow-[4px_4px_0px_#1a1c1a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
+<span class="material-symbols-outlined text-base">lightbulb</span>
+                        Dica Opcional
+                    </button>
+</div>
+</section>
+<!-- Editor Split View -->
+<section class="flex-1 flex flex-col bg-surface overflow-hidden">
+<div class="h-10 bg-surface-container flex items-center px-4 border-b-2 border-stone-900/5 justify-between">
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+<span class="w-2 h-2 bg-primary animate-pulse"></span>
+                        Fix the Snippet Mode: Restricted Manipulation
+                    </span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold bg-on-surface text-surface px-2 py-0.5">REACT v18.3</span>
+<span class="text-[10px] font-bold border border-on-surface px-2 py-0.5">JS-ESNEXT</span>
+</div>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Pane: LOCKED -->
+<div class="flex-1 border-r-2 border-stone-900/20 bg-stone-50 relative flex flex-col">
+<div class="absolute top-2 right-2 z-10 bg-stone-200 text-stone-600 px-2 py-1 text-[10px] font-black tracking-widest uppercase border border-stone-400">LOCKED</div>
+<div class="flex-1 font-mono text-sm p-4 opacity-50 select-none pointer-events-none custom-scrollbar overflow-auto">
+<div class="flex gap-4 mb-2">
+<span class="text-on-surface-variant w-4 text-right">1</span>
+<span class="text-blue-700">function</span> <span class="text-yellow-700">useSearch</span>(query) {
+                            </div>
+<div class="flex gap-4 mb-2">
+<span class="text-on-surface-variant w-4 text-right">2</span>
+                                  <span class="text-blue-700">const</span> [results, setResults] = useState([]);
+                            </div>
+<div class="flex gap-4 mb-2 bg-red-100 border-l-4 border-red-500">
+<span class="text-on-surface-variant w-4 text-right">3</span>
+                                  useEffect(() =&gt; {
+                            </div>
+<div class="flex gap-4 mb-2 bg-red-100 border-l-4 border-red-500">
+<span class="text-on-surface-variant w-4 text-right">4</span>
+                                    fetchData(query).then(data =&gt; setResults(data));
+                            </div>
+<div class="flex gap-4 mb-2">
+<span class="text-on-surface-variant w-4 text-right">5</span>
+                                  }, [query]);
+                            </div>
+<div class="flex gap-4 mb-2">
+<span class="text-on-surface-variant w-4 text-right">6</span>
+                                  <span class="text-blue-700">return</span> results;
+                            </div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant w-4 text-right">7</span>
+                                }
+                            </div>
+</div>
+</div>
+<!-- Right Pane: EDITABLE -->
+<div class="flex-1 bg-surface-container-lowest relative flex flex-col shadow-inner">
+<div class="absolute top-2 right-2 z-10 bg-primary text-on-primary px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-[2px_2px_0px_#1a1c1a]">EDITABLE</div>
+<div class="flex-1 font-mono text-sm p-4 custom-scrollbar overflow-auto outline-none" contenteditable="true">
+<div class="flex gap-4 mb-2 opacity-30">
+<span class="text-on-surface-variant w-4 text-right">1</span>
+<span>function useSearch(query) {</span>
+</div>
+<div class="flex gap-4 mb-2 opacity-30">
+<span class="text-on-surface-variant w-4 text-right">2</span>
+<span>  const [results, setResults] = useState([]);</span>
+</div>
+<div class="flex gap-4 mb-2 bg-primary/5 border-l-4 border-primary">
+<span class="text-on-surface-variant w-4 text-right">3</span>
+                                  useEffect(() =&gt; {
+                            </div>
+<div class="flex gap-4 mb-2 bg-primary/5 border-l-4 border-primary">
+<span class="text-on-surface-variant w-4 text-right">4</span>
+                                    <span class="text-orange-700 font-bold">let ignore = false;</span>
+</div>
+<div class="flex gap-4 mb-2 bg-primary/5 border-l-4 border-primary">
+<span class="text-on-surface-variant w-4 text-right">5</span>
+                                    fetchData(query).then(data =&gt; {
+                            </div>
+<div class="flex gap-4 mb-2 bg-primary/5 border-l-4 border-primary">
+<span class="text-on-surface-variant w-4 text-right">6</span>
+                                      <span class="text-orange-700 font-bold">if (!ignore)</span> setResults(data);
+                            </div>
+<div class="flex gap-4 mb-2 bg-primary/5 border-l-4 border-primary">
+<span class="text-on-surface-variant w-4 text-right">7</span>
+                                    });
+                            </div>
+<div class="flex gap-4 mb-2 bg-primary/10 border-l-4 border-primary">
+<span class="text-on-surface-variant w-4 text-right">8</span>
+                                    <span class="text-orange-700 font-bold">return () =&gt; { ignore = true; };</span>
+</div>
+<div class="flex gap-4 mb-2">
+<span class="text-on-surface-variant w-4 text-right">9</span>
+                                  }, [query]);
+                            </div>
+<div class="flex gap-4 opacity-30">
+<span class="text-on-surface-variant w-4 text-right">10</span>
+<span>  return results;</span>
+</div>
+<div class="flex gap-4 opacity-30">
+<span class="text-on-surface-variant w-4 text-right">11</span>
+<span>}</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Area -->
+<div class="h-24 bg-surface border-t-2 border-stone-900 flex items-center px-8 gap-6">
+<button class="bg-primary text-on-primary px-8 py-3 font-headline font-bold uppercase tracking-widest text-sm shadow-[6px_6px_0px_#1a1c1a] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2">
+                        Submeter Correção
+                        <span class="material-symbols-outlined">send</span>
+</button>
+<button class="border-2 border-on-surface px-8 py-3 font-headline font-bold uppercase tracking-widest text-sm hover:bg-surface-container transition-all flex items-center gap-2">
+                        Executar Checagem
+                        <span class="material-symbols-outlined">play_circle</span>
+</button>
+<div class="ml-auto flex items-center gap-4 text-[10px] font-bold uppercase text-on-surface-variant opacity-60">
+<span>Status: 3 Testes Falhando</span>
+<div class="w-32 h-2 bg-surface-container">
+<div class="w-1/3 h-full bg-error"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Sidebar: Diagnostics & AI -->
+<section class="w-80 bg-stone-900 text-stone-50 flex flex-col overflow-hidden border-l-2 border-stone-50/10">
+<div class="p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+<div>
+<h3 class="font-headline font-bold text-sm uppercase tracking-tighter text-orange-500 mb-4 flex items-center gap-2">
+                            Diagnóstico de Precisão
+                            <span class="material-symbols-outlined text-xs">analytics</span>
+</h3>
+<div class="space-y-4">
+<div class="p-3 bg-stone-800 border border-stone-700 flex flex-col gap-2">
+<span class="text-[10px] text-stone-400 font-bold uppercase">Consistência Estrutural</span>
+<div class="flex justify-between items-center">
+<span class="text-xl font-bold">88%</span>
+<span class="text-[10px] bg-green-500/20 text-green-400 px-1">PASSOU</span>
+</div>
+</div>
+<div class="p-3 bg-stone-800 border border-stone-700 flex flex-col gap-2">
+<span class="text-[10px] text-stone-400 font-bold uppercase">Evidência de Fix</span>
+<p class="text-[10px] text-stone-300 italic">"Flag de cancelamento identificada no escopo do Effect."</p>
+</div>
+</div>
+</div>
+<div class="border-t border-stone-700 pt-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline font-bold text-sm uppercase tracking-tighter text-stone-100 flex items-center gap-2">
+                                AI Architect
+                                <span class="material-symbols-outlined text-xs">psychology</span>
+</h3>
+<span class="text-[8px] bg-orange-700 px-1 font-bold">V2.0 ALPHA</span>
+</div>
+<div class="bg-primary/10 border-l-2 border-primary p-4 space-y-3">
+<p class="text-xs leading-relaxed text-stone-300">
+                                O erro residia na <span class="text-orange-400 font-bold">não limpeza</span> do efeito. Quando a <code class="bg-stone-800 px-1">query</code> mudava rapidamente, múltiplas requisições competiam pelo estado, causando inconsistência visual.
+                            </p>
+<div class="flex items-center gap-2 text-[10px] text-stone-400">
+<span class="material-symbols-outlined text-xs">info</span>
+                                Reparação sugerida: Closure de Cancelamento.
+                            </div>
+</div>
+</div>
+<div class="mt-4">
+<img alt="Abstract visualization of code execution flow" class="w-full h-32 object-cover border border-stone-700 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500" data-alt="abstract digital visualization of data streams and code architecture in dark industrial aesthetic with neon orange accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkHZsBKfHRVAG_nHxlPaoUN6Zzx4UqFdpqx1jRM4P-gmcAws9yK6U-ONWCvhFs0n1ZKc0dHkbckv91e5lHFhU0SzENF2V-o5xFCFMjAr9c-vLYoJnpSOt7ob71kIyyY-rxiaeohi7nAtSYKo26Fc0n2CoIMH1ixDtzlz39R_Dxgy1kqCUtxQNg0C4ZFuBYqrtGxEto7SH-W1_-Efy9Sg5lHAG_qAfzERP40PYpxrOQo0HlGV7B14ykl4eYcmEHI_tQrS8ppjrBAT8"/>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<footer class="bg-stone-50 dark:bg-stone-900 fixed bottom-0 w-full border-t-2 border-stone-900 dark:border-stone-50 shadow-[0px_-4px_0px_0px_rgba(26,28,26,1)] h-10 z-50 flex justify-start items-center px-4 gap-6">
+<div class="flex items-center gap-2 text-orange-700 dark:text-orange-500 underline decoration-2 underline-offset-4">
+<span class="material-symbols-outlined text-sm">terminal</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase">Console</span>
+</div>
+<div class="flex items-center gap-2 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-800 px-2 h-full transition-all">
+<span class="material-symbols-outlined text-sm">play_arrow</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase">Tests</span>
+</div>
+<div class="flex items-center gap-2 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-800 px-2 h-full transition-all">
+<span class="material-symbols-outlined text-sm">bug_report</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase">AI Debug</span>
+</div>
+<div class="ml-auto text-[10px] font-bold opacity-30 font-headline uppercase tracking-widest">
+            LOGIC_ARENA // SYSTEM_STATUS: OPERATIONAL
+        </div>
+</footer>
+</body></html>

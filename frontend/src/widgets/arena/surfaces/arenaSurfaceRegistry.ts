@@ -43,19 +43,19 @@ const surfaceDescriptors: Record<ArenaSurfaceKey, ArenaSurfaceDescriptor> = {
   objective_choices: {
     key: 'objective_choices',
     title: 'Escolha objetiva',
-    description: 'Itens com estímulo de código e alternativas fixas para leitura, discriminação e decisão.',
+    description: 'Itens com estímulo read-only, alternativas fixas e revisão ancorada em gabarito.',
     kind: 'objective',
     implemented: true,
-    anatomy: ['estímulo', 'alternativas', 'gabarito', 'revisão'],
+    anatomy: ['estímulo', 'alternativas', 'gabarito', 'mentor'],
     accent: 'amber',
   },
   objective_classifier: {
     key: 'objective_classifier',
     title: 'Classificador de comportamento',
-    description: 'Questões de compile/runtime/output com veredito objetivo e revisão explicativa.',
+    description: 'Questões de compile/runtime/output e behavior classification com veredito objetivo.',
     kind: 'objective',
     implemented: true,
-    anatomy: ['snippet', 'classificação', 'veredito', 'feedback'],
+    anatomy: ['snippet', 'classificação', 'veredito', 'output'],
     accent: 'amber',
   },
   restricted_diff: {

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#ffb4a3",
+                    "primary-fixed": "#ffdad2",
+                    "on-primary-fixed": "#3d0700",
+                    "on-surface-variant": "#5b413a",
+                    "on-background": "#1a1c1a",
+                    "surface-tint": "#b52701",
+                    "inverse-primary": "#ffb4a3",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-container": "#e2e2e2",
+                    "tertiary-fixed-dim": "#c6c6c7",
+                    "error": "#ba1a1a",
+                    "background": "#f9f9f6",
+                    "on-tertiary-fixed": "#1a1c1c",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed-variant": "#8a1c00",
+                    "surface-bright": "#f9f9f6",
+                    "on-primary-container": "#5a0e00",
+                    "on-secondary-fixed": "#1b1b1b",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f4f4f1",
+                    "surface": "#f9f9f6",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#1a1c1a",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed-variant": "#474747",
+                    "surface-variant": "#e2e3e0",
+                    "outline-variant": "#e3beb6",
+                    "tertiary-fixed": "#e2e2e2",
+                    "surface-dim": "#dadad7",
+                    "primary": "#b52701",
+                    "tertiary-container": "#929393",
+                    "surface-container-high": "#e8e8e5",
+                    "on-error": "#ffffff",
+                    "on-secondary-container": "#646464",
+                    "secondary-fixed": "#e2e2e2",
+                    "inverse-on-surface": "#f1f1ee",
+                    "inverse-surface": "#2f312f",
+                    "surface-container-highest": "#e2e3e0",
+                    "on-tertiary-fixed-variant": "#454747",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#2a2c2c",
+                    "tertiary": "#5d5f5f",
+                    "outline": "#8f7069",
+                    "secondary-fixed-dim": "#c6c6c6",
+                    "surface-container": "#eeeeeb",
+                    "secondary": "#5e5e5e",
+                    "primary-container": "#ff5c35"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Inter"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hard-shadow-primary {
+            box-shadow: 4px 4px 0px #b52701;
+        }
+        .hard-shadow-black {
+            box-shadow: 4px 4px 0px #1a1c1a;
+        }
+        .hard-shadow-black-lg {
+            box-shadow: 8px 8px 0px #1a1c1a;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-space {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#f9f9f6] dark:bg-[#1a1c1a] border-b-2 border-[#1a1c1a] dark:border-[#f9f9f6]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#1a1c1a] dark:text-[#f9f9f6] font-['Space_Grotesk'] tracking-tighter uppercase">LOGIC ARENA</span>
+<nav class="hidden md:flex gap-6">
+<a class="font-['Space_Grotesk'] font-bold uppercase tracking-tighter text-[#1a1c1a] dark:text-[#f9f9f6] opacity-60 hover:text-[#ff5c35] transition-colors duration-150" href="#">ASSESSMENT</a>
+<a class="font-['Space_Grotesk'] font-bold uppercase tracking-tighter text-[#1a1c1a] dark:text-[#f9f9f6] opacity-60 hover:text-[#ff5c35] transition-colors duration-150" href="#">RESOURCES</a>
+<a class="font-['Space_Grotesk'] font-bold uppercase tracking-tighter text-[#1a1c1a] dark:text-[#f9f9f6] opacity-60 hover:text-[#ff5c35] transition-colors duration-150" href="#">TERMINAL</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-[#b52701] text-white px-4 py-1 font-['Space_Grotesk'] font-bold uppercase tracking-tighter border-2 border-[#1a1c1a] hard-shadow-black active:translate-y-0.5 active:shadow-none transition-all">SUBMIT SESSION</button>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[#1a1c1a] dark:text-[#f9f9f6]">timer</span>
+<span class="material-symbols-outlined text-[#1a1c1a] dark:text-[#f9f9f6]">settings</span>
+</div>
+<img alt="User Avatar" class="w-8 h-8 rounded-full border-2 border-[#1a1c1a]" data-alt="close-up profile photo of a modern software engineer in a neutral tech setting with soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCj4LVTaAQXtS-JAFrMbuBf63amCwyY6G5dew0u6ZvxH0ljXJpO-Xd4qHzI3Ztl2ECMvMVzqDv4yqp3kqLZCKng-4RG9xTryLyyaY13eCbEsPYdDgSyWaLrUIs25B5fqgd-tTL5IWlQZkskTjyUxHbZWLhvmRr53YAm_srSJurBHkpvAjWMkVrFl_cdFf8dnEYJ6tN2f5Q-zsrovLsYgUMkSgcVGGYTKV2BVraNOkrXf4ANK0DIlnvM6X8S2Z5wL6J8e9FfJX9D6mY"/>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] flex flex-col z-40 bg-[#f4f4f1] dark:bg-[#121212] w-64 border-r-2 border-[#1a1c1a] dark:border-[#f9f9f6]">
+<div class="p-6 border-b border-[#eeeeeb] dark:border-[#1e1e1e]">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container flex items-center justify-center border-2 border-[#1a1c1a]">
+<span class="material-symbols-outlined text-[#1a1c1a]">terminal</span>
+</div>
+<div>
+<h3 class="font-['Space_Grotesk'] text-sm font-bold uppercase text-[#1a1c1a] dark:text-[#f9f9f6]">OPERATIONAL RAIL</h3>
+<p class="text-[10px] font-mono text-on-surface-variant">SESSION_ID: 0x4F2A</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 py-4">
+<div class="px-3 mb-2">
+<a class="flex items-center gap-3 px-4 py-3 font-['Space_Grotesk'] text-sm font-bold uppercase text-[#1a1c1a] dark:text-[#f9f9f6] hover:border-l-4 hover:border-[#b52701] transition-all border-b border-[#eeeeeb] dark:border-[#1e1e1e]" href="#">
+<span class="material-symbols-outlined" data-icon="target">target</span>
+                    OBJECTIVE
+                </a>
+</div>
+<div class="px-3 mb-2">
+<a class="flex items-center gap-3 px-4 py-3 font-['Space_Grotesk'] text-sm font-bold uppercase text-[#1a1c1a] dark:text-[#f9f9f6] hover:border-l-4 hover:border-[#b52701] transition-all border-b border-[#eeeeeb] dark:border-[#1e1e1e]" href="#">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+                    SNIPPET FIX
+                </a>
+</div>
+<div class="px-3 mb-2">
+<a class="flex items-center gap-3 px-4 py-3 font-['Space_Grotesk'] text-sm font-bold uppercase text-[#1a1c1a] dark:text-[#f9f9f6] hover:border-l-4 hover:border-[#b52701] transition-all border-b border-[#eeeeeb] dark:border-[#1e1e1e]" href="#">
+<span class="material-symbols-outlined" data-icon="science">science</span>
+                    MINI LAB
+                </a>
+</div>
+<div class="px-3">
+<a class="flex items-center gap-3 px-4 py-3 font-['Space_Grotesk'] text-sm font-bold uppercase bg-[#b52701] text-[#f9f9f6] shadow-[4px_4px_0px_#1a1c1a] translate-x-1 duration-100" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                    RESULTS
+                </a>
+</div>
+</nav>
+<div class="p-4 border-t-2 border-[#1a1c1a] bg-surface-container-low">
+<button class="w-full bg-surface border-2 border-[#1a1c1a] py-2 font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest hard-shadow-black hover:bg-primary-container hover:text-white transition-all">NEW SIMULATION</button>
+</div>
+<footer class="p-4 flex flex-col gap-2">
+<a class="flex items-center gap-2 text-xs font-bold uppercase font-['Space_Grotesk'] text-on-surface-variant hover:text-primary" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="menu_book">menu_book</span> DOCUMENTATION
+            </a>
+<a class="flex items-center gap-2 text-xs font-bold uppercase font-['Space_Grotesk'] text-on-surface-variant hover:text-primary" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="support_agent">support_agent</span> HELP
+            </a>
+</footer>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-8 min-h-[calc(100vh-64px)] bg-surface">
+<div class="max-w-6xl mx-auto">
+<!-- Page Header -->
+<div class="mb-12 border-l-8 border-primary pl-6">
+<h1 class="text-6xl font-black font-space tracking-tighter uppercase text-on-surface mb-2">Synthetic Results View</h1>
+<p class="text-on-surface-variant font-medium tracking-wide uppercase text-sm">Deployment Stage: Final Validation // User_ID: ADMIN_01</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Aggregated Score Box -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-lowest border-2 border-on-surface p-8 flex flex-col items-center justify-center hard-shadow-black-lg text-center">
+<span class="font-space font-bold text-primary uppercase text-sm mb-4">TOTAL EVALUATION SCORE</span>
+<div class="text-9xl font-black font-space tracking-tighter leading-none mb-4">850</div>
+<div class="w-full h-1 bg-on-surface mb-4"></div>
+<span class="text-2xl font-black font-space uppercase">1000 MAX_VAL</span>
+<div class="mt-8 px-4 py-2 bg-primary-container text-on-primary-container font-space font-bold uppercase text-xs border border-on-surface">STATUS: ELIGIBLE FOR CERTIFICATION</div>
+</div>
+<!-- Concept Mastery Bars -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-low border-2 border-on-surface p-8 hard-shadow-black">
+<h2 class="font-space font-black text-2xl uppercase mb-8 flex items-center gap-3">
+<span class="material-symbols-outlined">analytics</span>
+                        CONCEPT_MASTERY_V02
+                    </h2>
+<div class="space-y-8">
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-space font-bold uppercase text-sm">Computational Logic</span>
+<span class="font-mono text-xs text-primary font-bold">92% // OPTIMAL</span>
+</div>
+<div class="h-6 bg-surface-container-highest border border-on-surface">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container" style="width: 92%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-space font-bold uppercase text-sm">Data Structures</span>
+<span class="font-mono text-xs text-primary font-bold">78% // NOMINAL</span>
+</div>
+<div class="h-6 bg-surface-container-highest border border-on-surface">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container" style="width: 78%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-space font-bold uppercase text-sm">Error Handling</span>
+<span class="font-mono text-xs text-primary font-bold">85% // OPTIMAL</span>
+</div>
+<div class="h-6 bg-surface-container-highest border border-on-surface">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container" style="width: 85%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-space font-bold uppercase text-sm">Memory Management</span>
+<span class="font-mono text-xs text-on-surface-variant font-bold">64% // SUBOPTIMAL</span>
+</div>
+<div class="h-6 bg-surface-container-highest border border-on-surface">
+<div class="h-full bg-on-surface opacity-30" style="width: 64%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Error Patterns Analysis -->
+<div class="col-span-12 lg:col-span-5 bg-[#1a1c1a] text-surface p-8 hard-shadow-primary">
+<h2 class="font-space font-black text-2xl uppercase mb-6 text-primary flex items-center gap-3">
+<span class="material-symbols-outlined">dangerous</span>
+                        RECURRING_FAILURE_PATTERNS
+                    </h2>
+<ul class="space-y-6">
+<li class="flex gap-4 border-b border-surface-container-lowest border-opacity-20 pb-4">
+<span class="font-mono text-primary font-bold text-lg">01</span>
+<div>
+<h4 class="font-space font-bold uppercase text-sm mb-1">Null Pointer Oversight</h4>
+<p class="text-xs text-surface-dim font-body leading-relaxed opacity-80">Frequent failure to sanitize inputs before reference in high-recursion environments.</p>
+</div>
+</li>
+<li class="flex gap-4 border-b border-surface-container-lowest border-opacity-20 pb-4">
+<span class="font-mono text-primary font-bold text-lg">02</span>
+<div>
+<h4 class="font-space font-bold uppercase text-sm mb-1">Redundant Allocations</h4>
+<p class="text-xs text-surface-dim font-body leading-relaxed opacity-80">Identified 12 instances of unnecessary heap allocation within nested loops.</p>
+</div>
+</li>
+<li class="flex gap-4">
+<span class="font-mono text-primary font-bold text-lg">03</span>
+<div>
+<h4 class="font-space font-bold uppercase text-sm mb-1">Concurrency Locks</h4>
+<p class="text-xs text-surface-dim font-body leading-relaxed opacity-80">Wait times in parallel threads exceeded optimized thresholds by 14%.</p>
+</div>
+</li>
+</ul>
+</div>
+<!-- Composite AI Review -->
+<div class="col-span-12 lg:col-span-7 bg-surface-container-high border-2 border-on-surface p-8 relative overflow-hidden">
+<div class="absolute -right-12 -top-12 opacity-5 text-[200px] font-black pointer-events-none uppercase font-space">AI</div>
+<h2 class="font-space font-black text-2xl uppercase mb-6 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">robot_2</span>
+                        ARCHITECT_COMPOSITE_REVIEW
+                    </h2>
+<div class="font-mono text-sm leading-relaxed text-on-surface space-y-4">
+<p><span class="bg-primary text-white px-1">ANALYSIS:</span> Overall performance suggests a candidate with strong syntactic fundamental knowledge but lacking in "low-level" hardware abstraction awareness.</p>
+<p><span class="bg-on-surface text-surface px-1">OBSERVATION:</span> During the <span class="underline decoration-primary decoration-2">MINI LAB</span> phase, your solution for the Buffer Overflow challenge was creative but physically inefficient.</p>
+<p><span class="bg-on-surface text-surface px-1">ADVISORY:</span> Recommend focus on pointer arithmetic and garbage collection strategies before attempting Session 0x5G. Your logic is sound, but your execution architecture is 'heavy'.</p>
+<div class="pt-4 border-t border-on-surface-variant border-dashed">
+<p class="text-xs italic text-on-surface-variant font-body">Generated by Neural-Link v8.4 // Confidence Interval: 98.2%</p>
+</div>
+</div>
+</div>
+<!-- Action Buttons Container -->
+<div class="col-span-12 flex flex-wrap gap-6 pt-8 pb-16">
+<button class="bg-primary text-white font-space font-black text-lg uppercase tracking-tight px-10 py-4 border-2 border-on-surface hard-shadow-black flex items-center gap-3 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all">
+<span class="material-symbols-outlined">workspace_premium</span>
+                        DOWNLOAD CERTIFICATION
+                    </button>
+<button class="bg-surface text-on-surface font-space font-bold text-lg uppercase tracking-tight px-10 py-4 border-2 border-on-surface hard-shadow-black flex items-center gap-3 hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined">troubleshoot</span>
+                        REVIEW SPECIFIC ERRORS
+                    </button>
+<button class="bg-transparent text-on-surface font-space font-bold text-lg uppercase tracking-tight px-6 py-4 underline decoration-primary decoration-4 underline-offset-8 flex items-center gap-3 hover:text-primary transition-all">
+<span class="material-symbols-outlined">keyboard_return</span>
+                        BACK TO NAVIGATOR
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Decorative Line -->
+<footer class="h-2 w-full bg-gradient-to-r from-primary via-primary-container to-on-surface fixed bottom-0 left-0 z-50"></footer>
+</body></html>

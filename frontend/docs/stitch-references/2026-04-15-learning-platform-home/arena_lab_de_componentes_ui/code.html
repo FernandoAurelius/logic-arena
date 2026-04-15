@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Arena - Lab de Componentes UI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f4f4f1",
+                        "surface-bright": "#f9f9f6",
+                        "on-surface-variant": "#5b413a",
+                        "outline": "#8f7069",
+                        "background": "#f9f9f6",
+                        "surface-tint": "#b52701",
+                        "tertiary-container": "#929393",
+                        "primary": "#b52701",
+                        "surface-container": "#eeeeeb",
+                        "primary-container": "#ff5c35",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-error": "#ffffff",
+                        "surface": "#f9f9f6",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "outline-variant": "#e3beb6",
+                        "on-background": "#1a1c1a",
+                        "on-primary-container": "#5a0e00",
+                        "surface-container-high": "#e8e8e5",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#e2e2e2",
+                        "secondary-container": "#e2e2e2",
+                        "tertiary": "#5d5f5f",
+                        "on-primary-fixed-variant": "#8a1c00",
+                        "secondary-fixed-dim": "#c6c6c6",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-secondary-container": "#646464",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "on-tertiary-container": "#2a2c2c",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "inverse-surface": "#2f312f",
+                        "inverse-on-surface": "#f1f1ee",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#1a1c1a",
+                        "surface-dim": "#dadad7",
+                        "secondary": "#5e5e5e",
+                        "surface-variant": "#e2e3e0",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#ffdad2",
+                        "on-primary-fixed": "#3d0700",
+                        "inverse-primary": "#ffb4a3",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "surface-container-highest": "#e2e3e0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neo-shadow {
+            box-shadow: 4px 4px 0px #1a1c1a;
+        }
+        .neo-shadow-primary {
+            box-shadow: 4px 4px 0px #b52701;
+        }
+        .neo-btn-primary:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #eeeeeb;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #8f7069;
+            border: 2px solid #eeeeeb;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body overflow-hidden">
+<!-- TopNavBar -->
+<nav class="flex justify-between items-center px-6 h-16 w-full fixed top-0 z-50 bg-[#f9f9f6] dark:bg-[#1a1c1a] border-b-2 border-[#1a1c1a] dark:border-[#f9f9f6] shadow-[4px_4px_0px_#1a1c1a] dark:shadow-[4px_4px_0px_#ff5c35]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black italic text-[#1a1c1a] dark:text-[#f9f9f6] font-['Space_Grotesk'] uppercase tracking-wider">LOGIC_ARENA</span>
+<div class="hidden md:flex gap-6">
+<a class="text-[#5b413a] dark:text-[#e3beb6] font-['Space_Grotesk'] uppercase tracking-wider text-sm hover:translate-x-[2px] hover:translate-y-[2px] transition-all" href="#">Documentation</a>
+<a class="text-[#b52701] border-b-4 border-[#b52701] pb-1 font-['Space_Grotesk'] uppercase tracking-wider text-sm" href="#">Challenges</a>
+<a class="text-[#5b413a] dark:text-[#e3beb6] font-['Space_Grotesk'] uppercase tracking-wider text-sm hover:translate-x-[2px] hover:translate-y-[2px] transition-all" href="#">Community</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-4 py-1 font-bold text-sm neo-shadow neo-btn-primary transition-all">UPGRADE</button>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:scale-110 transition-transform">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:scale-110 transition-transform">settings</span>
+<div class="flex items-center gap-3 pl-4 border-l border-outline-variant">
+<div class="text-right">
+<p class="text-[10px] font-bold text-primary leading-none">LEVEL 04</p>
+<p class="text-xs font-black">ARCHITECT</p>
+</div>
+<img alt="User avatar with level indicator" class="w-10 h-10 border-2 border-on-background" data-alt="close up profile photo of a person with a futuristic headset and glowing orange interface light on face" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmVRsB1w1KPd5T8-6vinI8wcXEamsZM5Mw8cp1nm0wLXC5WbxW0h22lac1xrUw2VLuEY5_Tmc4AD8GBQWNYd--oSNni3CbTGnaisJNmAFrMDsLbExgXaL26od7qdxZa7uvRMOAVi_VMdzVcMmMAPx5Yv6-82Kt0Fuk42OA3z_GetEZVpbC8n_hxP8JNq3OUEeGXP7Q84cqkNfjwaaumidWQqZzCcs7k24yKvkJwJU4AjAQ7zphW3vc2nON3yI4_IC-8XC72r0XsWQ"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 bottom-0 flex flex-col p-4 z-40 bg-[#eeeeeb] dark:bg-[#1a1c1a] h-[calc(100vh-64px)] w-64 border-r-2 border-[#1a1c1a] dark:border-[#f9f9f6] font-['Space_Grotesk'] font-bold text-xs">
+<div class="mb-8 p-4 bg-surface-container-highest border-2 border-on-background neo-shadow">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary" data-weight="fill" style="font-variation-settings: 'FILL' 1;">architecture</span>
+<span class="text-xs tracking-tighter">ARCHITECT_LEVEL_04</span>
+</div>
+<div class="w-full bg-secondary-container h-2 border border-on-background">
+<div class="bg-primary h-full w-[90%]"></div>
+</div>
+<p class="text-[10px] mt-1 opacity-70">XP: 4500 / 5000</p>
+</div>
+<div class="flex flex-col gap-2 flex-grow">
+<div class="flex items-center gap-3 p-3 bg-[#b52701] text-[#f9f9f6] border-2 border-[#1a1c1a] shadow-[4px_4px_0px_#1a1c1a]">
+<span class="material-symbols-outlined">architecture</span>
+<span>Current Track</span>
+</div>
+<div class="flex items-center gap-3 p-3 text-[#1a1c1a] dark:text-[#f9f9f6] hover:bg-[#e8e8e5] dark:hover:bg-[#5b413a] transition-all">
+<span class="material-symbols-outlined">history</span>
+<span>History</span>
+</div>
+<div class="flex items-center gap-3 p-3 text-[#1a1c1a] dark:text-[#f9f9f6] hover:bg-[#e8e8e5] dark:hover:bg-[#5b413a] transition-all">
+<span class="material-symbols-outlined">military_tech</span>
+<span>Achievements</span>
+</div>
+<div class="flex items-center gap-3 p-3 text-[#1a1c1a] dark:text-[#f9f9f6] hover:bg-[#e8e8e5] dark:hover:bg-[#5b413a] transition-all">
+<span class="material-symbols-outlined">leaderboard</span>
+<span>Leaderboard</span>
+</div>
+<div class="flex items-center gap-3 p-3 text-[#1a1c1a] dark:text-[#f9f9f6] hover:bg-[#e8e8e5] dark:hover:bg-[#5b413a] transition-all">
+<span class="material-symbols-outlined">tune</span>
+<span>Settings</span>
+</div>
+</div>
+<div class="mt-auto flex flex-col gap-2 pt-4 border-t-2 border-outline-variant">
+<button class="flex items-center justify-center gap-2 w-full p-2 bg-on-background text-surface font-black neo-shadow-primary mb-4">VIEW_LOGS</button>
+<div class="flex items-center gap-3 p-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">help_outline</span>
+<span>Help</span>
+</div>
+<div class="flex items-center gap-3 p-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 mt-16 h-[calc(100vh-64px)] grid grid-cols-12 gap-0 overflow-hidden">
+<!-- Left Column: Component Editor -->
+<section class="col-span-6 border-r-2 border-on-background flex flex-col h-full bg-surface-container-low">
+<header class="flex items-center justify-between px-6 py-4 border-b-2 border-on-background bg-surface-bright">
+<div>
+<h1 class="font-headline font-black text-xl tracking-tight uppercase">Arena - Lab de Componentes UI</h1>
+<p class="font-label text-[10px] text-on-surface-variant uppercase">Track: Advanced React Core / Lab: 04-B</p>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-on-background text-surface text-[10px] font-bold">MODE: REACT_TS</span>
+<span class="px-2 py-1 bg-primary text-on-primary text-[10px] font-bold">STATUS: DRAFT</span>
+</div>
+</header>
+<div class="flex border-b-2 border-on-background bg-surface-container">
+<button class="px-6 py-3 border-r-2 border-on-background bg-surface-bright font-black text-xs flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">code</span> TEMPLATE.TSX
+                </button>
+<button class="px-6 py-3 border-r-2 border-on-background hover:bg-surface-container-high transition-colors font-bold text-xs text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">javascript</span> SCRIPT.JS
+                </button>
+<button class="px-6 py-3 border-r-2 border-on-background hover:bg-surface-container-high transition-colors font-bold text-xs text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">css</span> STYLE.CSS
+                </button>
+</div>
+<div class="flex-grow flex font-mono text-sm overflow-hidden">
+<div class="w-12 bg-surface-container-high flex flex-col items-center py-4 text-on-surface-variant opacity-50 border-r border-outline-variant">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span>
+</div>
+<div class="flex-grow p-4 bg-surface-container-lowest overflow-y-auto custom-scrollbar">
+<pre class="text-on-background leading-relaxed"><span class="text-primary font-bold">interface</span> <span class="text-blue-600">CounterProps</span> {
+  initial: number;
+  onUpdate?: (val: number) =&gt; void;
+}
+
+<span class="text-primary font-bold">export const</span> <span class="text-blue-600">CounterComponent</span> = ({ initial, onUpdate }: CounterProps) =&gt; {
+  <span class="text-primary font-bold">const</span> [count, setCount] = <span class="text-blue-600">useState</span>(initial);
+
+  <span class="text-primary font-bold">const</span> <span class="text-green-600">increment</span> = () =&gt; {
+    <span class="text-primary font-bold">const</span> newVal = count + 1;
+    <span class="text-blue-600">setCount</span>(newVal);
+    onUpdate?.(newVal);
+  };
+
+  <span class="text-primary font-bold">return</span> (
+    &lt;<span class="text-blue-600">div</span> <span class="text-orange-600">className</span>="p-4 border-2 border-black"&gt;
+      &lt;<span class="text-blue-600">h1</span>&gt;Count: {count}&lt;/<span class="text-blue-600">h1</span>&gt;
+      &lt;<span class="text-blue-600">button</span> <span class="text-orange-600">onClick</span>={increment}&gt;+1&lt;/<span class="text-blue-600">button</span>&gt;
+    &lt;/<span class="text-blue-600">div</span>&gt;
+  );
+};
+</pre>
+</div>
+</div>
+<div class="p-4 border-t-2 border-on-background bg-surface-container flex justify-between items-center">
+<div class="flex gap-4">
+<button class="bg-surface border-2 border-on-background px-4 py-2 font-black text-xs neo-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">Atualizar Preview</button>
+</div>
+<div class="flex gap-4">
+<button class="bg-primary text-on-primary px-6 py-2 font-black text-xs neo-shadow-primary neo-btn-primary transition-all">Executar Testes</button>
+<button class="bg-on-background text-surface px-6 py-2 font-black text-xs neo-shadow border-2 border-on-background hover:bg-on-surface-variant transition-colors">Submeter</button>
+</div>
+</div>
+</section>
+<!-- Right Column -->
+<section class="col-span-6 flex flex-col h-full bg-surface-container-low overflow-hidden">
+<!-- Right Column Top: Live Preview & State Inspector -->
+<div class="flex-1 border-b-2 border-on-background flex flex-col min-h-0">
+<div class="grid grid-cols-2 h-full">
+<!-- Live Preview -->
+<div class="border-r-2 border-on-background flex flex-col bg-surface-container-low">
+<div class="p-2 border-b-2 border-on-background bg-surface-bright flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">visibility</span>
+<span class="font-headline font-black text-[10px] uppercase tracking-widest">LIVE_PREVIEW</span>
+</div>
+<div class="flex-grow flex items-center justify-center p-8 relative">
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#1a1c1a 1px, transparent 1px); background-size: 16px 16px;"></div>
+<!-- Component Visual Representation -->
+<div class="bg-surface-bright border-4 border-on-background p-8 neo-shadow flex flex-col items-center gap-4 z-10 w-48">
+<span class="font-headline text-4xl font-black">42</span>
+<button class="w-full bg-primary text-on-primary py-3 font-black text-xl neo-shadow-primary neo-btn-primary border-2 border-on-background">+1</button>
+</div>
+</div>
+</div>
+<!-- State Inspector -->
+<div class="flex flex-col bg-surface-container-high">
+<div class="p-2 border-b-2 border-on-background bg-surface-bright flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">monitoring</span>
+<span class="font-headline font-black text-[10px] uppercase tracking-widest">STATE_INSPECTOR</span>
+</div>
+<div class="flex-grow p-4 font-mono text-[11px] overflow-y-auto custom-scrollbar">
+<div class="space-y-4">
+<div>
+<p class="text-primary font-black mb-1 uppercase tracking-tighter">PROPS</p>
+<div class="bg-surface-bright p-2 border border-outline">
+<div class="flex justify-between">
+<span class="text-blue-600">initial:</span>
+<span class="font-black text-on-background">42</span>
+</div>
+<div class="flex justify-between mt-1">
+<span class="text-blue-600">onUpdate:</span>
+<span class="italic text-on-surface-variant">fn()</span>
+</div>
+</div>
+</div>
+<div>
+<p class="text-primary font-black mb-1 uppercase tracking-tighter">STATE</p>
+<div class="bg-surface-bright p-2 border border-outline">
+<div class="flex justify-between">
+<span class="text-blue-600">count:</span>
+<span class="font-black text-on-background">42</span>
+</div>
+</div>
+</div>
+<div>
+<p class="text-primary font-black mb-1 uppercase tracking-tighter">EVENT_LOG</p>
+<div class="bg-on-background text-surface p-2 space-y-1">
+<p><span class="text-green-400">[10:14:02]</span> Component Mounted</p>
+<p><span class="text-green-400">[10:14:05]</span> Props Update: initial=42</p>
+<p><span class="text-primary-container">[10:15:00]</span> State Update: count: 42</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column Bottom: Behavior Assertions -->
+<div class="h-1/3 flex flex-col bg-surface-bright">
+<div class="p-2 border-b-2 border-on-background bg-surface-container-high flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">fact_check</span>
+<span class="font-headline font-black text-[10px] uppercase tracking-widest">BEHAVIOR_ASSERTIONS</span>
+</div>
+<span class="text-[10px] font-bold">2/3 PASSED</span>
+</div>
+<div class="flex-grow p-4 overflow-y-auto custom-scrollbar">
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest border-2 border-on-background neo-shadow">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-green-600 font-bold">check_circle</span>
+<div>
+<p class="text-xs font-black uppercase">Renders correctly</p>
+<p class="text-[10px] text-on-surface-variant">Component mount matches DOM structure</p>
+</div>
+</div>
+<span class="text-[10px] font-bold text-green-600 uppercase">PASSED</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest border-2 border-on-background neo-shadow">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-green-600 font-bold">check_circle</span>
+<div>
+<p class="text-xs font-black uppercase">Increments on click</p>
+<p class="text-[10px] text-on-surface-variant">User interaction updates internal state</p>
+</div>
+</div>
+<span class="text-[10px] font-bold text-green-600 uppercase">PASSED</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest border-2 border-primary neo-shadow-primary">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary font-bold">error</span>
+<div>
+<p class="text-xs font-black uppercase">Handles empty state</p>
+<p class="text-[10px] text-on-surface-variant">Prop validation for null/undefined values</p>
+</div>
+</div>
+<span class="text-[10px] font-bold text-primary uppercase underline">FAILED</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Side Overlay / Results Panel -->
+<div class="fixed right-0 top-16 bottom-0 w-80 bg-surface border-l-2 border-on-background z-30 transform translate-x-[95%] hover:translate-x-0 transition-transform duration-300 ease-in-out shadow-[-8px_0px_0px_rgba(0,0,0,0.1)]">
+<div class="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 bg-on-background text-surface p-2 flex flex-col items-center gap-4 cursor-pointer">
+<span class="material-symbols-outlined">analytics</span>
+<span class="[writing-mode:vertical-lr] font-headline font-black text-xs uppercase tracking-widest py-2">AI ARCHITECT REVIEW</span>
+</div>
+<div class="h-full flex flex-col p-6 overflow-y-auto custom-scrollbar">
+<div class="mb-8 text-center">
+<p class="font-headline font-black text-5xl text-primary">82%</p>
+<p class="font-label font-bold text-xs uppercase tracking-widest text-on-surface-variant">Lab Accuracy Score</p>
+</div>
+<div class="space-y-6">
+<div>
+<h3 class="font-headline font-black text-xs uppercase mb-3 border-b border-outline-variant pb-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">science</span> DIVERGENCE OBSERVED
+                    </h3>
+<div class="bg-primary-container/10 p-3 border-l-4 border-primary space-y-2">
+<p class="text-[11px] leading-relaxed"><strong>Contract Violation:</strong> The `onUpdate` callback is triggered after internal state update, but lacks a guard for asynchronous race conditions in high-frequency interactions.</p>
+</div>
+</div>
+<div>
+<h3 class="font-headline font-black text-xs uppercase mb-3 border-b border-outline-variant pb-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">psychology</span> ARCHITECT NOTES
+                    </h3>
+<div class="space-y-4">
+<div class="bg-surface-container p-3 border border-outline">
+<p class="text-[11px] font-bold text-primary uppercase mb-1">Reactivity</p>
+<p class="text-[10px] text-on-surface-variant leading-relaxed">State transitions are clean. Consider using `useCallback` for the increment function to optimize memoized children.</p>
+</div>
+<div class="bg-surface-container p-3 border border-outline">
+<p class="text-[11px] font-bold text-primary uppercase mb-1">UI Contract</p>
+<p class="text-[10px] text-on-surface-variant leading-relaxed">The DOM structure matches the specification. Tailwind classes are applied correctly for the "Neo-Syntax" look.</p>
+</div>
+</div>
+</div>
+<button class="w-full bg-on-background text-surface py-3 font-black text-xs neo-shadow-primary mt-4 flex items-center justify-center gap-2">
+                    RE-GENERATE REPORT <span class="material-symbols-outlined text-sm">refresh</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Logic Arena - Objective Exercise</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#5b413a",
+                        "on-surface": "#1a1c1a",
+                        "inverse-primary": "#ffb4a3",
+                        "secondary-fixed": "#e2e2e2",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e8e8e5",
+                        "surface-container-highest": "#e2e3e0",
+                        "secondary": "#5e5e5e",
+                        "inverse-on-surface": "#f1f1ee",
+                        "on-tertiary-container": "#2a2c2c",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "surface-container": "#eeeeeb",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "on-primary-container": "#5a0e00",
+                        "tertiary-container": "#929393",
+                        "surface-tint": "#b52701",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#1a1c1a",
+                        "tertiary": "#5d5f5f",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-secondary-container": "#646464",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "on-primary-fixed": "#3d0700",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "outline": "#8f7069",
+                        "inverse-surface": "#2f312f",
+                        "primary-fixed": "#ffdad2",
+                        "surface-dim": "#dadad7",
+                        "surface-container-low": "#f4f4f1",
+                        "secondary-container": "#e2e2e2",
+                        "primary": "#b52701",
+                        "primary-container": "#ff5c35",
+                        "background": "#f9f9f6",
+                        "outline-variant": "#e3beb6",
+                        "surface": "#f9f9f6",
+                        "secondary-fixed-dim": "#c6c6c6",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f9f9f6",
+                        "on-primary-fixed-variant": "#8a1c00",
+                        "surface-variant": "#e2e3e0",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neo-grid-bg {
+            background-image: radial-gradient(#8f7069 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+        }
+        .code-syntax-keyword { color: #b52701; font-weight: 600; }
+        .code-syntax-string { color: #5b413a; }
+        .code-syntax-comment { color: #929393; font-style: italic; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f4f4f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #8f7069; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Bar -->
+<header class="flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 bg-[#f9f9f6] dark:bg-stone-950 font-['Space_Grotesk'] tracking-tight font-bold uppercase docked full-width top-0 border-b-2 border-stone-900 dark:border-stone-800 shadow-[4px_4px_0px_0px_rgba(26,28,26,1)]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-stone-900 dark:text-stone-50 tracking-tighter">LOGIC ARENA</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-[#FF5C35] border-b-2 border-[#FF5C35] pb-1" href="#">Practice</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors" href="#">Compete</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors" href="#">Leaderboard</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors" href="#">Docs</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+<span class="material-symbols-outlined text-stone-900 dark:text-stone-50" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+<span class="material-symbols-outlined text-stone-900 dark:text-stone-50" data-icon="terminal">terminal</span>
+</button>
+<div class="w-8 h-8 bg-surface-container-highest border-2 border-stone-900 overflow-hidden">
+<img alt="Technical Operator Avatar" class="w-full h-full object-cover" data-alt="close-up of a digital avatar profile picture with a retro-futuristic pixel art style in warm orange and gray tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARGoHrrcJAA-YqeH1CkIgSTTNkuD6SpqYNwxPoqYWDp63I-qzoK22KxJtQpPPY-NxtLnYqsQqtMyI8p82JlTskbbJf6Q7duL1Nw-fS2a_b4MgM3LU8XKEgSpoWYuV5RTCgxdSM_aI1yBMZrqQgYjj3yEzVmwYjRGMS1OwETLngo-4ji-kOtCjNmQRY7lVVhQrwKj4YHhyOTFr8OJy8Zd32FV7BeS-x4naCpjjtfKoqszTclMWA9ZXThM2VBv0-r2Yrn44g9kOadbc"/>
+</div>
+</div>
+</header>
+<div class="flex min-h-[calc(100vh-64px)] overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="flex flex-col fixed left-0 top-16 h-[calc(100vh-64px)] p-4 gap-4 w-64 border-r-2 border-stone-900 dark:border-stone-800 bg-[#eeeeeb] dark:bg-stone-900 z-40">
+<div class="mb-6 p-3 bg-surface-container-lowest border-2 border-stone-900 shadow-[4px_4px_0px_0px_rgba(26,28,26,1)]">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="workspace_premium" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div>
+<p class="font-headline font-bold text-stone-900 dark:text-stone-50 text-xs">OPERATOR_01</p>
+<p class="font-body text-[10px] text-on-surface-variant uppercase tracking-widest">Level 14 Senior Compiler</p>
+</div>
+</div>
+</div>
+<nav class="space-y-2">
+<a class="flex items-center gap-3 p-3 font-['Inter'] text-sm font-medium transition-all duration-100 ease-in-out bg-[#FF5C35] text-white shadow-[4px_4px_0px_0px_rgba(26,28,26,1)] translate-x-[-2px] translate-y-[-2px]" href="#">
+<span class="material-symbols-outlined" data-icon="route">route</span>
+<span>Current Track</span>
+</a>
+<a class="flex items-center gap-3 p-3 font-['Inter'] text-sm font-medium transition-all duration-100 ease-in-out text-stone-600 dark:text-stone-400 border-2 border-transparent hover:border-stone-900 dark:hover:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>History</span>
+</a>
+<a class="flex items-center gap-3 p-3 font-['Inter'] text-sm font-medium transition-all duration-100 ease-in-out text-stone-600 dark:text-stone-400 border-2 border-transparent hover:border-stone-900 dark:hover:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800" href="#">
+<span class="material-symbols-outlined" data-icon="workspace_premium">workspace_premium</span>
+<span>Achievements</span>
+</a>
+<a class="flex items-center gap-3 p-3 font-['Inter'] text-sm font-medium transition-all duration-100 ease-in-out text-stone-600 dark:text-stone-400 border-2 border-transparent hover:border-stone-900 dark:hover:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="mt-auto">
+<button class="w-full py-4 bg-primary text-white font-headline font-bold text-sm shadow-[4px_4px_0px_0px_rgba(26,28,26,1)] border-2 border-stone-900 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all uppercase tracking-tighter">
+                    GO TO ARENA
+                </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex flex-1 overflow-hidden neo-grid-bg">
+<!-- Left Panel: Context/Objective -->
+<section class="w-1/3 flex flex-col border-r-2 border-stone-900 bg-surface-container-low/50 backdrop-blur-sm p-8 overflow-y-auto custom-scrollbar">
+<div class="space-y-8">
+<div>
+<span class="inline-block px-3 py-1 bg-on-surface text-surface text-[10px] font-headline font-bold uppercase tracking-widest mb-4">Exercise Module 08</span>
+<h1 class="text-4xl font-headline font-black text-on-surface leading-none uppercase tracking-tighter">Memory Leak Analysis</h1>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-surface-container border-2 border-stone-900 shadow-[4px_4px_0px_0px_rgba(26,28,26,1)]">
+<p class="text-[10px] font-headline font-bold uppercase text-on-surface-variant mb-1">Difficulty</p>
+<p class="font-headline font-black text-primary uppercase">Expert</p>
+</div>
+<div class="p-4 bg-surface-container border-2 border-stone-900 shadow-[4px_4px_0px_0px_rgba(26,28,26,1)]">
+<p class="text-[10px] font-headline font-bold uppercase text-on-surface-variant mb-1">Estimated Time</p>
+<p class="font-headline font-black text-on-surface">10 MIN</p>
+</div>
+</div>
+<div class="space-y-4">
+<h3 class="font-headline font-bold text-on-surface border-b-2 border-stone-900 pb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="terminal">terminal</span>
+                            OBJECTIVE
+                        </h3>
+<p class="text-sm text-on-surface leading-relaxed font-body">
+                            Identify the architectural flaw in the provided resource management pattern. Analyze how the garbage collector handles the reference cycle and determine the resultant state after 1,000,000 iterations.
+                        </p>
+</div>
+<div class="p-4 border-2 border-primary bg-primary/5 relative">
+<div class="absolute -top-3 left-4 px-2 bg-surface text-primary font-headline font-bold text-[10px] uppercase tracking-widest">
+                            System Hint
+                        </div>
+<p class="text-xs text-on-surface font-body italic flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="lightbulb">lightbulb</span>
+                            "Check for off-by-one errors in the buffer allocation logic and verify pointer cleanup sequence."
+                        </p>
+</div>
+<div class="mt-8">
+<img alt="Technical Schematic" class="w-full grayscale border-2 border-stone-900 shadow-[8px_8px_0px_0px_rgba(181,39,1,0.2)]" data-alt="a professional technical architectural schematic with high contrast lines on an off-white background showing complex server connection nodes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-Y8wy9_PlLe3NQ-TA_mMbgyMRRUQnCbZuDhMQGkD1lBTMR0HPkmYv2TRDt8atX6TZJZtITLNbV1cr2aXJ6mypSn63nMnJYFi-bvEf8XKOzBakFhmolKAKMZiFmlX9SJ-wqs-v5FOLYK-uaix2ywn6b9CKFooOXXh_Qvlm4IPLt133ftU9lFNr6NMqrR8Ni1NW7tNg3YOrBXm06BTafGgPTiXf3U72SeNSf77qqBXkX5utF_GlwuBTjdDqun5bCggDvku_x2fS2aA"/>
+</div>
+</div>
+</section>
+<!-- Main Center Panel: Code & Alternatives -->
+<section class="flex-1 flex flex-col p-8 overflow-y-auto custom-scrollbar">
+<!-- Technical Code Frame -->
+<div class="bg-surface-container-lowest border-2 border-stone-900 shadow-[8px_8px_0px_0px_rgba(26,28,26,1)] mb-10 overflow-hidden">
+<div class="bg-surface-container h-10 border-b-2 border-stone-900 flex items-center px-4 justify-between">
+<div class="flex gap-2">
+<div class="w-3 h-3 rounded-full bg-stone-400"></div>
+<div class="w-3 h-3 rounded-full bg-stone-400"></div>
+<div class="w-3 h-3 rounded-full bg-stone-400"></div>
+</div>
+<span class="font-headline font-bold text-[10px] text-on-surface-variant tracking-widest uppercase">main_v2.cpp | 741 lines</span>
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="settings_ethernet">settings_ethernet</span>
+</div>
+<div class="flex">
+<div class="w-12 bg-surface-container border-r-2 border-stone-900 py-4 flex flex-col items-center gap-1 font-body text-[10px] text-on-surface-variant select-none">
+<span>124</span><span>125</span><span>126</span><span>127</span><span>128</span><span>129</span><span>130</span><span>131</span><span>132</span>
+</div>
+<div class="p-6 font-mono text-sm leading-relaxed whitespace-pre overflow-x-auto bg-white">
+<span class="code-syntax-keyword">void</span> process_stream(<span class="code-syntax-keyword">char</span>* input) {
+    Buffer* b = <span class="code-syntax-keyword">new</span> Buffer(MAX_SIZE);
+    <span class="code-syntax-keyword">try</span> {
+        <span class="code-syntax-comment">// Critical section for memory mapping</span>
+<span class="code-syntax-keyword">while</span> (input != <span class="code-syntax-string">'\0'</span>) {
+            b-&gt;write(*input++);
+        }
+    } <span class="code-syntax-keyword">catch</span> (...) {
+        <span class="code-syntax-comment">// Recovery logic omitted for brevity</span>
+    }
+} <span class="code-syntax-comment">// Observation point: Memory state here</span></div>
+</div>
+</div>
+<!-- Alternatives Section -->
+<div class="space-y-6">
+<h2 class="font-headline font-black text-2xl uppercase tracking-tighter text-on-surface flex items-center gap-3">
+<span class="w-2 h-8 bg-primary"></span>
+                        SELECT CORRECT RESPONSE
+                    </h2>
+<div class="grid grid-cols-1 gap-4">
+<!-- Option A -->
+<button class="group flex items-start text-left bg-surface-container-low border-2 border-stone-900 p-5 hover:bg-surface-container-high hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(26,28,26,1)] transition-all duration-75 relative">
+<span class="font-headline font-black text-2xl text-stone-300 group-hover:text-primary transition-colors mr-6 leading-none">A</span>
+<div>
+<p class="font-headline font-bold text-on-surface text-lg mb-1">Heap Leak on Exception</p>
+<p class="font-body text-sm text-on-surface-variant">The buffer object 'b' is allocated on the heap but never deallocated, causing a leak if an exception occurs or even in normal flow.</p>
+</div>
+</button>
+<!-- Option B (Selected State Example) -->
+<button class="group flex items-start text-left bg-surface border-2 border-primary p-5 shadow-[4px_4px_0px_0px_rgba(181,39,1,1)] relative translate-x-[-2px] translate-y-[-2px]">
+<div class="absolute top-2 right-2 text-primary">
+<span class="material-symbols-outlined text-lg" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="font-headline font-black text-2xl text-primary mr-6 leading-none">B</span>
+<div>
+<p class="font-headline font-bold text-on-surface text-lg mb-1">Buffer Overflow Vulnerability</p>
+<p class="font-body text-sm text-on-surface-variant">The while loop does not check against MAX_SIZE, allowing the input to overwrite adjacent memory addresses until a null byte is found.</p>
+</div>
+</button>
+<!-- Option C -->
+<button class="group flex items-start text-left bg-surface-container-low border-2 border-stone-900 p-5 hover:bg-surface-container-high hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(26,28,26,1)] transition-all duration-75 relative">
+<span class="font-headline font-black text-2xl text-stone-300 group-hover:text-primary transition-colors mr-6 leading-none">C</span>
+<div>
+<p class="font-headline font-bold text-on-surface text-lg mb-1">Null Pointer Dereference</p>
+<p class="font-body text-sm text-on-surface-variant">Input pointer is not checked for null before access, potentially triggering a segmentation fault on entry.</p>
+</div>
+</button>
+</div>
+<!-- Action Footer -->
+<div class="mt-12 pt-8 border-t-4 border-double border-stone-900 flex justify-between items-center">
+<div class="flex items-center gap-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-stone-900 bg-stone-200 flex items-center justify-center font-bold text-[10px]">OS</div>
+<div class="w-8 h-8 rounded-full border-2 border-stone-900 bg-stone-300 flex items-center justify-center font-bold text-[10px]">TR</div>
+<div class="w-8 h-8 rounded-full border-2 border-stone-900 bg-stone-400 flex items-center justify-center font-bold text-[10px]">KM</div>
+</div>
+<p class="text-[10px] font-headline font-bold text-on-surface-variant uppercase tracking-widest">3 Operators also attempting</p>
+</div>
+<div class="flex gap-4">
+<button class="px-8 py-3 bg-surface border-2 border-stone-900 font-headline font-bold text-on-surface hover:bg-surface-container-high transition-all active:translate-y-[2px] uppercase">
+                                Verificar
+                            </button>
+<button class="px-10 py-3 bg-primary text-on-primary border-2 border-stone-900 font-headline font-black shadow-[4px_4px_0px_0px_rgba(26,28,26,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all uppercase tracking-tight">
+                                Responder
+                            </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Floating UI Artifact: Progress Ticker -->
+<div class="fixed bottom-6 left-6 z-50 pointer-events-none">
+<div class="bg-on-surface text-surface p-4 border-2 border-primary shadow-[4px_4px_0px_0px_rgba(181,39,1,1)] flex items-center gap-6">
+<div class="flex flex-col">
+<span class="text-[8px] font-headline font-bold tracking-[0.2em] opacity-60">SYSTEM_UPTIME</span>
+<span class="font-mono text-xs">00:08:42:19</span>
+</div>
+<div class="w-[1px] h-8 bg-surface/20"></div>
+<div class="flex flex-col">
+<span class="text-[8px] font-headline font-bold tracking-[0.2em] opacity-60">BITRATE_ACCURACY</span>
+<span class="font-mono text-xs text-primary">94.82%</span>
+</div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#5b413a",
+                        "on-surface": "#1a1c1a",
+                        "inverse-primary": "#ffb4a3",
+                        "secondary-fixed": "#e2e2e2",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e8e8e5",
+                        "surface-container-highest": "#e2e3e0",
+                        "secondary": "#5e5e5e",
+                        "inverse-on-surface": "#f1f1ee",
+                        "on-tertiary-container": "#2a2c2c",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "surface-container": "#eeeeeb",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "on-primary-container": "#5a0e00",
+                        "tertiary-container": "#929393",
+                        "surface-tint": "#b52701",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#1a1c1a",
+                        "tertiary": "#5d5f5f",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-secondary-container": "#646464",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "on-primary-fixed": "#3d0700",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "outline": "#8f7069",
+                        "inverse-surface": "#2f312f",
+                        "primary-fixed": "#ffdad2",
+                        "surface-dim": "#dadad7",
+                        "surface-container-low": "#f4f4f1",
+                        "secondary-container": "#e2e2e2",
+                        "primary": "#b52701",
+                        "primary-container": "#ff5c35",
+                        "background": "#f9f9f6",
+                        "outline-variant": "#e3beb6",
+                        "surface": "#f9f9f6",
+                        "secondary-fixed-dim": "#c6c6c6",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f9f9f6",
+                        "on-primary-fixed-variant": "#8a1c00",
+                        "surface-variant": "#e2e3e0",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .code-shadow {
+            box-shadow: 8px 8px 0px #1a1c1a;
+        }
+        .button-shadow {
+            box-shadow: 4px 4px 0px #1a1c1a;
+        }
+        .error-shadow {
+            box-shadow: 4px 4px 0px #ba1a1a;
+        }
+        .success-shadow {
+            box-shadow: 4px 4px 0px #2e7d32;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 bg-[#f9f9f6] dark:bg-stone-950 border-b-2 border-stone-900 dark:border-stone-800 shadow-[4px_4px_0px_0px_rgba(26,28,26,1)]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-stone-900 dark:text-stone-50 tracking-tighter font-['Space_Grotesk'] tracking-tight font-bold uppercase">LOGIC ARENA</span>
+<nav class="hidden md:flex gap-6 items-center h-full pt-1">
+<a class="text-[#FF5C35] border-b-2 border-[#FF5C35] pb-1 font-['Space_Grotesk'] tracking-tight font-bold uppercase" href="#">Practice</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors font-['Space_Grotesk'] tracking-tight font-bold uppercase" href="#">Compete</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors font-['Space_Grotesk'] tracking-tight font-bold uppercase" href="#">Leaderboard</a>
+<a class="text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors font-['Space_Grotesk'] tracking-tight font-bold uppercase" href="#">Docs</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+<span class="material-symbols-outlined text-stone-900 dark:text-stone-100">notifications</span>
+</button>
+<button class="p-2 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+<span class="material-symbols-outlined text-stone-900 dark:text-stone-100">terminal</span>
+</button>
+<div class="w-10 h-10 border-2 border-stone-900 dark:border-stone-100 overflow-hidden">
+<img alt="Technical Operator Avatar" class="w-full h-full object-cover" data-alt="Technical operator avatar portrait with high-contrast cinematic lighting and industrial sci-fi aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-mlerLc0BDLlbsQdSY9zFItS_e1O465lNU4VfBHGlINDehPilQIyk_8ky2wgpfphvMK4qQ6QXeyLS1y4iCeQHu_Nl760zmWZaY-6VSb0dW_VmSL8OBXKYyMwdnAgiGyLOoKXAe7cxy4Wh2OQbPaoyvQhNawLJteuWJ0daqnABdvSLzgi6C3513bwM9PWquNq_pG4qlfxnG6Cji0WJ4DgQ1kuikbU9llTKkHVo2vNnX7UveqiMLowDP5SKWOC2BWPmGl24zRGN9mU"/>
+</div>
+</div>
+</header>
+<div class="flex min-h-[calc(100vh-64px)]">
+<!-- SideNavBar -->
+<aside class="flex flex-col fixed left-0 top-16 h-[calc(100vh-64px)] p-4 gap-4 bg-[#eeeeeb] dark:bg-stone-900 w-64 border-r-2 border-stone-900 dark:border-stone-800">
+<div class="flex items-center gap-3 p-3 bg-white dark:bg-stone-950 border-2 border-stone-900">
+<div class="w-8 h-8 flex items-center justify-center bg-[#FF5C35] text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div>
+<p class="font-['Space_Grotesk'] font-bold text-stone-900 dark:text-stone-50 leading-tight">OPERATOR_01</p>
+<p class="text-[10px] uppercase font-bold tracking-widest text-stone-500">Level 14 Senior Compiler</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 p-3 bg-[#FF5C35] text-white shadow-[4px_4px_0px_0px_rgba(26,28,26,1)] translate-x-[-2px] translate-y-[-2px] font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">route</span>
+<span>Current Track</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-stone-600 dark:text-stone-400 border-2 border-transparent hover:border-stone-900 dark:hover:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-all duration-100 ease-in-out font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">history</span>
+<span>History</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-stone-600 dark:text-stone-400 border-2 border-transparent hover:border-stone-900 dark:hover:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-all duration-100 ease-in-out font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">workspace_premium</span>
+<span>Achievements</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-stone-600 dark:text-stone-400 border-2 border-transparent hover:border-stone-900 dark:hover:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-all duration-100 ease-in-out font-['Inter'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t-2 border-stone-300 dark:border-stone-700">
+<button class="w-full bg-stone-900 text-white p-3 font-['Space_Grotesk'] font-bold uppercase tracking-wider hover:bg-stone-800 transition-colors shadow-[4px_4px_0px_0px_rgba(255,92,53,1)]">
+                    GO TO ARENA
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 flex-1 p-10 bg-surface">
+<div class="max-w-6xl mx-auto">
+<!-- Status Bar / Feedback Header -->
+<div class="flex items-end justify-between mb-12">
+<div>
+<h2 class="font-headline text-5xl font-black uppercase tracking-tighter text-on-surface flex items-center gap-4">
+                            LOGIC_FAILURE
+                            <span class="text-error text-2xl px-3 py-1 border-2 border-error uppercase tracking-widest font-bold">Incomplete</span>
+</h2>
+<p class="mt-2 font-label text-on-surface-variant font-medium uppercase text-sm tracking-widest">Exercise #842 // Memory Management &amp; Pointer Logic</p>
+</div>
+<div class="text-right">
+<div class="font-headline text-4xl font-bold text-error">+0 XP</div>
+<div class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Session Delta</div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-10">
+<!-- Left: Dimmed Code Column -->
+<div class="col-span-12 lg:col-span-7">
+<div class="relative opacity-60">
+<div class="bg-surface-container-lowest border-2 border-outline p-6 code-shadow">
+<div class="flex items-center justify-between mb-4 border-b border-outline-variant pb-2">
+<div class="flex gap-2">
+<div class="w-3 h-3 bg-error"></div>
+<div class="w-3 h-3 bg-on-surface-variant opacity-20"></div>
+<div class="w-3 h-3 bg-on-surface-variant opacity-20"></div>
+</div>
+<span class="font-label text-xs font-bold uppercase tracking-tighter">main.rs — memory_unsafe.ptr</span>
+</div>
+<pre class="font-mono text-sm leading-relaxed text-on-surface"><span class="text-on-surface-variant select-none pr-4">01</span>fn main() {
+<span class="text-on-surface-variant select-none pr-4">02</span>    let mut data = vec![1, 2, 3];
+<span class="text-on-surface-variant select-none pr-4">03</span>    let ptr = &amp;data[0] as *const i32;
+<span class="text-on-surface-variant select-none pr-4">04</span>
+<span class="text-on-surface-variant select-none pr-4">05</span>    data.push(4); <span class="text-error font-bold">// CRITICAL POINT</span>
+<span class="text-on-surface-variant select-none pr-4">06</span>
+<span class="text-on-surface-variant select-none pr-4">07</span>    unsafe {
+<span class="text-on-surface-variant select-none pr-4">08</span>        println!("Value: {}", *ptr);
+<span class="text-on-surface-variant select-none pr-4">09</span>    }
+<span class="text-on-surface-variant select-none pr-4">10</span>}</pre>
+</div>
+<!-- Selection Overlay -->
+<div class="mt-8 space-y-4">
+<div class="p-4 border-2 border-error bg-error-container/20 flex items-center justify-between">
+<span class="font-bold uppercase tracking-tight text-error">Selected: Segfault occurs at line 08</span>
+<span class="material-symbols-outlined text-error">close</span>
+</div>
+<div class="p-4 border-2 border-on-surface bg-surface-container flex items-center justify-between">
+<span class="font-bold uppercase tracking-tight opacity-40">Option: Compile-time error at line 05</span>
+<span class="material-symbols-outlined opacity-40">radio_button_unchecked</span>
+</div>
+<div class="p-4 border-2 border-green-700 bg-green-50 flex items-center justify-between relative overflow-hidden">
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(#2e7d32_1px,transparent_1px)] [background-size:10px_10px]"></div>
+<span class="font-bold uppercase tracking-tight text-green-800 relative z-10">Correct: Undefined Behavior due to Reallocation</span>
+<span class="material-symbols-outlined text-green-700 relative z-10">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: AI Architect Panel (The Feedback Engine) -->
+<div class="col-span-12 lg:col-span-5 space-y-8">
+<!-- Reasoning Error Card -->
+<section class="bg-surface-container p-8 border-2 border-on-surface button-shadow">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+<h3 class="font-headline text-xl font-black uppercase tracking-tight">AI Architect Analysis</h3>
+</div>
+<div class="space-y-6">
+<div>
+<h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant mb-2">The Reasoning Error</h4>
+<p class="text-on-surface leading-relaxed font-medium">
+                                        You assumed the pointer <code class="bg-surface-container-high px-1 font-mono">ptr</code> remained valid after the <code class="bg-surface-container-high px-1 font-mono">push()</code> operation. While a <span class="italic">Segfault</span> is a possible manifestation, it is not guaranteed. 
+                                    </p>
+</div>
+<div class="p-4 bg-error-container/30 border-l-4 border-error">
+<p class="text-sm font-bold text-error uppercase mb-1">Logic Flaw Detected</p>
+<p class="text-sm text-on-surface">You mistook a specific hardware outcome (Segfault) for the abstract language rule (Undefined Behavior).</p>
+</div>
+<div>
+<h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant mb-2">Architectural Explanation</h4>
+<p class="text-sm text-on-surface leading-relaxed">
+                                        When <code class="font-mono">data.push(4)</code> is called, the vector may exceed its current capacity. This triggers a <span class="font-bold">reallocation</span>: the vector allocates a larger block of memory elsewhere, copies the elements, and frees the old block. Your raw pointer <code class="font-mono">ptr</code> is now "dangling"—it points to freed memory. Reading it is <span class="font-bold text-primary underline decoration-2">Undefined Behavior (UB)</span>.
+                                    </p>
+</div>
+</div>
+<div class="mt-8 flex gap-4">
+<button class="flex-1 bg-primary text-white font-headline font-black py-3 uppercase tracking-widest button-shadow active:translate-x-1 active:translate-y-1 active:shadow-none transition-all">
+                                    Retake Module
+                                </button>
+<button class="flex-1 border-2 border-on-surface font-headline font-black py-3 uppercase tracking-widest hover:bg-surface-container-highest transition-all">
+                                    Next Skill
+                                </button>
+</div>
+</section>
+<!-- Contextual Stats -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-4 border border-outline-variant">
+<div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Global Accuracy</div>
+<div class="text-2xl font-black font-headline">24.8%</div>
+<div class="w-full h-1 bg-secondary-fixed mt-2">
+<div class="bg-primary h-full w-[24.8%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 border border-outline-variant">
+<div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Primary Tag</div>
+<div class="text-lg font-black font-headline uppercase mt-1">Dangling_Ptr</div>
+<div class="text-[10px] font-bold text-on-surface-variant">Memory Safety II</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Recommendation -->
+<footer class="mt-16 pt-10 border-t-4 border-stone-900 flex flex-col md:flex-row items-center justify-between gap-8">
+<div class="flex items-center gap-6 max-w-xl">
+<div class="w-24 h-24 bg-surface-container-high border-2 border-on-surface flex-shrink-0 flex items-center justify-center p-2">
+<img alt="Recommended Course: Memory Layouts" class="w-full h-full object-cover grayscale contrast-125" data-alt="Abstract geometric data visualization with glowing orange nodes and sharp digital lines on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCv8aoO6QC1y9jUkhTJ9mYNWhbR7kS5dwRsuBzaeL6LW7TIhwK_1Enz8Uke19CoszfHVrRAWccoRh6UmWCLncy9Ak30uRYJAA215oHne_6AWtgjYKbP-R0ljIfQyo5O_mzBtmg5GLHKNb0h-9b9JYv7FckdvA1LcE1xinbUEIOJxprmzJWFbRJjf3rRoRJKa3up54ACk6IajVkVwiOvNVK7S2XIOSZ9fxjLySkIhC_Mr_QbEd1H6vxkjFs3viqwZnRtUceKvabY7uc"/>
+</div>
+<div>
+<h4 class="font-headline font-black uppercase text-lg leading-none">Remediation Path: Structural Memory</h4>
+<p class="text-sm text-on-surface-variant mt-2">We've identified a recurring weakness in your mental model of the Heap. We recommend the "Pointer Stability &amp; Reallocation" module.</p>
+</div>
+</div>
+<a class="font-headline font-black text-primary uppercase flex items-center gap-2 group" href="#">
+                        Enter Remediation Center 
+                        <span class="material-symbols-outlined group-hover:translate-x-2 transition-transform">arrow_forward</span>
+</a>
+</footer>
+</div>
+</main>
+</div>
+</body></html>
