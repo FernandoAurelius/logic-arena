@@ -54,6 +54,7 @@ OBJECTIVE_SNIPPET_TEMPLATES = {
     'read-only-snippet',
     'snippet-analysis',
     'code-snippet',
+    'output-prediction',
 }
 
 

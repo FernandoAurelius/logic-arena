@@ -23,6 +23,7 @@ import {
   getObjectiveSnippet,
   getObjectiveStatement,
   getObjectiveTemplateInfo,
+  getObjectiveTemplateMeta,
   toggleObjectiveSelection,
 } from './objectiveSurfaceShared'
 
@@ -42,6 +43,7 @@ const props = withDefaults(defineProps<{
 const options = computed(() => getObjectiveOptions(props.sessionConfig))
 const snippet = computed(() => getObjectiveSnippet(props.sessionConfig))
 const objectiveInfo = computed(() => getObjectiveTemplateInfo(props.sessionConfig))
+const templateMeta = computed(() => getObjectiveTemplateMeta(props.sessionConfig))
 const objectiveStatement = computed(() => getObjectiveStatement(props.sessionConfig))
 const learningObjectives = computed(() => getObjectiveLearningObjectives(props.sessionConfig))
 const contextTags = computed(() => getObjectiveContextTags(props.sessionConfig))
@@ -59,8 +61,11 @@ const templateLabel = computed(() => {
   if (snippet.value.template === 'snippet-read-only') return 'Snippet read-only'
   return objectiveInfo.value.badge
 })
-const expectsOutputText = computed(() => snippet.value.template === 'compile-runtime-output')
+const expectsOutputText = computed(() => Boolean(templateMeta.value.requires_output_text))
 const selectedLabel = computed(() => selectedLabels.value[0] ?? '')
+const analysisSteps = computed(() => templateMeta.value.analysis_steps ?? [])
+const responseInputLabel = computed(() => templateMeta.value.response_input_label || 'Saída esperada')
+const responseInputPlaceholder = computed(() => templateMeta.value.response_input_placeholder || 'INSIRA A SAÍDA ESPERADA...')
 
 function iconForOption(key: string) {
   const normalized = key.toLowerCase()
@@ -81,7 +86,7 @@ function selectOption(key: string) {
     <Card class="classifier-surface__hero">
       <CardHeader class="classifier-surface__hero-header">
         <div class="classifier-surface__hero-copy">
-          <p class="eyebrow">Fase 2 · objective_item</p>
+          <p class="eyebrow">Fase 3 · objective_item</p>
           <CardTitle class="classifier-surface__hero-title">{{ props.exerciseTitle }}</CardTitle>
           <CardDescription class="classifier-surface__hero-description">
             {{ objectiveInfo.subtitle }}
@@ -125,6 +130,9 @@ function selectOption(key: string) {
           </CardHeader>
           <CardContent>
             <p class="classifier-copy">{{ objectiveInfo.lens_copy }}</p>
+            <ol v-if="analysisSteps.length" class="classifier-analysis-steps">
+              <li v-for="step in analysisSteps" :key="step">{{ step }}</li>
+            </ol>
           </CardContent>
         </Card>
 
@@ -222,12 +230,12 @@ function selectOption(key: string) {
             </button>
 
             <div v-if="expectsOutputText" class="classifier-output">
-              <p class="classifier-output__label">Saída esperada</p>
+              <p class="classifier-output__label">{{ responseInputLabel }}</p>
               <input
                 v-model="responseText"
                 class="classifier-output__input"
                 type="text"
-                placeholder="INSIRA A SAÍDA ESPERADA..."
+                :placeholder="responseInputPlaceholder"
                 :disabled="props.readOnly"
               />
             </div>
@@ -480,6 +488,15 @@ function selectOption(key: string) {
 .classifier-surface__options {
   display: grid;
   gap: 0.8rem;
+}
+
+.classifier-analysis-steps {
+  margin: 0.9rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  color: var(--on-surface-variant);
 }
 
 .classifier-option {

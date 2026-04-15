@@ -378,6 +378,8 @@ def test_objective_item_multi_select_and_classifier_templates_cover_surface_vari
     assert classifier_config.status_code == 200
     assert multi_config.json()['surface_key'] == 'objective_choices'
     assert classifier_config.json()['surface_key'] == 'objective_classifier'
+    assert classifier_config.json()['workspace_spec']['template_meta']['key'] == 'compile-runtime-output'
+    assert classifier_config.json()['workspace_spec']['template_meta']['analysis_steps']
 
     multi_session = client.post(f'/api/practice/exercises/{multi_select_exercise.slug}/sessions', **auth_headers)
     classifier_session = client.post(f'/api/practice/exercises/{classifier_exercise.slug}/sessions', **auth_headers)
@@ -409,6 +411,63 @@ def test_objective_item_multi_select_and_classifier_templates_cover_surface_vari
     assert classifier_payload['evaluation']['verdict'] == 'failed'
     assert classifier_payload['session']['surface_key'] == 'objective_classifier'
     assert 'Gabarito esperado' in classifier_payload['review']['explanation']
+
+
+def test_objective_item_compile_runtime_output_can_require_output_text(client, auth_headers, catalog_graph):
+    exercise = _create_objective_item_exercise(
+        catalog_graph,
+        slug='objective-item-output-text-teste',
+        title='Classifique e preveja a saída',
+        statement='O snippet compila e produz uma saída específica.',
+        template='compile-runtime-output',
+        choice_mode='single',
+        correct_options=['output'],
+        options=[
+            {'key': 'compile-error', 'label': 'Compile error'},
+            {'key': 'runtime-exception', 'label': 'Runtime exception'},
+            {'key': 'output', 'label': 'Saída correta', 'is_correct': True},
+        ],
+    )
+    exercise.evaluation_plan = {
+        **exercise.evaluation_plan,
+        'expected_output_text': '42',
+    }
+    exercise.save(update_fields=['evaluation_plan', 'updated_at'])
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    config_payload = config_response.json()
+    assert config_payload['workspace_spec']['template_meta']['requires_output_text'] is True
+    assert 'expected_output_text' not in config_payload['workspace_spec']['template_meta']
+
+    session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert session_response.status_code == 201
+    session_id = session_response.json()['id']
+
+    partial_submit = client.post(
+        f'/api/practice/sessions/{session_id}/submit',
+        data='{"selected_options":["output"],"response_text":"41"}',
+        content_type='application/json',
+        **auth_headers,
+    )
+    assert partial_submit.status_code == 200
+    partial_payload = partial_submit.json()
+    assert partial_payload['evaluation']['verdict'] == 'partial'
+    assert partial_payload['evaluation']['evaluator_results']['output_text_matches'] is False
+    assert 'Saída esperada: 42' in partial_payload['review']['explanation']
+
+    second_session = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert second_session.status_code == 201
+    passed_submit = client.post(
+        f"/api/practice/sessions/{second_session.json()['id']}/submit",
+        data='{"selected_options":["output"],"response_text":"42"}',
+        content_type='application/json',
+        **auth_headers,
+    )
+    assert passed_submit.status_code == 200
+    passed_payload = passed_submit.json()
+    assert passed_payload['evaluation']['verdict'] == 'passed'
+    assert passed_payload['evaluation']['evaluator_results']['output_text_matches'] is True
 
 
 def test_objective_item_scoring_can_vary_by_mode(client, auth_headers, arena_user, catalog_graph):

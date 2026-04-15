@@ -17,6 +17,15 @@ APPROVAL_PATTERNS = {
     ],
 }
 
+OBJECTIVE_TEMPLATE_ALIASES = {
+    'single_choice': 'single-choice',
+    'multi_select': 'multi-select',
+    'read-only-snippet': 'snippet-read-only',
+    'snippet-analysis': 'snippet-read-only',
+    'code-snippet': 'snippet-read-only',
+    'output_prediction': 'output-prediction',
+}
+
 OBJECTIVE_SCORE_RULE_KEYS = (
     'scoring_rules',
     'mode_scoring',
@@ -68,6 +77,11 @@ def outputs_match_robust(expected: str, actual: str) -> bool:
 
 def normalize_choice_key(value: object) -> str:
     return re.sub(r'[^a-z0-9]+', '-', normalize_text(str(value)).lower()).strip('-')
+
+
+def normalize_objective_template_key(value: object) -> str:
+    normalized = normalize_choice_key(value or 'single-choice')
+    return OBJECTIVE_TEMPLATE_ALIASES.get(normalized, normalized or 'single-choice')
 
 
 def _coerce_objective_raw_options(evaluation_plan: dict | None, content_blocks: list[dict] | None) -> list[dict | str]:
@@ -237,6 +251,15 @@ def normalize_objective_selections(
     return normalized
 
 
+def _resolve_expected_output_text(evaluation_plan: dict | None) -> str:
+    evaluation_plan = evaluation_plan or {}
+    for key in ('expected_output_text', 'expected_output', 'correct_output_text', 'output_text'):
+        value = evaluation_plan.get(key)
+        if value not in (None, ''):
+            return normalize_text(str(value))
+    return ''
+
+
 def evaluate_objective_selection(
     *,
     evaluation_plan: dict | None,
@@ -253,7 +276,7 @@ def evaluate_objective_selection(
     correct_set = set(correct_options)
     score_rule = _resolve_objective_score_rule(evaluation_plan, attempt_mode)
 
-    template = normalize_choice_key(evaluation_plan.get('template') or evaluation_plan.get('kind') or 'single-choice')
+    template = normalize_objective_template_key(evaluation_plan.get('template') or evaluation_plan.get('kind') or 'single-choice')
     choice_mode = normalize_choice_key(
         evaluation_plan.get('choice_mode')
         or evaluation_plan.get('selection_mode')
@@ -283,6 +306,20 @@ def evaluate_objective_selection(
     if raw_passing_score is None:
         raw_passing_score = 1.0
     passing_score = float(raw_passing_score)
+
+    expected_output_text = _resolve_expected_output_text(evaluation_plan)
+    output_option_keys = {
+        option['canonical_key']
+        for option in option_catalog
+        if 'output' in option['canonical_key']
+    }
+    requires_output_text = bool(expected_output_text) and bool(correct_set & output_option_keys) and template == 'compile-runtime-output'
+    output_text_matches = None
+    if requires_output_text and bool(selected_set & output_option_keys):
+        output_text_matches = outputs_match_robust(expected_output_text, response_text)
+        if selected_set == correct_set and output_text_matches is False:
+            normalized_score = 0.5
+
     passed = normalized_score >= passing_score and bool(correct_set)
     verdict = 'passed' if passed else ('partial' if normalized_score > 0 else 'failed')
     if not correct_set:
@@ -333,6 +370,10 @@ def evaluate_objective_selection(
         'verdict': verdict,
         'option_results': option_results,
         'misconception_inference': misconception_inference,
+        'requires_output_text': requires_output_text,
+        'expected_output_text': expected_output_text,
+        'output_text_matches': output_text_matches,
+        'response_text': response_text,
     }
 
 

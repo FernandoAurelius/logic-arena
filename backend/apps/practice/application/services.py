@@ -24,6 +24,7 @@ from apps.practice.domain import (
     build_objective_option_catalog,
     evaluate_objective_selection,
     format_execution_results_console,
+    normalize_objective_template_key,
     normalize_text,
     outputs_match_robust,
 )
@@ -36,9 +37,90 @@ DEFAULT_EXERCISE_TYPE_LABEL = 'Drill de implementação'
 DEFAULT_OBJECTIVE_ITEM_XP = 35
 
 
+def _build_objective_template_meta(
+    exercise: ExerciseDefinition,
+    *,
+    template_key: str,
+    choice_mode: str,
+    option_catalog: list[dict],
+    snippet_block: dict | None,
+) -> dict:
+    template_titles = {
+        'single-choice': 'Escolha objetiva',
+        'multi-select': 'Seleção de afirmações',
+        'snippet-read-only': 'Leitura de snippet',
+        'compile-runtime-output': 'Compile / Runtime / Output',
+        'behavior-classification': 'Behavior classification',
+        'output-prediction': 'Previsão de saída',
+    }
+    analysis_steps = {
+        'single-choice': [
+            'Leia o estímulo até localizar a regra que decide a alternativa correta.',
+            'Compare a alternativa escolhida com os distratores mais plausíveis.',
+        ],
+        'multi-select': [
+            'Avalie cada afirmação separadamente antes de concluir o conjunto final.',
+            'Procure omissões e falsos positivos, não só a primeira impressão.',
+        ],
+        'snippet-read-only': [
+            'Leia o snippet como evidência, sem reescrever mentalmente o código.',
+            'Valide escopo, tipos e fluxo antes de decidir.',
+        ],
+        'compile-runtime-output': [
+            'Decida primeiro se o código compila.',
+            'Se compilar, separe falha em runtime de saída observável.',
+            'Só preencha a saída quando o veredito correto for output.',
+        ],
+        'behavior-classification': [
+            'Observe o comportamento real do trecho, não só a intenção aparente.',
+            'Considere dispatch, efeitos colaterais e ordem de execução.',
+        ],
+        'output-prediction': [
+            'Simule a execução linha a linha antes de escolher a saída.',
+            'Confirme ordem, espaçamento e valores finais do output.',
+        ],
+    }
+    response_shape = {
+        'single-choice': 'single_choice',
+        'multi-select': 'multi_select',
+        'snippet-read-only': 'single_choice',
+        'compile-runtime-output': 'classifier_with_optional_output',
+        'behavior-classification': 'single_choice',
+        'output-prediction': 'single_choice',
+    }
+    evaluation_plan = exercise.evaluation_plan or {}
+    expected_output_text = normalize_text(
+        evaluation_plan.get('expected_output_text')
+        or evaluation_plan.get('expected_output')
+        or evaluation_plan.get('correct_output_text')
+        or evaluation_plan.get('output_text')
+        or ''
+    )
+    requires_output_text = template_key == 'compile-runtime-output' and bool(expected_output_text)
+
+    return {
+        'key': template_key,
+        'title': template_titles.get(template_key, 'Template objetivo'),
+        'stimulus_kind': 'snippet' if snippet_block is not None else 'statement',
+        'choice_mode': choice_mode,
+        'response_shape': response_shape.get(template_key, 'single_choice'),
+        'requires_output_text': requires_output_text,
+        'response_input_label': 'Saída esperada' if requires_output_text else '',
+        'response_input_placeholder': 'INSIRA A SAÍDA ESPERADA...' if requires_output_text else '',
+        'analysis_steps': analysis_steps.get(template_key, []),
+        'verdict_options': [
+            {
+                'key': option['canonical_key'],
+                'label': option['label'],
+            }
+            for option in option_catalog
+        ],
+    }
+
+
 def _extract_objective_snippet_block(exercise: ExerciseDefinition) -> dict | None:
     evaluation_plan = exercise.evaluation_plan or {}
-    template = str(evaluation_plan.get('template') or evaluation_plan.get('kind') or '').strip().lower()
+    template = normalize_objective_template_key(evaluation_plan.get('template') or evaluation_plan.get('kind') or '')
     snippet = (
         evaluation_plan.get('snippet')
         or evaluation_plan.get('snippet_code')
@@ -74,10 +156,11 @@ def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
         correct_options = evaluation_plan.get('correct_options') or evaluation_plan.get('correct_answers') or evaluation_plan.get('correct_answer') or evaluation_plan.get('answer_key') or []
         if not isinstance(correct_options, (list, tuple, set)):
             correct_options = [correct_options]
+        template_key = normalize_objective_template_key(evaluation_plan.get('template') or evaluation_plan.get('kind') or 'single-choice')
         choice_mode = str(
             evaluation_plan.get('choice_mode')
             or evaluation_plan.get('selection_mode')
-            or ('multiple' if evaluation_plan.get('template') == 'multi-select' or len(correct_options) > 1 else 'single')
+            or ('multiple' if template_key == 'multi-select' or len(correct_options) > 1 else 'single')
         ).strip().lower()
         if choice_mode not in {'single', 'multiple'}:
             choice_mode = 'single'
@@ -121,19 +204,28 @@ def build_default_workspace_spec(exercise: ExerciseDefinition) -> dict:
         if not isinstance(correct_options, (list, tuple, set)):
             correct_options = [correct_options]
         snippet_block = _extract_objective_snippet_block(exercise)
+        template_key = normalize_objective_template_key(evaluation_plan.get('template') or evaluation_plan.get('kind') or 'single-choice')
         choice_mode = str(
             evaluation_plan.get('choice_mode')
             or evaluation_plan.get('selection_mode')
-            or ('multiple' if evaluation_plan.get('template') == 'multi-select' or len(correct_options) > 1 else 'single')
+            or ('multiple' if template_key == 'multi-select' or len(correct_options) > 1 else 'single')
         ).strip().lower()
         if choice_mode not in {'single', 'multiple'}:
             choice_mode = 'single'
+        template_meta = _build_objective_template_meta(
+            exercise,
+            template_key=template_key,
+            choice_mode=choice_mode,
+            option_catalog=option_catalog,
+            snippet_block=snippet_block,
+        )
         return {
             'surface_key': family_spec.default_surface_key,
             'workspace_kind': 'objective_form',
             'stimulus_kind': 'snippet' if snippet_block is not None else 'statement',
             'choice_mode': choice_mode,
-            'template': evaluation_plan.get('template', 'single-choice'),
+            'template': template_key,
+            'template_meta': template_meta,
             'snippet': snippet_block['code'] if snippet_block is not None else '',
             'snippet_language': snippet_block['language'] if snippet_block is not None else exercise.language,
             'snippet_read_only': bool(snippet_block),
@@ -445,11 +537,12 @@ def create_attempt_session_for_exercise(user: ArenaUser, exercise: ExerciseDefin
     workspace_spec = build_default_workspace_spec(exercise)
     if exercise.family_key == ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
         evaluation_plan = build_default_evaluation_plan(exercise)
+        template_key = normalize_objective_template_key(evaluation_plan.get('template', 'single-choice'))
         answer_state = {
             'selected_options': [],
             'selected_labels': [],
             'response_text': '',
-            'template': evaluation_plan.get('template', 'single-choice'),
+            'template': template_key,
             'choice_mode': evaluation_plan.get('choice_mode', 'single'),
         }
     elif exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
@@ -747,6 +840,17 @@ def evaluate_attempt_session(
             f"Gabarito esperado: {', '.join(objective_result['correct_labels']) if objective_result['correct_labels'] else '(sem gabarito definido)'}",
             '',
         ]
+        if objective_result['template'] == 'compile-runtime-output':
+            explanation_lines.append('A análise foi feita separando compilação, runtime e saída observável.')
+            if objective_result['requires_output_text']:
+                explanation_lines.append(f"Saída esperada: {objective_result['expected_output_text'] or '(sem saída configurada)'}")
+                explanation_lines.append(f"Saída informada: {objective_result['response_text'] or '(nenhuma saída informada)'}")
+                if objective_result['output_text_matches'] is False:
+                    explanation_lines.append('A classificação apontou para output, mas o texto de saída ainda não bate com o esperado.')
+        elif objective_result['template'] == 'behavior-classification':
+            explanation_lines.append('O veredito depende do comportamento real do trecho, não apenas da leitura superficial do snippet.')
+        elif objective_result['template'] == 'output-prediction':
+            explanation_lines.append('A resposta foi avaliada como previsão de saída, com foco na execução linha a linha.')
         if objective_result['passed']:
             explanation_lines.append('Você acertou a leitura conceitual principal dessa questão.')
         else:
@@ -801,6 +905,10 @@ def evaluate_attempt_session(
                 'score': objective_result['normalized_score'],
                 'passing_score': objective_result['passing_score'],
                 'option_results': objective_result['option_results'],
+                'requires_output_text': objective_result['requires_output_text'],
+                'expected_output_text': objective_result['expected_output_text'],
+                'output_text_matches': objective_result['output_text_matches'],
+                'response_text': objective_result['response_text'],
             },
             normalized_score=objective_result['normalized_score'],
             verdict=objective_result['verdict'],
@@ -809,12 +917,17 @@ def evaluate_attempt_session(
                 'content_blocks': content_blocks,
                 'workspace_spec': build_default_workspace_spec(exercise),
                 'evaluation_plan': evaluation_plan,
+                'template_meta': build_default_workspace_spec(exercise).get('template_meta', {}),
                 'selected_options': objective_result['selected_options'],
                 'selected_labels': objective_result['selected_labels'],
                 'correct_options': objective_result['correct_options'],
                 'correct_labels': objective_result['correct_labels'],
                 'score_rule': objective_result['score_rule'],
                 'option_results': objective_result['option_results'],
+                'requires_output_text': objective_result['requires_output_text'],
+                'expected_output_text': objective_result['expected_output_text'],
+                'output_text_matches': objective_result['output_text_matches'],
+                'response_text': objective_result['response_text'],
             },
             misconception_inference=objective_result['misconception_inference'],
             raw_artifacts={
