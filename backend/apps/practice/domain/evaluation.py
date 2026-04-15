@@ -26,6 +26,15 @@ OBJECTIVE_TEMPLATE_ALIASES = {
     'output_prediction': 'output-prediction',
 }
 
+RESTRICTED_TEMPLATE_ALIASES = {
+    'fix_snippet': 'fix-the-snippet',
+    'fix-the-code': 'fix-the-snippet',
+    'bugfix-snippet': 'fix-the-snippet',
+    'fill_in_the_blanks': 'fill-in-the-blanks',
+    'fill-blanks': 'fill-in-the-blanks',
+    'fill-blanks-snippet': 'fill-in-the-blanks',
+}
+
 OBJECTIVE_SCORE_RULE_KEYS = (
     'scoring_rules',
     'mode_scoring',
@@ -82,6 +91,57 @@ def normalize_choice_key(value: object) -> str:
 def normalize_objective_template_key(value: object) -> str:
     normalized = normalize_choice_key(value or 'single-choice')
     return OBJECTIVE_TEMPLATE_ALIASES.get(normalized, normalized or 'single-choice')
+
+
+def normalize_restricted_template_key(value: object) -> str:
+    normalized = normalize_choice_key(value or 'fix-the-snippet')
+    return RESTRICTED_TEMPLATE_ALIASES.get(normalized, normalized or 'fix-the-snippet')
+
+
+def normalize_code_for_compare(source_code: str) -> str:
+    return '\n'.join(line.rstrip() for line in normalize_text(source_code).split('\n')).strip()
+
+
+BLANK_TOKEN_PATTERN = re.compile(r"\[\[blank:([a-zA-Z0-9_-]+)\]\]")
+
+
+def extract_blank_keys(template_source: str) -> list[str]:
+    return BLANK_TOKEN_PATTERN.findall(str(template_source or ''))
+
+
+def render_blank_template(template_source: str, values: dict[str, str] | None) -> str:
+    values = values or {}
+
+    def replace(match: re.Match[str]) -> str:
+        blank_key = match.group(1)
+        return str(values.get(blank_key, ''))
+
+    return BLANK_TOKEN_PATTERN.sub(replace, str(template_source or ''))
+
+
+def extract_blank_answers(template_source: str, submitted_source: str) -> dict[str, str]:
+    template_source = str(template_source or '')
+    submitted_source = str(submitted_source or '')
+    blank_keys = extract_blank_keys(template_source)
+    if not blank_keys:
+        return {}
+
+    pattern_parts: list[str] = []
+    cursor = 0
+    for match in BLANK_TOKEN_PATTERN.finditer(template_source):
+        pattern_parts.append(re.escape(template_source[cursor:match.start()]))
+        pattern_parts.append(f"(?P<{match.group(1)}>.*?)")
+        cursor = match.end()
+    pattern_parts.append(re.escape(template_source[cursor:]))
+    pattern = ''.join(pattern_parts)
+    matched = re.fullmatch(pattern, submitted_source, flags=re.DOTALL)
+    if not matched:
+        return {}
+
+    return {
+        blank_key: normalize_text(matched.group(blank_key))
+        for blank_key in blank_keys
+    }
 
 
 def _coerce_objective_raw_options(evaluation_plan: dict | None, content_blocks: list[dict] | None) -> list[dict | str]:
@@ -405,6 +465,168 @@ def evaluate_objective_selection(
         'expected_output_text': expected_output_text,
         'output_text_matches': output_text_matches,
         'response_text': response_text,
+    }
+
+
+def evaluate_restricted_code_submission(
+    *,
+    evaluation_plan: dict | None,
+    workspace_spec: dict | None,
+    source_code: str,
+    attempt_mode: str | None = None,
+) -> dict:
+    evaluation_plan = evaluation_plan or {}
+    workspace_spec = workspace_spec or {}
+    template = normalize_restricted_template_key(
+        workspace_spec.get('template')
+        or evaluation_plan.get('template')
+        or evaluation_plan.get('kind')
+        or 'fix-the-snippet'
+    )
+    score_rule = _resolve_objective_score_rule(evaluation_plan, attempt_mode)
+    raw_passing_score = score_rule.get('passing_score', evaluation_plan.get('passing_score', 1.0))
+    if raw_passing_score is None:
+        raw_passing_score = 1.0
+    passing_score = float(raw_passing_score)
+
+    normalized_source = normalize_code_for_compare(source_code)
+    expected_code = normalize_code_for_compare(
+        evaluation_plan.get('expected_code')
+        or evaluation_plan.get('solution_code')
+        or evaluation_plan.get('reference_code')
+        or ''
+    )
+    required_snippets = [
+        normalize_text(item)
+        for item in (
+            evaluation_plan.get('required_contains')
+            or evaluation_plan.get('required_snippets')
+            or []
+        )
+        if item not in (None, '')
+    ]
+    forbidden_snippets = [
+        normalize_text(item)
+        for item in (
+            evaluation_plan.get('forbidden_contains')
+            or evaluation_plan.get('forbidden_snippets')
+            or []
+        )
+        if item not in (None, '')
+    ]
+    blank_template = str(
+        workspace_spec.get('blank_template')
+        or evaluation_plan.get('blank_template')
+        or evaluation_plan.get('template_source')
+        or ''
+    )
+    raw_blanks = evaluation_plan.get('blanks') or workspace_spec.get('blanks') or []
+    if not isinstance(raw_blanks, list):
+        raw_blanks = []
+    extracted_blank_answers = extract_blank_answers(blank_template, source_code) if blank_template else {}
+
+    criteria_results: list[dict] = []
+    matched_criteria = 0
+
+    if expected_code:
+        exact_match = normalized_source == expected_code
+        criteria_results.append(
+            {
+                'key': 'expected_code',
+                'label': 'Bate com a solução esperada',
+                'passed': exact_match,
+                'kind': 'exact_match',
+            }
+        )
+        matched_criteria += int(exact_match)
+    else:
+        exact_match = None
+
+    for index, snippet in enumerate(required_snippets, start=1):
+        passed = snippet in normalized_source
+        criteria_results.append(
+            {
+                'key': f'required-{index}',
+                'label': f'Inclui trecho obrigatório: {snippet}',
+                'passed': passed,
+                'kind': 'required_contains',
+                'expected': snippet,
+            }
+        )
+        matched_criteria += int(passed)
+
+    for index, snippet in enumerate(forbidden_snippets, start=1):
+        passed = snippet not in normalized_source
+        criteria_results.append(
+            {
+                'key': f'forbidden-{index}',
+                'label': f'Não inclui trecho proibido: {snippet}',
+                'passed': passed,
+                'kind': 'forbidden_contains',
+                'expected': snippet,
+            }
+        )
+        matched_criteria += int(passed)
+
+    blank_results: list[dict] = []
+    for index, blank in enumerate(raw_blanks, start=1):
+        if not isinstance(blank, dict):
+            continue
+        blank_key = str(blank.get('key') or blank.get('id') or f'blank-{index}')
+        expected_answers = blank.get('expected_answers') or blank.get('answers') or blank.get('expected_answer') or []
+        if not isinstance(expected_answers, (list, tuple, set)):
+            expected_answers = [expected_answers]
+        normalized_expected_answers = [
+            normalize_text(answer)
+            for answer in expected_answers
+            if answer not in (None, '')
+        ]
+        actual_answer = extracted_blank_answers.get(blank_key, '')
+        passed = bool(normalized_expected_answers) and any(
+            normalize_text(actual_answer) == expected_answer
+            for expected_answer in normalized_expected_answers
+        )
+        result = {
+            'key': blank_key,
+            'label': str(blank.get('label') or blank.get('placeholder') or blank_key),
+            'passed': passed,
+            'kind': 'blank',
+            'actual_answer': actual_answer,
+        }
+        blank_results.append(result)
+        criteria_results.append(result)
+        matched_criteria += int(passed)
+
+    total_criteria = len(criteria_results)
+    normalized_score = (matched_criteria / total_criteria) if total_criteria else 0.0
+    passed = normalized_score >= passing_score and total_criteria > 0
+    verdict = 'passed' if passed else ('partial' if matched_criteria > 0 else 'failed')
+    if total_criteria == 0:
+        verdict = 'error'
+
+    failed_criteria = [criterion['label'] for criterion in criteria_results if not criterion['passed']]
+    passed_criteria = [criterion['label'] for criterion in criteria_results if criterion['passed']]
+
+    return {
+        'template': template,
+        'normalized_score': normalized_score,
+        'passing_score': passing_score,
+        'passed': passed,
+        'verdict': verdict,
+        'criteria_results': criteria_results,
+        'passed_criteria': passed_criteria,
+        'failed_criteria': failed_criteria,
+        'matched_criteria': matched_criteria,
+        'total_criteria': total_criteria,
+        'source_code': source_code,
+        'normalized_source': normalized_source,
+        'expected_code': expected_code,
+        'required_snippets': required_snippets,
+        'forbidden_snippets': forbidden_snippets,
+        'blank_answers': extracted_blank_answers,
+        'blank_results': blank_results,
+        'exact_match': exact_match,
+        'score_rule': score_rule,
     }
 
 

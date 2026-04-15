@@ -230,6 +230,50 @@ def review_evaluation_chat_response(evaluation_run, user_message: str, history: 
 
         return '\n'.join(lines).strip()
 
+    if family_key == 'restricted_code':
+        template = evaluator_results.get('template') or evidence_bundle.get('workspace_spec', {}).get('template')
+        criteria_results = evaluator_results.get('criteria_results') or evidence_bundle.get('criteria_results') or []
+        passed_criteria = [
+            criterion.get('label')
+            for criterion in criteria_results
+            if criterion.get('passed') and criterion.get('label')
+        ]
+        failed_criteria = [
+            criterion.get('label')
+            for criterion in criteria_results
+            if not criterion.get('passed') and criterion.get('label')
+        ]
+        lines = [
+            '### Revisão estrutural',
+            f"Template avaliado: {template or 'restricted-code'}",
+            (
+                f"Critérios atendidos: "
+                f"{evaluator_results.get('matched_criteria', 0)}/{evaluator_results.get('total_criteria', 0)}"
+            ),
+        ]
+        if evaluation_run.verdict == EvaluationRun.VERDICT_PASSED:
+            lines.append('A correção satisfez os critérios estruturais configurados para este exercício.')
+        elif evaluation_run.verdict == EvaluationRun.VERDICT_PARTIAL:
+            lines.append('Há avanço estrutural, mas ainda faltam critérios para fechar a correção.')
+        else:
+            lines.append('A correção ainda não atende aos critérios mínimos esperados.')
+
+        if passed_criteria:
+            lines.append('Critérios já atendidos: ' + ' | '.join(passed_criteria))
+        if failed_criteria:
+            lines.append('Critérios que ainda falharam: ' + ' | '.join(failed_criteria))
+
+        if user_message.strip():
+            lines.extend(
+                [
+                    '',
+                    f'Pergunta do aluno: {user_message.strip()}',
+                    'Concentre-se na menor alteração necessária para satisfazer apenas os critérios que ainda falharam.',
+                ]
+            )
+
+        return '\n'.join(lines).strip()
+
     return (
         'Ainda não há uma revisão especializada para esta família. '
         'Use a evidência objetiva desta avaliação como base e retorne depois para uma revisão mais profunda.'

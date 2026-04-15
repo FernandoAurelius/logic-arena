@@ -53,11 +53,15 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
   const submissionOutcomeCopy = computed(() => {
     const submission = options.latestSubmission.value
     if (!submission) return 'Execute uma tentativa para receber o diagnóstico desta rodada.'
+    const familyKey = options.activeSessionConfig.value?.family_key
     if (submission.status === 'passed' && submission.xp_awarded > 0) {
       return 'Você concluiu o exercício e desbloqueou um marco real de progresso.'
     }
     if (submission.status === 'passed') {
       return 'A solução está correta, mas esta rodada não mudou seu estado estrutural de progresso.'
+    }
+    if (familyKey === 'restricted_code') {
+      return 'A correção ainda precisa de ajuste estrutural. Use a revisão para focar nos critérios que falharam.'
     }
     return 'A rodada ainda precisa de ajuste. Use o console e a revisão com IA para entender onde corrigir.'
   })
@@ -181,7 +185,10 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
     const submission = options.latestSubmission.value
     if (!submission) return
     if (options.chatMessages.value.length === 0) {
-      const completionUnit = submission.total_tests === 1 ? 'critério' : 'critérios'
+      const familyKey = options.activeSessionConfig.value?.family_key
+      const completionUnit = familyKey === 'restricted_code'
+        ? (submission.total_tests === 1 ? 'critério estrutural' : 'critérios estruturais')
+        : (submission.total_tests === 1 ? 'critério' : 'critérios')
       options.chatMessages.value = [
         {
           role: 'assistant',

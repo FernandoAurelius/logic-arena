@@ -97,6 +97,7 @@ const hasStructuredFeedback = computed(() =>
   ),
 )
 const isObjectiveFamily = computed(() => props.familyKey === 'objective_item')
+const isRestrictedFamily = computed(() => props.familyKey === 'restricted_code')
 const selectedOptionsSummary = computed(() =>
   props.submission?.selected_options?.length
     ? props.submission.selected_options.map((option) => option.toUpperCase()).join(', ')
@@ -148,7 +149,9 @@ function consoleTagLabel(line: string) {
 }
 
 function completionUnitLabel(familyKey?: string) {
-  return familyKey === 'objective_item' ? 'critérios' : 'testes'
+  if (familyKey === 'objective_item') return 'critérios'
+  if (familyKey === 'restricted_code') return 'critérios estruturais'
+  return 'testes'
 }
 </script>
 
@@ -159,9 +162,7 @@ function completionUnitLabel(familyKey?: string) {
         <DialogTitle>Central da tentativa</DialogTitle>
         <DialogDescription>
           {{
-            isObjectiveFamily
-              ? `${activeExerciseTitle} · ${submission.passed_tests}/${submission.total_tests} critérios`
-              : `${activeExerciseTitle} · ${submission.passed_tests}/${submission.total_tests} testes`
+            `${activeExerciseTitle} · ${submission.passed_tests}/${submission.total_tests} ${completionUnitLabel(familyKey)}`
           }}
         </DialogDescription>
       </DialogHeader>
@@ -210,13 +211,9 @@ function completionUnitLabel(familyKey?: string) {
               </CardHeader>
               <CardContent class="outcome-grid">
                 <div class="outcome-block">
-                  <p class="section-label">{{ isObjectiveFamily ? 'Decisão' : 'Execução' }}</p>
+                  <p class="section-label">{{ isObjectiveFamily ? 'Decisão' : isRestrictedFamily ? 'Validação' : 'Execução' }}</p>
                   <strong>
-                    {{
-                      isObjectiveFamily
-                        ? `${submission.passed_tests}/${submission.total_tests} critérios`
-                        : `${submission.passed_tests}/${submission.total_tests} testes`
-                    }}
+                    {{ `${submission.passed_tests}/${submission.total_tests} ${completionUnitLabel(familyKey)}` }}
                   </strong>
                   <p>{{ submissionOutcomeCopy }}</p>
                 </div>
@@ -225,6 +222,13 @@ function completionUnitLabel(familyKey?: string) {
                   <strong>{{ selectedOptionsSummary }}</strong>
                   <p>
                     O julgamento desta rodada foi feito a partir da sua seleção objetiva e da regra configurada para o item.
+                  </p>
+                </div>
+                <div v-else-if="isRestrictedFamily" class="outcome-block">
+                  <p class="section-label">Critérios estruturais</p>
+                  <strong>{{ submission.passed_tests }}/{{ submission.total_tests }}</strong>
+                  <p>
+                    A rodada foi julgada por critérios estruturais da correção, não por execução livre do programa.
                   </p>
                 </div>
                 <div class="outcome-block">
@@ -242,10 +246,10 @@ function completionUnitLabel(familyKey?: string) {
               <CardHeader class="console-header">
                 <div class="console-heading">
                   <Terminal :size="16" />
-                  <CardTitle>{{ isObjectiveFamily ? 'Evidência objetiva' : 'Console de execução' }}</CardTitle>
+                  <CardTitle>{{ isObjectiveFamily ? 'Evidência objetiva' : isRestrictedFamily ? 'Evidência estrutural' : 'Console de execução' }}</CardTitle>
                 </div>
                 <Badge variant="outline" class="console-status-badge">
-                  {{ isObjectiveFamily ? 'Resposta registrada' : 'Saída bruta' }}
+                  {{ isObjectiveFamily ? 'Resposta registrada' : isRestrictedFamily ? 'Critérios avaliados' : 'Saída bruta' }}
                 </Badge>
               </CardHeader>
               <CardContent class="console-content">
@@ -260,6 +264,20 @@ function completionUnitLabel(familyKey?: string) {
                   </div>
                   <div class="objective-evidence__block">
                     <p class="section-label">Revisão base</p>
+                    <p>{{ feedbackSummary }}</p>
+                  </div>
+                </div>
+                <div v-else-if="isRestrictedFamily" class="objective-evidence">
+                  <div class="objective-evidence__block">
+                    <p class="section-label">Status</p>
+                    <code>{{ traduzirStatusExecucao(submission.status) }}</code>
+                  </div>
+                  <div class="objective-evidence__block">
+                    <p class="section-label">Código enviado</p>
+                    <code>{{ submission.source_code || '(sem código)' }}</code>
+                  </div>
+                  <div class="objective-evidence__block">
+                    <p class="section-label">Leitura base</p>
                     <p>{{ feedbackSummary }}</p>
                   </div>
                 </div>

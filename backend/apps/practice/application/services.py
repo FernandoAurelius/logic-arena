@@ -22,11 +22,13 @@ from apps.arena.models import (
 from apps.practice.application.registry import OBJECTIVE_SNIPPET_TEMPLATES, get_family_spec, resolve_surface_key
 from apps.practice.domain import (
     build_objective_option_catalog,
+    evaluate_restricted_code_submission,
     evaluate_objective_selection,
     format_execution_results_console,
     normalize_objective_template_key,
+    normalize_restricted_template_key,
     normalize_text,
-    outputs_match_robust,
+    render_blank_template,
 )
 from apps.progress.application.services import apply_submission_progress, build_exercise_progress_payload, build_user_progress_summary
 from apps.review.application.services import schedule_submission_feedback
@@ -35,6 +37,21 @@ from apps.review.application.services import schedule_submission_feedback
 DEFAULT_EXERCISE_TYPE_SLUG = 'drill-de-implementacao'
 DEFAULT_EXERCISE_TYPE_LABEL = 'Drill de implementação'
 DEFAULT_OBJECTIVE_ITEM_XP = 35
+DEFAULT_RESTRICTED_CODE_XP = 40
+
+
+def _build_passed_once_reward_payload(exercise: ExerciseDefinition) -> dict:
+    if exercise.family_key == ExerciseDefinition.FAMILY_RESTRICTED_CODE:
+        return {
+            'milestone_key': 'passed_once',
+            'label': 'Correção validada',
+            'xp_awarded': DEFAULT_RESTRICTED_CODE_XP,
+        }
+    return {
+        'milestone_key': 'passed_once',
+        'label': 'Primeira aprovação',
+        'xp_awarded': DEFAULT_OBJECTIVE_ITEM_XP,
+    }
 
 
 def _resolve_objective_choice_mode(template_key: str, evaluation_plan: dict, correct_options: list[object], workspace_spec: dict | None = None) -> str:
@@ -212,6 +229,127 @@ def _extract_objective_snippet_block(exercise: ExerciseDefinition) -> dict | Non
     }
 
 
+def _build_restricted_template_meta(
+    exercise: ExerciseDefinition,
+    *,
+    template_key: str,
+    blank_count: int,
+) -> dict:
+    titles = {
+        'fix-the-snippet': 'Correção localizada',
+        'fill-in-the-blanks': 'Preenchimento guiado',
+    }
+    analysis_steps = {
+        'fix-the-snippet': [
+            'Leia o snippet original para identificar o bug central.',
+            'Faça a menor correção que satisfaça os critérios estruturais.',
+            'Confirme que a versão editada remove o erro sem reescrever tudo.',
+        ],
+        'fill-in-the-blanks': [
+            'Entenda o papel de cada lacuna antes de preencher.',
+            'Valide sintaxe, nomes e ordem das expressões inseridas.',
+            'Revise o trecho completo depois de preencher todas as lacunas.',
+        ],
+    }
+    return {
+        'key': template_key,
+        'title': titles.get(template_key, 'Restricted code'),
+        'analysis_steps': analysis_steps.get(template_key, []),
+        'response_shape': 'editable_code',
+        'blank_count': blank_count,
+    }
+
+
+def _sanitize_restricted_blanks(raw_blanks: list[dict] | None) -> list[dict]:
+    sanitized: list[dict] = []
+    for index, blank in enumerate(raw_blanks or [], start=1):
+        if not isinstance(blank, dict):
+            continue
+        sanitized.append(
+            {
+                'key': str(blank.get('key') or blank.get('id') or f'blank-{index}'),
+                'label': str(blank.get('label') or blank.get('placeholder') or f'Lacuna {index}'),
+                'placeholder': str(blank.get('placeholder') or ''),
+                'hint': str(blank.get('hint') or ''),
+            }
+        )
+    return sanitized
+
+
+def _build_restricted_workspace_spec(exercise: ExerciseDefinition) -> dict:
+    family_spec = get_family_spec(exercise.family_key)
+    evaluation_plan = exercise.evaluation_plan or {}
+    base_workspace_spec = dict(exercise.workspace_spec or {})
+    template_key = normalize_restricted_template_key(
+        base_workspace_spec.get('template')
+        or evaluation_plan.get('template')
+        or evaluation_plan.get('kind')
+        or 'fix-the-snippet'
+    )
+    original_code = str(
+        base_workspace_spec.get('original_code')
+        or base_workspace_spec.get('broken_code')
+        or evaluation_plan.get('original_code')
+        or evaluation_plan.get('broken_code')
+        or exercise.starter_code
+        or ''
+    )
+    editable_code = str(
+        base_workspace_spec.get('editable_code')
+        or base_workspace_spec.get('starter_code')
+        or evaluation_plan.get('editable_code')
+        or evaluation_plan.get('starter_code')
+        or original_code
+    )
+    blank_template = str(
+        base_workspace_spec.get('blank_template')
+        or evaluation_plan.get('blank_template')
+        or evaluation_plan.get('template_source')
+        or editable_code
+    )
+    if template_key == 'fill-in-the-blanks' and not editable_code:
+        editable_code = render_blank_template(blank_template, {})
+    language = str(
+        base_workspace_spec.get('language')
+        or evaluation_plan.get('language')
+        or exercise.language
+        or 'python'
+    )
+    sanitized_blanks = _sanitize_restricted_blanks(
+        base_workspace_spec.get('blanks') or evaluation_plan.get('blanks') or []
+    )
+    template_meta = _build_restricted_template_meta(
+        exercise,
+        template_key=template_key,
+        blank_count=len(sanitized_blanks),
+    )
+
+    return {
+        **base_workspace_spec,
+        'surface_key': (
+            base_workspace_spec.get('surface_key')
+            or ('restricted_fill_blanks' if template_key == 'fill-in-the-blanks' else family_spec.default_surface_key)
+        ),
+        'workspace_kind': base_workspace_spec.get('workspace_kind') or 'restricted_code',
+        'template': template_key,
+        'template_meta': template_meta,
+        'language': language,
+        'original_code': original_code,
+        'editable_code': editable_code,
+        'blank_template': blank_template,
+        'blanks': sanitized_blanks,
+        'instructions': str(
+            base_workspace_spec.get('instructions')
+            or evaluation_plan.get('instructions')
+            or exercise.pedagogical_brief
+            or ''
+        ),
+        'validation_kind': str(evaluation_plan.get('mechanism') or 'structural_checker'),
+        'locked_regions': list(base_workspace_spec.get('locked_regions') or evaluation_plan.get('locked_regions') or []),
+        'editable_regions': list(base_workspace_spec.get('editable_regions') or evaluation_plan.get('editable_regions') or []),
+    }
+
+
 def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
     if exercise.content_blocks:
         return list(exercise.content_blocks)
@@ -242,6 +380,34 @@ def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
                 }
             )
         return blocks
+    if exercise.family_key == ExerciseDefinition.FAMILY_RESTRICTED_CODE:
+        workspace_spec = _build_restricted_workspace_spec(exercise)
+        blocks: list[dict] = [
+            {
+                'kind': 'statement',
+                'title': exercise.title,
+                'content': exercise.statement,
+            }
+        ]
+        if workspace_spec.get('original_code'):
+            blocks.append(
+                {
+                    'kind': 'snippet',
+                    'title': 'Snippet original',
+                    'language': workspace_spec.get('language') or exercise.language,
+                    'read_only': True,
+                    'code': workspace_spec.get('original_code'),
+                }
+            )
+        if workspace_spec.get('instructions'):
+            blocks.append(
+                {
+                    'kind': 'instructions',
+                    'title': 'Orientações',
+                    'content': workspace_spec.get('instructions'),
+                }
+            )
+        return blocks
     return [
         {
             'kind': 'statement',
@@ -257,6 +423,9 @@ def build_default_workspace_spec(exercise: ExerciseDefinition) -> dict:
 
     if exercise.family_key == ExerciseDefinition.FAMILY_OBJECTIVE_ITEM:
         return _build_objective_workspace_spec(exercise)
+
+    if exercise.family_key == ExerciseDefinition.FAMILY_RESTRICTED_CODE:
+        return _build_restricted_workspace_spec(exercise)
 
     family_spec = get_family_spec(exercise.family_key)
     if exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
@@ -299,6 +468,7 @@ def build_default_evaluation_plan(exercise: ExerciseDefinition) -> dict:
         return {
             'mechanism': 'structural_checker',
             'template': 'fix-the-snippet',
+            'passing_score': 1.0,
         }
 
     if exercise.family_key == ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB:
@@ -440,13 +610,7 @@ def serialize_attempt_session(session: AttemptSession) -> dict:
         if progress is not None:
             unlocked_rewards = []
             if 'passed_once' in (progress.awarded_progress_markers or []):
-                unlocked_rewards.append(
-                    {
-                        'milestone_key': 'passed_once',
-                        'label': 'Primeira aprovação',
-                        'xp_awarded': DEFAULT_OBJECTIVE_ITEM_XP,
-                    }
-                )
+                unlocked_rewards.append(_build_passed_once_reward_payload(exercise))
             serialized_progress = {
                 'xp_awarded': progress.xp_awarded_total,
                 'unlocked_progress_rewards': unlocked_rewards,
@@ -569,6 +733,11 @@ def create_attempt_session_for_exercise(user: ArenaUser, exercise: ExerciseDefin
             'response_text': '',
             'template': template_key,
             'choice_mode': evaluation_plan.get('choice_mode', 'single'),
+        }
+    elif exercise.family_key == ExerciseDefinition.FAMILY_RESTRICTED_CODE:
+        answer_state = {
+            'source_code': str(workspace_spec.get('editable_code') or ''),
+            'template': normalize_restricted_template_key(workspace_spec.get('template') or 'fix-the-snippet'),
         }
     elif exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
         answer_state = {'source_code': exercise.starter_code}
@@ -997,6 +1166,124 @@ def evaluate_attempt_session(
         update_objective_item_progress(session.user, exercise, objective_result)
         return snapshot, evaluation_run, review, None
 
+    if exercise.family_key == ExerciseDefinition.FAMILY_RESTRICTED_CODE:
+        evaluation_plan = build_default_evaluation_plan(exercise)
+        workspace_spec = build_default_workspace_spec(exercise)
+        restricted_result = evaluate_restricted_code_submission(
+            evaluation_plan=evaluation_plan,
+            workspace_spec=workspace_spec,
+            source_code=source_code,
+            attempt_mode=session.mode,
+        )
+        snapshot = SubmissionSnapshot.objects.create(
+            session=session,
+            type=snapshot_type,
+            payload={
+                'source_code': source_code,
+                'template': restricted_result['template'],
+                'matched_criteria': restricted_result['matched_criteria'],
+                'total_criteria': restricted_result['total_criteria'],
+            },
+            files=files or {},
+            selected_options=[],
+        )
+        explanation_lines = [
+            '### Revisão estrutural',
+            f"Template avaliado: {restricted_result['template']}",
+            f"Critérios atendidos: {restricted_result['matched_criteria']}/{restricted_result['total_criteria']}",
+            '',
+        ]
+        if restricted_result['passed']:
+            explanation_lines.append('A correção respeitou os critérios estruturais configurados para este exercício.')
+        else:
+            explanation_lines.append('A solução ainda não fecha com todos os critérios estruturais esperados.')
+            if restricted_result['failed_criteria']:
+                explanation_lines.append('O que ainda falta: ' + ' | '.join(restricted_result['failed_criteria']))
+        if restricted_result['passed_criteria']:
+            explanation_lines.append('O que já foi atendido: ' + ' | '.join(restricted_result['passed_criteria']))
+        if restricted_result['blank_results']:
+            missing_blanks = [
+                blank['label']
+                for blank in restricted_result['blank_results']
+                if not blank['passed']
+            ]
+            if missing_blanks:
+                explanation_lines.append('Lacunas que ainda precisam de ajuste: ' + ', '.join(missing_blanks))
+        explanation_lines.extend(
+            [
+                '',
+                'Procure a menor alteração capaz de satisfazer os critérios que ainda falharam antes de reescrever o trecho inteiro.',
+            ]
+        )
+        next_steps = [
+            'Compare o código editado com o snippet original e identifique a menor correção possível.',
+            'Revise apenas os critérios que ainda falharam antes de tentar novamente.',
+        ]
+
+        evaluation_run = EvaluationRun.objects.create(
+            submission=snapshot,
+            evaluator_results={
+                'family_key': exercise.family_key,
+                'mechanism': evaluation_plan.get('mechanism') or 'structural_checker',
+                'template': restricted_result['template'],
+                'matched_criteria': restricted_result['matched_criteria'],
+                'total_criteria': restricted_result['total_criteria'],
+                'passed_tests': restricted_result['matched_criteria'],
+                'total_tests': restricted_result['total_criteria'],
+                'criteria_results': restricted_result['criteria_results'],
+                'exact_match': restricted_result['exact_match'],
+            },
+            normalized_score=restricted_result['normalized_score'],
+            verdict=restricted_result['verdict'],
+            evidence_bundle={
+                'workspace_spec': workspace_spec,
+                'evaluation_plan': evaluation_plan,
+                'criteria_results': restricted_result['criteria_results'],
+                'passed_criteria': restricted_result['passed_criteria'],
+                'failed_criteria': restricted_result['failed_criteria'],
+                'blank_answers': restricted_result['blank_answers'],
+                'submitted_source_code': source_code,
+            },
+            misconception_inference=[] if restricted_result['passed'] else list(exercise.misconception_tags or []),
+            raw_artifacts={
+                'source_code': source_code,
+                'normalized_source': restricted_result['normalized_source'],
+                'expected_code': restricted_result['expected_code'],
+                'files': files or {},
+            },
+        )
+        review = AIReview.objects.create(
+            evaluation_run=evaluation_run,
+            profile_key=exercise.review_profile,
+            explanation='\n'.join(explanation_lines).strip(),
+            next_steps=next_steps,
+            conversation_thread=[
+                {
+                    'role': 'assistant',
+                    'content': '\n'.join(explanation_lines).strip(),
+                }
+            ],
+        )
+
+        session.answer_state = {
+            'source_code': source_code,
+            'template': restricted_result['template'],
+            'normalized_score': restricted_result['normalized_score'],
+            'verdict': restricted_result['verdict'],
+        }
+        session.current_workspace_state = {
+            **(session.current_workspace_state or {}),
+            'editable_code': source_code,
+            'last_matched_criteria': restricted_result['matched_criteria'],
+            'last_total_criteria': restricted_result['total_criteria'],
+        }
+        session.attempt_status = (
+            AttemptSession.STATUS_COMPLETED if snapshot_type == SubmissionSnapshot.TYPE_SUBMIT else AttemptSession.STATUS_ACTIVE
+        )
+        session.save(update_fields=['answer_state', 'current_workspace_state', 'attempt_status', 'updated_at'])
+        update_restricted_code_progress(session.user, exercise, restricted_result)
+        return snapshot, evaluation_run, review, None
+
     snapshot = SubmissionSnapshot.objects.create(
         session=session,
         type=snapshot_type,
@@ -1060,14 +1347,59 @@ def update_objective_item_progress(
 
         if objective_result.get('passed') and 'passed_once' not in awarded_progress_markers:
             awarded_progress_markers.append('passed_once')
-            unlocked_rewards.append(
-                {
-                    'milestone_key': 'passed_once',
-                    'label': 'Primeira aprovação',
-                    'xp_awarded': DEFAULT_OBJECTIVE_ITEM_XP,
-                }
-            )
+            unlocked_rewards.append(_build_passed_once_reward_payload(exercise))
             xp_awarded += DEFAULT_OBJECTIVE_ITEM_XP
+            progress.first_passed_at = progress.first_passed_at or timezone.now()
+
+        progress.awarded_progress_markers = awarded_progress_markers
+        progress.xp_awarded_total += xp_awarded
+        progress.save()
+
+        if xp_awarded:
+            locked_user.xp_total += xp_awarded
+            locked_user.save(update_fields=['xp_total', 'updated_at'])
+
+        user.xp_total = locked_user.xp_total
+        return progress, unlocked_rewards, xp_awarded
+
+
+def update_restricted_code_progress(
+    user: ArenaUser,
+    exercise: ExerciseDefinition,
+    restricted_result: dict,
+) -> tuple[UserExerciseProgress, list, int]:
+    with transaction.atomic():
+        locked_user = ArenaUser.objects.select_for_update().get(pk=user.pk)
+        progress, _ = UserExerciseProgress.objects.select_for_update().get_or_create(
+            user=locked_user,
+            exercise=exercise,
+        )
+
+        progress.attempts_count += 1
+        current_ratio = float(restricted_result.get('normalized_score', 0) or 0)
+        best_ratio = progress.best_ratio or 0
+        improved = (
+            current_ratio > best_ratio
+            or (
+                current_ratio == best_ratio
+                and restricted_result.get('passed')
+                and (progress.best_total_tests or 0) == 0
+            )
+        )
+
+        if improved:
+            progress.best_passed_tests = int(restricted_result.get('matched_criteria', 0) or 0)
+            progress.best_total_tests = int(restricted_result.get('total_criteria', 0) or 0)
+            progress.best_ratio = current_ratio
+
+        awarded_progress_markers = list(progress.awarded_progress_markers or [])
+        unlocked_rewards = []
+        xp_awarded = 0
+
+        if restricted_result.get('passed') and 'passed_once' not in awarded_progress_markers:
+            awarded_progress_markers.append('passed_once')
+            unlocked_rewards.append(_build_passed_once_reward_payload(exercise))
+            xp_awarded += DEFAULT_RESTRICTED_CODE_XP
             progress.first_passed_at = progress.first_passed_at or timezone.now()
 
         progress.awarded_progress_markers = awarded_progress_markers
