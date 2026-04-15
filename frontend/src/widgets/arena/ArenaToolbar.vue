@@ -43,9 +43,19 @@ function traduzirStatusExecucao(status?: string) {
 
 function resolvePrimaryActionLabel(familyKey?: string | null, isSubmitting?: boolean) {
   if (isSubmitting) {
-    return familyKey === 'objective_item' ? 'Corrigindo...' : 'Executando...'
+    if (familyKey === 'objective_item') return 'Corrigindo...'
+    if (familyKey === 'restricted_code') return 'Validando...'
+    return 'Executando...'
   }
-  return familyKey === 'objective_item' ? 'Responder' : 'Executar'
+  if (familyKey === 'objective_item') return 'Responder'
+  if (familyKey === 'restricted_code') return 'Validar correção'
+  return 'Executar'
+}
+
+function completionUnitLabel(familyKey?: string | null) {
+  if (familyKey === 'objective_item') return 'critérios'
+  if (familyKey === 'restricted_code') return 'critérios estruturais'
+  return 'testes'
 }
 </script>
 
@@ -75,9 +85,7 @@ function resolvePrimaryActionLabel(familyKey?: string | null, isSubmitting?: boo
             <strong>{{ submissionOutcomeTitle }}</strong>
             <span>
               {{
-                familyKey === 'objective_item'
-                  ? `${latestSubmissionPassedTests}/${latestSubmissionTotalTests} critérios · ${rewardSummary}`
-                  : `${latestSubmissionPassedTests}/${latestSubmissionTotalTests} testes · ${rewardSummary}`
+                `${latestSubmissionPassedTests}/${latestSubmissionTotalTests} ${completionUnitLabel(familyKey)} · ${rewardSummary}`
               }}
             </span>
           </div>

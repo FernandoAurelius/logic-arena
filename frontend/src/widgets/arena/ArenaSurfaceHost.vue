@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/sha
 import CodeWorkspaceSurface from './surfaces/CodeWorkspaceSurface.vue'
 import ObjectiveChoicesSurface from './surfaces/ObjectiveChoicesSurface.vue'
 import ObjectiveClassifierSurface from './surfaces/ObjectiveClassifierSurface.vue'
+import RestrictedDiffSurface from './surfaces/RestrictedDiffSurface.vue'
+import RestrictedFillBlanksSurface from './surfaces/RestrictedFillBlanksSurface.vue'
 import { getArenaSurfaceDescriptor } from './surfaces/arenaSurfaceRegistry'
 import SurfacePlaceholder from './surfaces/SurfacePlaceholder.vue'
 
@@ -66,6 +68,20 @@ const surface = computed(() => getArenaSurfaceDescriptor(props.surfaceKey))
         v-else-if="surface.key === 'objective_classifier'"
         v-model:selected-options="selectedOptions"
         v-model:response-text="responseText"
+        :read-only="props.readOnly"
+        :exercise-title="props.exerciseTitle"
+        :session-config="props.sessionConfig"
+      />
+      <RestrictedDiffSurface
+        v-else-if="surface.key === 'restricted_diff'"
+        v-model:code="code"
+        :read-only="props.readOnly"
+        :exercise-title="props.exerciseTitle"
+        :session-config="props.sessionConfig"
+      />
+      <RestrictedFillBlanksSurface
+        v-else-if="surface.key === 'restricted_fill_blanks'"
+        v-model:code="code"
         :read-only="props.readOnly"
         :exercise-title="props.exerciseTitle"
         :session-config="props.sessionConfig"

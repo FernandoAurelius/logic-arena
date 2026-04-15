@@ -51,6 +51,43 @@ def _create_objective_item_exercise(
     )
 
 
+def _create_restricted_code_exercise(
+    catalog_graph,
+    *,
+    slug: str,
+    title: str,
+    statement: str,
+    template: str,
+    starter_code: str,
+    evaluation_plan: dict,
+    workspace_spec: dict | None = None,
+):
+    return Exercise.objects.create(
+        slug=slug,
+        title=title,
+        statement=statement,
+        difficulty='intermediário',
+        language='python',
+        family_key=Exercise.FAMILY_RESTRICTED_CODE,
+        category=catalog_graph['category'],
+        track=catalog_graph['track'],
+        estimated_time_minutes=8,
+        review_profile='restricted_code_default',
+        content_blocks=[],
+        workspace_spec=workspace_spec or {},
+        evaluation_plan=evaluation_plan,
+        misconception_tags=['correcao-estrutural'],
+        progression_rules={},
+        track_position=101,
+        concept_summary='Correção guiada de código.',
+        pedagogical_brief='Exercício com edição restrita e verificação estrutural.',
+        starter_code=starter_code,
+        sample_input='',
+        sample_output='',
+        professor_note='',
+    )
+
+
 def test_practice_exercise_endpoints_return_active_catalog(client, auth_headers, catalog_graph):
     exercise = catalog_graph['exercises'][0]
 
@@ -632,3 +669,158 @@ def test_objective_item_scoring_can_vary_by_mode(client, auth_headers, arena_use
     assert checkpoint_result['normalized_score'] == 0.5
     assert checkpoint_result['passed'] is False
     assert checkpoint_result['score_rule']['passing_score'] == 0.8
+
+
+def test_restricted_code_fix_the_snippet_flow_uses_diff_surface_and_awards_xp(
+    client,
+    auth_headers,
+    arena_user,
+    catalog_graph,
+):
+    exercise = _create_restricted_code_exercise(
+        catalog_graph,
+        slug='restricted-fix-snippet-flow-teste',
+        title='Corrija o retorno',
+        statement='A função deveria somar 1 ao valor recebido.',
+        template='fix-the-snippet',
+        starter_code='def incrementar(valor):\n    return valor - 1\n',
+        evaluation_plan={
+            'mechanism': 'structural_checker',
+            'template': 'fix-the-snippet',
+            'expected_code': 'def incrementar(valor):\n    return valor + 1\n',
+            'required_snippets': ['return valor + 1'],
+            'forbidden_snippets': ['return valor - 1'],
+            'passing_score': 1.0,
+        },
+        workspace_spec={
+            'original_code': 'def incrementar(valor):\n    return valor - 1\n',
+            'editable_code': 'def incrementar(valor):\n    return valor - 1\n',
+            'instructions': 'Altere apenas o retorno da função.',
+        },
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    config_payload = config_response.json()
+    assert config_payload['family_key'] == 'restricted_code'
+    assert config_payload['surface_key'] == 'restricted_diff'
+    assert config_payload['workspace_spec']['template_meta']['key'] == 'fix-the-snippet'
+    assert config_payload['workspace_spec']['editable_code'].endswith('return valor - 1')
+
+    session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert session_response.status_code == 201
+    session_payload = session_response.json()
+    assert session_payload['answer_state']['source_code'].endswith('return valor - 1')
+
+    submit_response = client.post(
+        f"/api/practice/sessions/{session_payload['id']}/submit",
+        data='{"source_code":"def incrementar(valor):\\n    return valor + 1\\n"}',
+        content_type='application/json',
+        **auth_headers,
+    )
+    assert submit_response.status_code == 200
+    payload = submit_response.json()
+    assert payload['evaluation']['verdict'] == 'passed'
+    assert payload['evaluation']['evaluator_results']['passed_tests'] == 3
+    assert payload['evaluation']['evaluator_results']['total_tests'] == 3
+    assert payload['review']['profile_key'] == 'restricted_code_default'
+    assert ArenaUser.objects.get(pk=arena_user.pk).xp_total == 40
+
+
+def test_restricted_code_fill_in_the_blanks_uses_blank_template_and_partial_feedback(
+    client,
+    auth_headers,
+    catalog_graph,
+):
+    exercise = _create_restricted_code_exercise(
+        catalog_graph,
+        slug='restricted-fill-blanks-flow-teste',
+        title='Preencha as lacunas',
+        statement='Complete a função para imprimir o dobro do valor.',
+        template='fill-in-the-blanks',
+        starter_code='def dobrar(valor):\n    [[blank:acao]]\n',
+        evaluation_plan={
+            'mechanism': 'structural_checker',
+            'template': 'fill-in-the-blanks',
+            'blank_template': 'def dobrar(valor):\n    [[blank:acao]]\n',
+            'blanks': [
+                {
+                    'key': 'acao',
+                    'label': 'Ação principal',
+                    'placeholder': 'print(valor * 2)',
+                    'expected_answers': ['print(valor * 2)'],
+                }
+            ],
+            'required_snippets': ['print(valor * 2)'],
+            'passing_score': 1.0,
+        },
+        workspace_spec={
+            'blank_template': 'def dobrar(valor):\n    [[blank:acao]]\n',
+            'editable_code': 'def dobrar(valor):\n    \n',
+        },
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    config_payload = config_response.json()
+    assert config_payload['surface_key'] == 'restricted_fill_blanks'
+    assert config_payload['workspace_spec']['template_meta']['blank_count'] == 1
+    assert config_payload['workspace_spec']['blanks'][0]['label'] == 'Ação principal'
+
+    session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert session_response.status_code == 201
+
+    submit_response = client.post(
+        f"/api/practice/sessions/{session_response.json()['id']}/submit",
+        data='{"source_code":"def dobrar(valor):\\n    print(valor)\\n"}',
+        content_type='application/json',
+        **auth_headers,
+    )
+    assert submit_response.status_code == 200
+    payload = submit_response.json()
+    assert payload['evaluation']['verdict'] == 'partial'
+    assert payload['evaluation']['evaluator_results']['total_tests'] == 2
+    assert payload['evaluation']['evidence_bundle']['blank_answers']['acao'] == 'print(valor)'
+    assert 'Lacunas que ainda precisam de ajuste' in payload['review']['explanation']
+
+
+def test_restricted_code_persisted_workspace_spec_is_enriched_with_phase4_defaults(
+    client,
+    auth_headers,
+    catalog_graph,
+):
+    exercise = _create_restricted_code_exercise(
+        catalog_graph,
+        slug='restricted-persisted-workspace-spec-teste',
+        title='Workspace persistido restricted',
+        statement='Corrija o snippet sem perder os metadados derivados.',
+        template='fill-in-the-blanks',
+        starter_code='def dobrar(valor):\n    [[blank:acao]]\n',
+        evaluation_plan={
+            'mechanism': 'structural_checker',
+            'template': 'fill_in_the_blanks',
+            'blank_template': 'def dobrar(valor):\n    [[blank:acao]]\n',
+            'blanks': [
+                {
+                    'key': 'acao',
+                    'label': 'Ação principal',
+                    'expected_answers': ['print(valor * 2)'],
+                }
+            ],
+        },
+        workspace_spec={
+            'workspace_kind': 'restricted_code',
+            'template': 'fill_in_the_blanks',
+            'editable_code': 'def dobrar(valor):\n    \n',
+            'blank_template': 'def dobrar(valor):\n    [[blank:acao]]\n',
+            'blanks': [{'key': 'acao', 'label': 'Ação principal'}],
+        },
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    config_payload = config_response.json()
+    assert config_payload['surface_key'] == 'restricted_fill_blanks'
+    assert config_payload['workspace_spec']['template'] == 'fill-in-the-blanks'
+    assert config_payload['workspace_spec']['template_meta']['key'] == 'fill-in-the-blanks'
+    assert config_payload['workspace_spec']['template_meta']['blank_count'] == 1

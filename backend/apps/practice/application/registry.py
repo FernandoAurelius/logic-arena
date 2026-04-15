@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from apps.practice.domain import normalize_objective_template_key
+from apps.practice.domain import normalize_objective_template_key, normalize_restricted_template_key
 
 
 @dataclass(frozen=True)
@@ -82,12 +82,6 @@ def resolve_surface_key(exercise) -> str:
     family_spec = get_family_spec(exercise.family_key)
     workspace_spec = exercise.workspace_spec or {}
     evaluation_plan = exercise.evaluation_plan or {}
-    template = normalize_objective_template_key(
-        workspace_spec.get('template')
-        or evaluation_plan.get('template')
-        or evaluation_plan.get('kind')
-        or ''
-    )
 
     if exercise.family_key == 'code_lab':
         if workspace_spec.get('workspace_kind') == 'multifile':
@@ -95,16 +89,34 @@ def resolve_surface_key(exercise) -> str:
         return family_spec.default_surface_key
 
     if exercise.family_key == 'objective_item':
+        template = normalize_objective_template_key(
+            workspace_spec.get('template')
+            or evaluation_plan.get('template')
+            or evaluation_plan.get('kind')
+            or ''
+        )
         if template in OBJECTIVE_CLASSIFIER_TEMPLATES:
             return 'objective_classifier'
         return family_spec.default_surface_key
 
     if exercise.family_key == 'restricted_code':
+        template = normalize_restricted_template_key(
+            workspace_spec.get('template')
+            or evaluation_plan.get('template')
+            or evaluation_plan.get('kind')
+            or ''
+        )
         if template in RESTRICTED_FILL_TEMPLATES:
             return 'restricted_fill_blanks'
         return family_spec.default_surface_key
 
     if exercise.family_key == 'contract_behavior_lab':
+        template = normalize_objective_template_key(
+            workspace_spec.get('template')
+            or evaluation_plan.get('template')
+            or evaluation_plan.get('kind')
+            or ''
+        )
         if template in CONTRACT_COMPONENT_TEMPLATES:
             return 'component_behavior_lab'
         return family_spec.default_surface_key

@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { catalogApi } from '@/entities/catalog/api/catalog.api'
 import { exerciseApi, type ExerciseDetail, type ExerciseSummary } from '@/entities/exercise'
-import { submissionApi, type ReviewChatMessage, type SessionConfig, type Submission, type SubmissionSummary } from '@/entities/submission'
+import { submissionApi, type AttemptSession, type ReviewChatMessage, type SessionConfig, type Submission, type SubmissionSummary } from '@/entities/submission'
 import type { TrackDetail, TrackExercise } from '@/entities/track'
 
 type ArenaExerciseWorkspaceOptions = {
@@ -100,6 +100,21 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     selectedOptions.value = []
     responseText.value = ''
     chatMessages.value = []
+  }
+
+  function resolveInitialSourceCode(
+    exercise: ExerciseDetail,
+    sessionConfig: SessionConfig,
+    initialSession: AttemptSession,
+  ) {
+    return String(
+      initialSession.answer_state?.source_code
+      ?? initialSession.current_workspace_state?.editable_code
+      ?? sessionConfig.workspace_spec?.editable_code
+      ?? sessionConfig.workspace_spec?.starter_code
+      ?? exercise.starter_code
+      ?? '',
+    )
   }
 
   function setHydratedSubmission(submission: Submission) {
@@ -237,7 +252,7 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
       activeSessionId.value = initialSession.id
       activeSessionConfig.value = sessionConfig
       clearDraftForExercise()
-      code.value = String(initialSession.answer_state?.source_code ?? exercise.starter_code ?? '')
+      code.value = resolveInitialSourceCode(exercise, sessionConfig, initialSession)
       selectedOptions.value = Array.isArray(initialSession.answer_state?.selected_options)
         ? [...(initialSession.answer_state.selected_options as string[])]
         : []
