@@ -2,13 +2,17 @@ import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 
 import { submissionApi, type ProgressReward, type ReviewChatMessage, type Submission } from '@/entities/submission'
+import type { SessionConfig } from '@/entities/practice-session'
 
 type ResultsTab = 'saida' | 'testes' | 'revisao' | 'chat'
 
 type UseArenaSubmissionFlowOptions = {
   authHeader: () => string | null
   activeSessionId: Ref<number | null>
+  activeSessionConfig: Ref<SessionConfig | null>
   code: Ref<string>
+  selectedOptions: Ref<string[]>
+  responseText: Ref<string>
   latestSubmission: Ref<Submission | null>
   chatMessages: Ref<ReviewChatMessage[]>
   onSubmissionHydrated: (submission: Submission) => void
@@ -118,9 +122,15 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
     options.chatMessages.value = []
 
     try {
+      const payload = {
+        source_code: options.code.value,
+        selected_options: [...options.selectedOptions.value],
+        response_text: options.responseText.value,
+        files: {},
+      }
       const submission = await submissionApi.submit(
         options.activeSessionId.value,
-        options.code.value,
+        payload,
         options.authHeader() ?? undefined,
       )
       options.onSubmissionHydrated(submission)

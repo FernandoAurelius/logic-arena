@@ -72,6 +72,16 @@ function mapSessionToSubmission(session: AttemptSession): Submission {
       ?? session.latest_snapshot?.payload?.source_code
       ?? '',
     ),
+    selected_options: Array.isArray(session.answer_state?.selected_options)
+      ? (session.answer_state.selected_options as string[])
+      : Array.isArray(session.latest_snapshot?.selected_options)
+        ? (session.latest_snapshot.selected_options as string[])
+        : [],
+    response_text: String(
+      session.answer_state?.response_text
+      ?? session.latest_snapshot?.payload?.response_text
+      ?? '',
+    ),
     console_output: String(evaluation?.evidence_bundle?.console_output ?? ''),
     feedback: feedbackPayload?.summary ?? '',
     feedback_status: review ? (review.explanation === 'Revisão com IA em processamento...' ? 'pending' : 'ready') : 'pending',
@@ -116,14 +126,23 @@ export const submissionApi = {
   async openExerciseSession(exerciseSlug: string, authorization?: string): Promise<AttemptSession> {
     return practiceSessionApi.openExerciseSession(exerciseSlug, authorization)
   },
-  async submit(sessionId: number, sourceCode: string, authorization?: string): Promise<Submission> {
+  async submit(
+    sessionId: number,
+    payload: {
+      source_code?: string
+      selected_options?: string[]
+      response_text?: string
+      files?: Record<string, unknown>
+    },
+    authorization?: string,
+  ): Promise<Submission> {
     const response = await practiceSessionApi.submit(
       sessionId,
       {
-        source_code: sourceCode,
-        selected_options: [],
-        response_text: '',
-        files: {},
+        source_code: payload.source_code ?? '',
+        selected_options: payload.selected_options ?? [],
+        response_text: payload.response_text ?? '',
+        files: payload.files ?? {},
       },
       authorization,
     )

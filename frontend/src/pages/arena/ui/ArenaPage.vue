@@ -28,6 +28,8 @@ const {
   activeSessionConfig,
   trackContext,
   code,
+  selectedOptions,
+  responseText,
   latestSubmission,
   chatMessages,
   isBooting,
@@ -175,6 +177,8 @@ const {
               <div class="right-column">
                 <ArenaSurfaceHost
                   v-model:code="code"
+                  v-model:selected-options="selectedOptions"
+                  v-model:response-text="responseText"
                   :surface-key="activeSessionConfig?.surface_key ?? 'code_editor_single'"
                   :read-only="submissionFlow.isSubmitting.value"
                   :exercise-title="activeExercise?.title ?? 'atividade'"

@@ -33,6 +33,8 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
   const submissions = ref<SubmissionSummary[]>([])
   const trackContext = ref<TrackDetail | null>(null)
   const code = ref('')
+  const selectedOptions = ref<string[]>([])
+  const responseText = ref('')
   const latestSubmission = ref<Submission | null>(null)
   const chatMessages = ref<ReviewChatMessage[]>([])
   const isBooting = ref(false)
@@ -95,6 +97,8 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     options.onStopFeedbackPolling?.()
     latestSubmission.value = null
     code.value = ''
+    selectedOptions.value = []
+    responseText.value = ''
     chatMessages.value = []
   }
 
@@ -102,6 +106,8 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     latestSubmission.value = submission
     activeSessionId.value = submission.session_id
     code.value = submission.source_code
+    selectedOptions.value = [...(submission.selected_options ?? [])]
+    responseText.value = submission.response_text ?? ''
     chatMessages.value = submission.review_chat_history ?? []
     if (submission.feedback_status === 'pending' && submission.session_id) {
       options.onStartFeedbackPolling?.(submission.session_id)
@@ -232,6 +238,10 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
       activeSessionConfig.value = sessionConfig
       clearDraftForExercise()
       code.value = String(initialSession.answer_state?.source_code ?? exercise.starter_code ?? '')
+      selectedOptions.value = Array.isArray(initialSession.answer_state?.selected_options)
+        ? [...(initialSession.answer_state.selected_options as string[])]
+        : []
+      responseText.value = String(initialSession.answer_state?.response_text ?? '')
       if (route.query.exercise !== slug) {
         await router.replace({
           name: 'arena',
@@ -303,6 +313,8 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     submissions,
     trackContext,
     code,
+    selectedOptions,
+    responseText,
     latestSubmission,
     chatMessages,
     isBooting,

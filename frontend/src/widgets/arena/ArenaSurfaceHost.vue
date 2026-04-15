@@ -6,10 +6,14 @@ import { Badge } from '@/shared/ui/badge'
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/shared/ui/card'
 
 import CodeWorkspaceSurface from './surfaces/CodeWorkspaceSurface.vue'
+import ObjectiveChoicesSurface from './surfaces/ObjectiveChoicesSurface.vue'
+import ObjectiveClassifierSurface from './surfaces/ObjectiveClassifierSurface.vue'
 import { getArenaSurfaceDescriptor } from './surfaces/arenaSurfaceRegistry'
 import SurfacePlaceholder from './surfaces/SurfacePlaceholder.vue'
 
 const code = defineModel<string>('code', { default: '' })
+const selectedOptions = defineModel<string[]>('selectedOptions', { default: [] })
+const responseText = defineModel<string>('responseText', { default: '' })
 
 const props = withDefaults(defineProps<{
   surfaceKey?: string | null
@@ -46,6 +50,22 @@ const surface = computed(() => getArenaSurfaceDescriptor(props.surfaceKey))
         v-if="surface.kind === 'code'"
         v-model="code"
         :surface-key="surface.key"
+        :read-only="props.readOnly"
+        :exercise-title="props.exerciseTitle"
+        :session-config="props.sessionConfig"
+      />
+      <ObjectiveChoicesSurface
+        v-else-if="surface.key === 'objective_choices'"
+        v-model:selected-options="selectedOptions"
+        v-model:response-text="responseText"
+        :read-only="props.readOnly"
+        :exercise-title="props.exerciseTitle"
+        :session-config="props.sessionConfig"
+      />
+      <ObjectiveClassifierSurface
+        v-else-if="surface.key === 'objective_classifier'"
+        v-model:selected-options="selectedOptions"
+        v-model:response-text="responseText"
         :read-only="props.readOnly"
         :exercise-title="props.exerciseTitle"
         :session-config="props.sessionConfig"

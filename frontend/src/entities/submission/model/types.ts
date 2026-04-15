@@ -57,6 +57,8 @@ export type Submission = {
   passed_tests: number
   total_tests: number
   source_code: string
+  selected_options: string[]
+  response_text: string
   console_output: string
   feedback: string
   feedback_status: string
