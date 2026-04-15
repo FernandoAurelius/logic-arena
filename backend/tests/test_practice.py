@@ -470,6 +470,48 @@ def test_objective_item_compile_runtime_output_can_require_output_text(client, a
     assert passed_payload['evaluation']['evaluator_results']['output_text_matches'] is True
 
 
+def test_objective_item_compile_runtime_output_does_not_require_output_text_for_compile_error(
+    client,
+    auth_headers,
+    catalog_graph,
+):
+    exercise = _create_objective_item_exercise(
+        catalog_graph,
+        slug='objective-item-compile-error-sem-output-text-teste',
+        title='Compile error sem exigir saída textual',
+        statement='O snippet falha na compilação.',
+        template='compile-runtime-output',
+        choice_mode='single',
+        correct_options=['compile-error'],
+        options=[
+            {'key': 'compile-error', 'label': 'Compile error', 'is_correct': True},
+            {'key': 'runtime-exception', 'label': 'Runtime exception'},
+            {'key': 'saida-correta', 'label': 'Saída correta', 'semantic': 'output'},
+        ],
+    )
+    exercise.evaluation_plan = {
+        **exercise.evaluation_plan,
+        'expected_output_text': '42',
+    }
+    exercise.save(update_fields=['evaluation_plan', 'updated_at'])
+
+    session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert session_response.status_code == 201
+
+    submit_response = client.post(
+        f"/api/practice/sessions/{session_response.json()['id']}/submit",
+        data='{"selected_options":["compile-error"],"response_text":""}',
+        content_type='application/json',
+        **auth_headers,
+    )
+    assert submit_response.status_code == 200
+    payload = submit_response.json()
+    assert payload['evaluation']['verdict'] == 'passed'
+    assert payload['evaluation']['normalized_score'] == 1.0
+    assert payload['evaluation']['evaluator_results']['requires_output_text'] is False
+    assert payload['evaluation']['evaluator_results']['output_text_matches'] is True
+
+
 def test_objective_item_template_alias_still_resolves_classifier_surface(client, auth_headers, catalog_graph):
     exercise = _create_objective_item_exercise(
         catalog_graph,

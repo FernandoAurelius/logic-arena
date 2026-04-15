@@ -292,10 +292,6 @@ def _resolve_output_option_keys(
     if semantic_keys:
         return semantic_keys
 
-    expected_output_text = _resolve_expected_output_text(evaluation_plan)
-    if expected_output_text:
-        return set(correct_options)
-
     return set()
 
 
