@@ -8,6 +8,7 @@ import { schemas } from '@/lib/api/generated'
 import { catalogApi, exercisesApi, submissionsApi } from '@/lib/api/client'
 import ArenaResultsDialog from '@/components/arena/ArenaResultsDialog.vue'
 import ArenaSidebar from '@/components/arena/ArenaSidebar.vue'
+import ArenaSurfaceHost from '@/components/arena/ArenaSurfaceHost.vue'
 import MonacoEditor from '@/components/editor/MonacoEditor.vue'
 import ProfileModal from '@/components/theme/ProfileModal.vue'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSession } from '@/lib/session'
+import { getArenaSurfaceConfig, resolveArenaSurfaceKey } from '@/components/arena/surfaces/arenaSurfaceRegistry'
 
 type ExerciseSummary = ZodInfer<typeof schemas.ExerciseSummarySchema>
 type ExerciseDetail = ZodInfer<typeof schemas.ExerciseDetailSchema>
@@ -63,7 +65,17 @@ const activeIndex = computed(() => {
   if (!activeExercise.value) return 0
   return exercises.value.findIndex((exercise) => exercise.slug === activeExercise.value?.slug) + 1
 })
+const surfaceKey = computed(() => resolveArenaSurfaceKey(activeExercise.value))
+const surfaceConfig = computed(() => getArenaSurfaceConfig(surfaceKey.value))
+const isHttpContractLab = computed(() => surfaceKey.value === 'http_contract_lab')
 const consoleLines = computed(() => {
+  if (isHttpContractLab.value) {
+    const source = latestSubmission.value?.source_code?.trim()
+    if (!source) {
+      return ['[HTTP] Aguardando requisição de contrato...']
+    }
+    return source.split('\n').filter(Boolean)
+  }
   if (!latestSubmission.value?.console_output) return ['[INIT] Aguardando execução do módulo atual...']
   return latestSubmission.value.console_output.split('\n').filter(Boolean)
 })
@@ -133,12 +145,26 @@ const submissionOutcomeTone = computed(() => {
 })
 const submissionOutcomeTitle = computed(() => {
   if (!latestSubmission.value) return 'Aguardando execução'
+  if (isHttpContractLab.value) {
+    if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) return 'Contrato validado e consolidado'
+    if (latestSubmission.value.status === 'passed') return 'Contrato válido'
+    return 'Contrato ainda com divergências'
+  }
   if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) return 'Passou e evoluiu'
   if (latestSubmission.value.status === 'passed') return 'Passou, mas sem novo XP'
   return 'Ainda não passou'
 })
 const submissionOutcomeCopy = computed(() => {
   if (!latestSubmission.value) return 'Execute um exercício para receber o diagnóstico desta rodada.'
+  if (isHttpContractLab.value) {
+    if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) {
+      return 'O contrato ficou coerente e a rodada consolidou a leitura de request, response, headers e schema.'
+    }
+    if (latestSubmission.value.status === 'passed') {
+      return 'A verificação fechou sem divergências críticas, mas ainda sem novo salto de progresso.'
+    }
+    return 'A requisição ainda precisa alinhar o contrato esperado. Compare status, body e headers com atenção.'
+  }
   if (latestSubmission.value.status === 'passed' && latestSubmission.value.xp_awarded > 0) {
     return 'Você concluiu o exercício e desbloqueou um marco real de progresso.'
   }
@@ -158,6 +184,66 @@ const rewardSummary = computed(() => {
     return `+${submission.xp_awarded} XP nesta rodada`
   }
   return 'Sem ganho de XP nesta rodada'
+})
+
+const currentExerciseSpec = computed(() => {
+  if (!activeExercise.value) return null
+  return (activeExercise.value as Record<string, unknown>).workspace_spec
+    ?? (activeExercise.value as Record<string, unknown>).workspaceSpec
+    ?? null
+})
+
+const currentExerciseSpecRecord = computed<Record<string, unknown> | null>(() => {
+  if (!activeExercise.value) return null
+  const spec = activeExercise.value as Record<string, unknown>
+  const workspaceSpec = spec.workspace_spec ?? spec.workspaceSpec
+  if (!workspaceSpec || typeof workspaceSpec !== 'object' || Array.isArray(workspaceSpec)) {
+    return null
+  }
+  return workspaceSpec as Record<string, unknown>
+})
+
+const currentExerciseEvaluationPlan = computed(() => {
+  if (!activeExercise.value) return null
+  return (activeExercise.value as Record<string, unknown>).evaluation_plan
+    ?? (activeExercise.value as Record<string, unknown>).evaluationPlan
+    ?? null
+})
+
+const httpContractSummary = computed(() => {
+  const record = currentExerciseSpecRecord.value
+  const summary = record?.contract_summary ?? record?.summary ?? record?.description
+  return typeof summary === 'string' && summary.trim()
+    ? summary
+    : 'A superfície já está preparada para consumir workspace_spec e evaluation_plan canônicos da família HTTP.'
+})
+
+const httpRequestExample = computed(() => {
+  const record = currentExerciseSpecRecord.value
+  return typeof record?.request_example === 'string'
+    ? record.request_example
+    : activeExercise.value?.sample_input || 'POST /api/contrato HTTP/1.1'
+})
+
+const httpRequestBodyExample = computed(() => {
+  const record = currentExerciseSpecRecord.value
+  return typeof record?.request_body === 'string'
+    ? record.request_body
+    : activeExercise.value?.sample_input || '{\n  "resource": "logic-arena"\n}'
+})
+
+const httpResponseExample = computed(() => {
+  const record = currentExerciseSpecRecord.value
+  return typeof record?.response_example === 'string'
+    ? record.response_example
+    : activeExercise.value?.sample_output || 'HTTP/1.1 200 OK'
+})
+
+const httpResponseBodyExample = computed(() => {
+  const record = currentExerciseSpecRecord.value
+  return typeof record?.response_body === 'string'
+    ? record.response_body
+    : activeExercise.value?.sample_output || '{\n  "ok": true\n}'
 })
 
 function triggerLevelUp() {
@@ -564,7 +650,9 @@ function openReviewChat() {
     chatMessages.value = [
       {
         role: 'assistant',
-        content: `Vamos revisar essa submissão. Você passou ${latestSubmission.value.passed_tests} de ${latestSubmission.value.total_tests} testes. Me pergunte sobre um erro específico, uma melhoria de código ou o raciocínio esperado.`,
+        content: isHttpContractLab.value
+          ? `Vamos revisar esse contrato. Você validou ${latestSubmission.value.passed_tests} de ${latestSubmission.value.total_tests} assertivas. Me pergunte sobre status codes, headers, schema ou body.`
+          : `Vamos revisar essa submissão. Você passou ${latestSubmission.value.passed_tests} de ${latestSubmission.value.total_tests} testes. Me pergunte sobre um erro específico, uma melhoria de código ou o raciocínio esperado.`,
       },
     ]
   }
@@ -669,7 +757,7 @@ onBeforeUnmount(() => {
               <div class="arena-toolbar__left">
                 <Button variant="outline" size="sm" @click="toggleHints">
                   <BookOpenText :size="16" />
-                  Dicas
+                  {{ isHttpContractLab ? 'Contrato' : 'Dicas' }}
                 </Button>
                 <Button v-if="latestSubmission" variant="outline" size="sm" :disabled="!canReviewWithAi || isChatBusy" @click="openReviewChat">
                   <MessageSquare :size="16" />
@@ -693,7 +781,7 @@ onBeforeUnmount(() => {
               <div class="arena-toolbar__right">
                 <Button size="sm" :disabled="isSubmitting || isBooting" @click="submitSolution">
                   <Play :size="16" />
-                  {{ isSubmitting ? 'Executando...' : 'Executar' }}
+                  {{ isSubmitting ? surfaceConfig.primaryActionBusyLabel : surfaceConfig.primaryActionLabel }}
                 </Button>
               </div>
             </div>
@@ -706,15 +794,15 @@ onBeforeUnmount(() => {
                       <TabsList class="spec-tabs-list">
                         <TabsTrigger value="descricao" class="spec-tabs-trigger">
                           <FileText :size="15" />
-                          Especificação
+                          {{ isHttpContractLab ? 'Contrato' : 'Especificação' }}
                         </TabsTrigger>
                         <TabsTrigger value="exemplos" class="spec-tabs-trigger">
                           <FlaskConical :size="15" />
-                          Exemplos
+                          {{ isHttpContractLab ? 'Exemplo HTTP' : 'Exemplos' }}
                         </TabsTrigger>
                         <TabsTrigger value="testes" class="spec-tabs-trigger">
                           <ListChecks :size="15" />
-                          Testes
+                          {{ isHttpContractLab ? 'Assertivas' : 'Testes' }}
                         </TabsTrigger>
                       </TabsList>
                     </Tabs>
@@ -774,13 +862,27 @@ onBeforeUnmount(() => {
                     <Tabs v-model:model-value="specTab" class="spec-tabs-content">
                       <TabsContent value="descricao" class="spec-pane">
                         <div class="formula-box formula-box--statement">
-                          <p class="section-label">Enunciado</p>
+                          <p class="section-label">{{ isHttpContractLab ? 'Contrato esperado' : 'Enunciado' }}</p>
                           <p>{{ activeExercise.statement }}</p>
                         </div>
 
                         <div class="formula-box">
-                          <p class="section-label">Modo de prova</p>
-                          <strong>Resolva sem código inicial. Abra <em>dicas</em> apenas se quiser uma pista opcional.</strong>
+                          <p class="section-label">{{ surfaceConfig.specModeLabel }}</p>
+                          <strong>
+                            {{
+                              isHttpContractLab
+                                ? 'Compare request, response, status, headers e schema para fechar a divergência do contrato.'
+                                : 'Resolva sem código inicial. Abra dicas apenas se quiser uma pista opcional.'
+                            }}
+                          </strong>
+                        </div>
+
+                        <div v-if="isHttpContractLab" class="formula-box formula-box--track">
+                          <p class="section-label">Contrato HTTP</p>
+                          <strong>Method / path / status / schema / body</strong>
+                          <p>
+                            {{ httpContractSummary }}
+                          </p>
                         </div>
 
                         <div v-if="routeTrackSlug && trackContext && activeTrackIndex >= 0" class="formula-box formula-box--track">
@@ -796,7 +898,30 @@ onBeforeUnmount(() => {
                       </TabsContent>
 
                       <TabsContent value="exemplos" class="spec-pane spec-pane--examples">
-                        <div class="example-flow-grid">
+                        <div v-if="isHttpContractLab" class="example-flow-grid">
+                          <div class="example-flow-card io-card">
+                            <p class="section-label">Requisição esperada</p>
+                            <div class="code-block">
+                              <span>{{ httpRequestExample }}</span>
+                              <span v-for="(line, index) in formatSampleBlock(httpRequestBodyExample)" :key="`req-${index}`">
+                                {{ line }}
+                              </span>
+                            </div>
+                          </div>
+                          <div class="example-flow-arrow" aria-hidden="true">
+                            <ChevronRight :size="18" />
+                          </div>
+                          <div class="example-flow-card io-card">
+                            <p class="section-label">Resposta esperada</p>
+                            <div class="code-block">
+                              <span>{{ httpResponseExample }}</span>
+                              <span v-for="(line, index) in formatSampleBlock(httpResponseBodyExample)" :key="`res-${index}`">
+                                {{ line }}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div v-else class="example-flow-grid">
                           <div class="example-flow-card io-card">
                             <p class="section-label">Exemplo de entrada</p>
                             <div class="code-block">
@@ -820,7 +945,23 @@ onBeforeUnmount(() => {
                       </TabsContent>
 
                       <TabsContent value="testes" class="spec-pane">
-                        <div v-if="visibleTestCases.length" class="visible-tests">
+                        <div v-if="isHttpContractLab" class="visible-tests">
+                          <p class="section-label">Assertivas do contrato</p>
+                          <div class="test-grid">
+                            <div v-for="item in ['Status code esperado', 'Headers compatíveis', 'Schema validado', 'Body em conformidade']" :key="item" class="test-card">
+                              <strong>{{ item }}</strong>
+                              <div class="test-case-line">
+                                <span>Leitura</span>
+                                <code>{{ item }}</code>
+                              </div>
+                              <div class="test-case-line">
+                                <span>Estado</span>
+                                <code>Pronto para validação</code>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div v-else-if="visibleTestCases.length" class="visible-tests">
                           <p class="section-label">Testes</p>
                           <div class="test-grid">
                             <div v-for="testCase in visibleTestCases" :key="testCase.id" class="test-card">
@@ -847,18 +988,29 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="right-column">
-                <Card class="editor-card editor-card--compact">
-                  <CardContent class="editor-content editor-content--flush">
-                    <MonacoEditor
-                      v-model="code"
-                      class="code-editor"
-                      language="python"
-                      height="calc(100vh - 15.5rem)"
-                      :read-only="isSubmitting"
-                      placeholder="# escreva sua solução aqui"
-                    />
-                  </CardContent>
-                </Card>
+                <ArenaSurfaceHost
+                  :surface-key="surfaceKey"
+                  :exercise="activeExercise"
+                  :exercise-title="activeExercise?.title ?? ''"
+                  :workspace-spec="currentExerciseSpec"
+                  :evaluation-plan="currentExerciseEvaluationPlan"
+                  :model-value="code"
+                  :read-only="isSubmitting"
+                  @update:model-value="code = $event"
+                >
+                  <Card class="editor-card editor-card--compact">
+                    <CardContent class="editor-content editor-content--flush">
+                      <MonacoEditor
+                        v-model="code"
+                        class="code-editor"
+                        language="python"
+                        height="calc(100vh - 15.5rem)"
+                        :read-only="isSubmitting"
+                        placeholder="# escreva sua solução aqui"
+                      />
+                    </CardContent>
+                  </Card>
+                </ArenaSurfaceHost>
               </div>
             </section>
           </div>
@@ -880,6 +1032,7 @@ onBeforeUnmount(() => {
       :chat-messages="chatMessages"
       :chat-input="chatInput"
       :is-chat-busy="isChatBusy"
+      :surface-key="surfaceKey"
       @update:open="resultsDialogOpen = $event"
       @update:tab="resultsTab = $event"
       @update:chat-input="chatInput = $event"
@@ -913,17 +1066,28 @@ onBeforeUnmount(() => {
     <Dialog :open="hintsOpen" @update:open="hintsOpen = $event">
       <DialogContent class="hint-dialog" :show-close="true">
         <DialogHeader>
-          <DialogTitle>Dicas</DialogTitle>
-          <DialogDescription>Pistas opcionais para destravar o raciocínio sem entregar a solução.</DialogDescription>
+          <DialogTitle>{{ isHttpContractLab ? 'Contrato' : 'Dicas' }}</DialogTitle>
+          <DialogDescription>
+            {{
+              isHttpContractLab
+                ? 'Pistas para ler request, response, status, headers e schema sem mascarar a intenção do contrato.'
+                : 'Pistas opcionais para destravar o raciocínio sem entregar a solução.'
+            }}
+          </DialogDescription>
         </DialogHeader>
         <div class="hint-content">
           <div class="hint-block">
-            <p class="section-label">Pista do professor</p>
-            <p>{{ activeExercise?.professor_note || 'Sem hint adicional para este exercício.' }}</p>
+            <p class="section-label">{{ isHttpContractLab ? 'Pista do contrato' : 'Pista do professor' }}</p>
+            <p>{{ activeExercise?.professor_note || (isHttpContractLab ? 'Sem pista adicional para este contrato.' : 'Sem hint adicional para este exercício.') }}</p>
           </div>
           <div class="hint-block">
-            <p class="section-label">Estratégia</p>
-            <ul>
+            <p class="section-label">{{ isHttpContractLab ? 'Estratégia de validação' : 'Estratégia' }}</p>
+            <ul v-if="isHttpContractLab">
+              <li>Confira se método e path batem com o contrato antes de olhar o body.</li>
+              <li>Compare status e headers antes de aceitar a resposta como válida.</li>
+              <li>Leia o schema como um acordo entre camadas, não como texto solto.</li>
+            </ul>
+            <ul v-else>
               <li>Separe o problema em entrada, processamento e saída antes de codar.</li>
               <li>Use o exemplo visível para validar o fluxo mínimo.</li>
               <li>Pense em um caso limite simples antes de submeter.</li>

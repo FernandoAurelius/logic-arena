@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getArenaSurfaceConfig, isHttpContractSurface } from '@/components/arena/surfaces/arenaSurfaceRegistry'
 
 type Submission = ZodInfer<typeof schemas.SubmissionSchema>
 type ReviewChatMessage = ZodInfer<typeof schemas.ReviewChatMessageSchema>
@@ -26,6 +27,7 @@ const props = withDefaults(defineProps<{
   open: boolean
   tab: ResultsTab
   activeExerciseTitle?: string
+  surfaceKey?: string | null
   submission: Submission | null
   consoleLines?: string[]
   submissionOutcomeTone?: string
@@ -39,6 +41,7 @@ const props = withDefaults(defineProps<{
   isChatBusy?: boolean
 }>(), {
   activeExerciseTitle: '',
+  surfaceKey: null,
   consoleLines: () => [],
   submissionOutcomeTone: 'idle',
   submissionOutcomeTitle: 'Aguardando execução',
@@ -80,6 +83,9 @@ const openModel = computed({
   set: (value: boolean) => emit('update:open', value),
 })
 
+const surfaceConfig = computed(() => getArenaSurfaceConfig(props.surfaceKey))
+const isHttpContractLab = computed(() => isHttpContractSurface(props.surfaceKey))
+
 const tabModel = computed({
   get: () => props.tab,
   set: (value: string | number) => emit('update:tab', value as ResultsTab),
@@ -100,6 +106,30 @@ const hasStructuredFeedback = computed(() =>
     || props.feedbackPayload?.next_steps?.length,
   ),
 )
+const dialogTitle = computed(() => (isHttpContractLab.value ? 'Central do contrato' : 'Central da execução'))
+const dialogDescription = computed(() =>
+  isHttpContractLab.value
+    ? `${props.activeExerciseTitle} · ${props.submission?.passed_tests ?? 0}/${props.submission?.total_tests ?? 0} ${surfaceConfig.value.outcomeNoun}`
+    : `${props.activeExerciseTitle} · ${props.submission?.passed_tests ?? 0}/${props.submission?.total_tests ?? 0} testes`,
+)
+const firstTabLabel = computed(() => (isHttpContractLab.value ? 'Contrato' : 'Saída'))
+const secondTabLabel = computed(() => (isHttpContractLab.value ? 'Comparação' : 'Testes'))
+const feedbackTitle = computed(() => (isHttpContractLab.value ? 'Leitura do contrato' : 'Leitura crítica da solução'))
+const feedbackDescription = computed(() =>
+  isHttpContractLab.value
+    ? 'A revisão automática agora destaca divergências entre esperado e observado: status, headers, schema e body.'
+    : 'Leitura crítica da solução com foco em qualidade, clareza e próximos ganhos.',
+)
+const chatPlaceholder = computed(() =>
+  isHttpContractLab.value
+    ? 'Pergunte sobre a diferença entre contrato esperado e resposta observada, sobre status codes, headers ou schema.'
+    : 'Pergunte por que falhou, como melhorar a solução ou qual raciocínio a banca esperava.',
+)
+const resultRowLabels = computed(() => ({
+  expected: isHttpContractLab.value ? 'Requisição' : 'Entrada',
+  actual: isHttpContractLab.value ? 'Resposta observada' : 'Obtido',
+  error: isHttpContractLab.value ? 'Divergência' : 'Erro',
+}))
 
 function renderMessage(content: string) {
   return markdown.render(content)
@@ -150,9 +180,9 @@ function consoleTagLabel(line: string) {
   <Dialog v-model:open="openModel">
     <DialogContent v-if="submission" class="results-dialog-content">
       <DialogHeader>
-        <DialogTitle>Central da execução</DialogTitle>
+        <DialogTitle>{{ dialogTitle }}</DialogTitle>
         <DialogDescription>
-          {{ activeExerciseTitle }} · {{ submission.passed_tests }}/{{ submission.total_tests }} testes
+          {{ dialogDescription }}
         </DialogDescription>
       </DialogHeader>
 
@@ -171,11 +201,11 @@ function consoleTagLabel(line: string) {
           <TabsList class="results-tabs-list">
             <TabsTrigger value="saida" class="results-tabs-trigger">
               <FileTerminal :size="15" />
-              Saída
+              {{ firstTabLabel }}
             </TabsTrigger>
             <TabsTrigger value="testes" class="results-tabs-trigger">
               <TestTubeDiagonal :size="15" />
-              Testes
+              {{ secondTabLabel }}
             </TabsTrigger>
             <TabsTrigger value="revisao" class="results-tabs-trigger">
               <Bot :size="15" />
@@ -193,15 +223,15 @@ function consoleTagLabel(line: string) {
               <CardHeader>
                 <div class="feedback-header">
                   <div>
-                    <p class="eyebrow">Resultado da rodada</p>
+                    <p class="eyebrow">{{ isHttpContractLab ? 'Resultado do contrato' : 'Resultado da rodada' }}</p>
                     <CardTitle>{{ submissionOutcomeTitle }}</CardTitle>
                   </div>
                 </div>
               </CardHeader>
               <CardContent class="outcome-grid">
                 <div class="outcome-block">
-                  <p class="section-label">Execução</p>
-                  <strong>{{ submission.passed_tests }}/{{ submission.total_tests }} testes</strong>
+                  <p class="section-label">{{ isHttpContractLab ? 'Contrato' : 'Execução' }}</p>
+                  <strong>{{ submission.passed_tests }}/{{ submission.total_tests }} {{ surfaceConfig.outcomeNoun }}</strong>
                   <p>{{ submissionOutcomeCopy }}</p>
                 </div>
                 <div class="outcome-block">
@@ -219,9 +249,11 @@ function consoleTagLabel(line: string) {
               <CardHeader class="console-header">
                 <div class="console-heading">
                   <Terminal :size="16" />
-                  <CardTitle>Console de execução</CardTitle>
+                  <CardTitle>{{ isHttpContractLab ? 'Traço do contrato' : 'Console de execução' }}</CardTitle>
                 </div>
-                <Badge variant="outline" class="console-status-badge">Saída bruta</Badge>
+                <Badge variant="outline" class="console-status-badge">
+                  {{ isHttpContractLab ? 'Payload da requisição' : 'Saída bruta' }}
+                </Badge>
               </CardHeader>
               <CardContent class="console-content">
                 <div class="console-body">
@@ -241,32 +273,38 @@ function consoleTagLabel(line: string) {
         <TabsContent value="testes" class="results-tab-panel">
           <Card>
             <CardHeader>
-              <CardTitle>Resultado dos testes</CardTitle>
-              <CardDescription>Diagnóstico detalhado de cada caso executado.</CardDescription>
+              <CardTitle>{{ isHttpContractLab ? 'Comparação do contrato' : 'Resultado dos testes' }}</CardTitle>
+              <CardDescription>
+                {{
+                  isHttpContractLab
+                    ? 'Diagnóstico detalhado de cada assertiva do contrato HTTP.'
+                    : 'Diagnóstico detalhado de cada caso executado.'
+                }}
+              </CardDescription>
             </CardHeader>
             <CardContent class="test-results-list">
               <article v-for="result in submission.results" :key="result.index" class="test-result-card" :data-passed="result.passed">
                 <div class="test-result-header">
-                  <strong>Teste {{ result.index }}</strong>
+                  <strong>{{ isHttpContractLab ? `Assertiva ${result.index}` : `Teste ${result.index}` }}</strong>
                   <Badge :variant="result.passed ? 'default' : 'outline'">
                     {{ result.passed ? 'Passou' : 'Falhou' }}
                   </Badge>
                 </div>
                 <div class="test-result-grid">
                   <div>
-                    <p class="section-label">Entrada</p>
+                    <p class="section-label">{{ resultRowLabels.expected }}</p>
                     <code>{{ result.input_data }}</code>
                   </div>
                   <div>
-                    <p class="section-label">Esperado</p>
+                    <p class="section-label">{{ isHttpContractLab ? 'Resposta esperada' : 'Esperado' }}</p>
                     <code>{{ result.expected_output }}</code>
                   </div>
                   <div>
-                    <p class="section-label">Obtido</p>
+                    <p class="section-label">{{ resultRowLabels.actual }}</p>
                     <code>{{ result.actual_output || 'Sem saída' }}</code>
                   </div>
                   <div v-if="result.stderr">
-                    <p class="section-label">Erro</p>
+                    <p class="section-label">{{ resultRowLabels.error }}</p>
                     <code>{{ result.stderr }}</code>
                   </div>
                 </div>
@@ -281,9 +319,9 @@ function consoleTagLabel(line: string) {
               <div class="feedback-header">
                 <div>
                   <p class="eyebrow">Revisão automática</p>
-                  <CardTitle>Analisando sua solução</CardTitle>
+                  <CardTitle>{{ feedbackTitle }}</CardTitle>
                   <CardDescription>
-                    A IA está consolidando pontos fortes, ajustes e próximos passos desta submissão.
+                    {{ feedbackDescription }}
                   </CardDescription>
                 </div>
                 <LoaderCircle class="feedback-loader" :size="22" />
@@ -311,8 +349,8 @@ function consoleTagLabel(line: string) {
               <div class="feedback-header">
                 <div>
                   <p class="eyebrow">Revisão automática</p>
-                  <CardTitle>{{ submission.passed_tests }}/{{ submission.total_tests }} testes</CardTitle>
-                  <CardDescription>Leitura crítica da solução com foco em qualidade, clareza e próximos ganhos.</CardDescription>
+                  <CardTitle>{{ feedbackTitle }}</CardTitle>
+                  <CardDescription>{{ feedbackDescription }}</CardDescription>
                 </div>
                 <div class="feedback-badges">
                   <Badge>{{ traduzirStatusExecucao(submission.status) }}</Badge>
@@ -326,10 +364,10 @@ function consoleTagLabel(line: string) {
                   <Bot :size="18" />
                 </div>
                 <div class="feedback-summary-hero__copy">
-                  <p class="section-label">Resumo executivo</p>
+                  <p class="section-label">{{ isHttpContractLab ? 'Resumo executivo do contrato' : 'Resumo executivo' }}</p>
                   <strong>{{ feedbackSummary }}</strong>
                   <span>
-                    {{ submission.passed_tests }}/{{ submission.total_tests }} testes concluídos · {{ rewardSummary }}
+                    {{ submission.passed_tests }}/{{ submission.total_tests }} {{ surfaceConfig.outcomeNoun }} concluídos · {{ rewardSummary }}
                   </span>
                 </div>
               </div>
@@ -343,23 +381,23 @@ function consoleTagLabel(line: string) {
                   </ul>
                 </div>
                 <div class="feedback-column">
-                  <p class="section-label">Resumo</p>
+                  <p class="section-label">{{ isHttpContractLab ? 'Resumo do contrato' : 'Resumo' }}</p>
                   <p>{{ feedbackSummary }}</p>
                 </div>
                 <div class="feedback-column">
-                  <p class="section-label">Pontos fortes</p>
+                  <p class="section-label">{{ isHttpContractLab ? 'Campos consistentes' : 'Pontos fortes' }}</p>
                   <ul>
                     <li v-for="item in feedbackPayload?.strengths ?? []" :key="item">{{ item }}</li>
                   </ul>
                 </div>
                 <div class="feedback-column">
-                  <p class="section-label">Ajustes</p>
+                  <p class="section-label">{{ isHttpContractLab ? 'Divergências' : 'Ajustes' }}</p>
                   <ul>
                     <li v-for="item in feedbackPayload?.issues ?? []" :key="item">{{ item }}</li>
                   </ul>
                 </div>
                 <div class="feedback-column feedback-column--wide">
-                  <p class="section-label">Próximos passos</p>
+                  <p class="section-label">{{ isHttpContractLab ? 'Próximos passos no contrato' : 'Próximos passos' }}</p>
                   <ul>
                     <li v-for="item in feedbackPayload?.next_steps ?? []" :key="item">{{ item }}</li>
                   </ul>
@@ -395,7 +433,7 @@ function consoleTagLabel(line: string) {
               v-model="chatInputModel"
               class="review-chat-input"
               rows="4"
-              placeholder="Pergunte por que falhou, como melhorar a solução ou qual raciocínio a banca esperava."
+              :placeholder="chatPlaceholder"
             ></textarea>
             <div class="review-chat-actions">
               <Button :disabled="isChatBusy || !chatInputModel.trim()" @click="emit('send-chat')">
