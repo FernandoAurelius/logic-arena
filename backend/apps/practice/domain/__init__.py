@@ -19,3 +19,4 @@ from .evaluation import (
     outputs_match_robust,
     render_blank_template,
 )
+from .http_contracts import evaluate_http_contract_submission

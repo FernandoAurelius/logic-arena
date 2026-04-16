@@ -66,6 +66,25 @@ function deriveEvaluationCounts(session: AttemptSession) {
   }
 }
 
+function mapEvaluationResults(session: AttemptSession) {
+  const evaluation = session.latest_evaluation
+  const familyKey = session.family_key ?? evaluation?.evaluator_results?.family_key
+  const rawResults = Array.isArray(evaluation?.evidence_bundle?.results) ? evaluation?.evidence_bundle?.results : []
+
+  if (familyKey === 'contract_behavior_lab') {
+    return rawResults.map((result: any, index: number) => ({
+      index: index + 1,
+      input_data: result.check ?? 'check',
+      expected_output: typeof result.expected === 'string' ? result.expected : JSON.stringify(result.expected ?? null),
+      actual_output: typeof result.actual === 'string' ? result.actual : JSON.stringify(result.actual ?? null),
+      passed: Boolean(result.passed),
+      stderr: result.detail ?? '',
+    }))
+  }
+
+  return rawResults as any[]
+}
+
 function mapSessionToSubmissionSummary(session: AttemptSession): SubmissionSummary {
   const evaluation = session.latest_evaluation
   const review = session.latest_review
@@ -168,7 +187,7 @@ function mapSessionToSubmission(session: AttemptSession): Submission {
     feedback_payload: feedbackPayload,
     review_chat_history: (review?.conversation_thread as ReviewChatMessage[] | undefined) ?? [],
     created_at: session.latest_snapshot?.created_at ?? session.created_at,
-    results: Array.isArray(evaluation?.evidence_bundle?.results) ? (evaluation?.evidence_bundle?.results as any[]) : [],
+    results: mapEvaluationResults(session),
     xp_awarded: session.xp_awarded ?? 0,
     unlocked_progress_rewards: session.unlocked_progress_rewards ?? [],
     exercise_progress: session.exercise_progress ?? null,

@@ -62,6 +62,9 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
     if (submission.status === 'passed') {
       return 'A solução está correta, mas esta rodada não mudou seu estado estrutural de progresso.'
     }
+    if (familyKey === 'contract_behavior_lab') {
+      return 'O contrato ainda tem divergências observáveis. Compare request, status, headers e body antes de tentar de novo.'
+    }
     if (familyKey === 'restricted_code') {
       return 'A correção ainda precisa de ajuste estrutural. Use a revisão para focar nos critérios que falharam.'
     }

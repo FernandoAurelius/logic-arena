@@ -98,6 +98,7 @@ const hasStructuredFeedback = computed(() =>
 )
 const isObjectiveFamily = computed(() => props.familyKey === 'objective_item')
 const isRestrictedFamily = computed(() => props.familyKey === 'restricted_code')
+const isContractFamily = computed(() => props.familyKey === 'contract_behavior_lab')
 const selectedOptionsSummary = computed(() =>
   props.submission?.selected_options?.length
     ? props.submission.selected_options.map((option) => option.toUpperCase()).join(', ')
@@ -151,6 +152,7 @@ function consoleTagLabel(line: string) {
 function completionUnitLabel(familyKey?: string) {
   if (familyKey === 'objective_item') return 'critérios'
   if (familyKey === 'restricted_code') return 'critérios estruturais'
+  if (familyKey === 'contract_behavior_lab') return 'checks de contrato'
   return 'testes'
 }
 </script>
@@ -211,7 +213,7 @@ function completionUnitLabel(familyKey?: string) {
               </CardHeader>
               <CardContent class="outcome-grid">
                 <div class="outcome-block">
-                  <p class="section-label">{{ isObjectiveFamily ? 'Decisão' : isRestrictedFamily ? 'Validação' : 'Execução' }}</p>
+                  <p class="section-label">{{ isObjectiveFamily ? 'Decisão' : isRestrictedFamily ? 'Validação' : isContractFamily ? 'Contrato' : 'Execução' }}</p>
                   <strong>
                     {{ `${submission.passed_tests}/${submission.total_tests} ${completionUnitLabel(familyKey)}` }}
                   </strong>
@@ -231,6 +233,13 @@ function completionUnitLabel(familyKey?: string) {
                     A rodada foi julgada por critérios estruturais da correção, não por execução livre do programa.
                   </p>
                 </div>
+                <div v-else-if="isContractFamily" class="outcome-block">
+                  <p class="section-label">Checks de contrato</p>
+                  <strong>{{ submission.passed_tests }}/{{ submission.total_tests }}</strong>
+                  <p>
+                    A rodada foi julgada pelo contraste entre contrato esperado e comportamento HTTP observado.
+                  </p>
+                </div>
                 <div class="outcome-block">
                   <p class="section-label">Progressão</p>
                   <strong>{{ rewardSummary }}</strong>
@@ -246,10 +255,10 @@ function completionUnitLabel(familyKey?: string) {
               <CardHeader class="console-header">
                 <div class="console-heading">
                   <Terminal :size="16" />
-                  <CardTitle>{{ isObjectiveFamily ? 'Evidência objetiva' : isRestrictedFamily ? 'Evidência estrutural' : 'Console de execução' }}</CardTitle>
+                  <CardTitle>{{ isObjectiveFamily ? 'Evidência objetiva' : isRestrictedFamily ? 'Evidência estrutural' : isContractFamily ? 'Evidência de contrato' : 'Console de execução' }}</CardTitle>
                 </div>
                 <Badge variant="outline" class="console-status-badge">
-                  {{ isObjectiveFamily ? 'Resposta registrada' : isRestrictedFamily ? 'Critérios avaliados' : 'Saída bruta' }}
+                  {{ isObjectiveFamily ? 'Resposta registrada' : isRestrictedFamily ? 'Critérios avaliados' : isContractFamily ? 'Contrato observado' : 'Saída bruta' }}
                 </Badge>
               </CardHeader>
               <CardContent class="console-content">
@@ -281,6 +290,20 @@ function completionUnitLabel(familyKey?: string) {
                     <p>{{ feedbackSummary }}</p>
                   </div>
                 </div>
+                <div v-else-if="isContractFamily" class="objective-evidence">
+                  <div class="objective-evidence__block">
+                    <p class="section-label">Status</p>
+                    <code>{{ traduzirStatusExecucao(submission.status) }}</code>
+                  </div>
+                  <div class="objective-evidence__block">
+                    <p class="section-label">Payload observado</p>
+                    <code>{{ submission.response_text || '(sem payload)' }}</code>
+                  </div>
+                  <div class="objective-evidence__block">
+                    <p class="section-label">Leitura base</p>
+                    <p>{{ feedbackSummary }}</p>
+                  </div>
+                </div>
                 <div v-else class="console-body">
                   <div v-for="(line, index) in consoleLines" :key="`${index}-${line}`" class="console-line">
                     <span class="console-time">{{ String(index).padStart(2, '0') }}:42</span>
@@ -298,11 +321,13 @@ function completionUnitLabel(familyKey?: string) {
         <TabsContent value="testes" class="results-tab-panel">
           <Card>
             <CardHeader>
-              <CardTitle>{{ isObjectiveFamily ? 'Critérios e evidências' : 'Resultado dos testes' }}</CardTitle>
+              <CardTitle>{{ isObjectiveFamily ? 'Critérios e evidências' : isContractFamily ? 'Checks do contrato' : 'Resultado dos testes' }}</CardTitle>
               <CardDescription>
                 {{
                   isObjectiveFamily
                     ? 'Diagnóstico detalhado do julgamento objetivo desta tentativa.'
+                    : isContractFamily
+                      ? 'Comparação detalhada entre o contrato esperado e a resposta observada.'
                     : 'Diagnóstico detalhado de cada caso executado.'
                 }}
               </CardDescription>

@@ -10,6 +10,7 @@ import ObjectiveChoicesSurface from './surfaces/ObjectiveChoicesSurface.vue'
 import ObjectiveClassifierSurface from './surfaces/ObjectiveClassifierSurface.vue'
 import RestrictedDiffSurface from './surfaces/RestrictedDiffSurface.vue'
 import RestrictedFillBlanksSurface from './surfaces/RestrictedFillBlanksSurface.vue'
+import HttpContractLabSurface from './surfaces/HttpContractLabSurface.vue'
 import { getArenaSurfaceDescriptor } from './surfaces/arenaSurfaceRegistry'
 import SurfacePlaceholder from './surfaces/SurfacePlaceholder.vue'
 
@@ -86,6 +87,13 @@ const surface = computed(() => getArenaSurfaceDescriptor(props.surfaceKey))
       <RestrictedFillBlanksSurface
         v-else-if="surface.key === 'restricted_fill_blanks'"
         v-model:code="code"
+        :read-only="props.readOnly"
+        :exercise-title="props.exerciseTitle"
+        :session-config="props.sessionConfig"
+      />
+      <HttpContractLabSurface
+        v-else-if="surface.key === 'http_contract_lab'"
+        v-model:response-text="responseText"
         :read-only="props.readOnly"
         :exercise-title="props.exerciseTitle"
         :session-config="props.sessionConfig"

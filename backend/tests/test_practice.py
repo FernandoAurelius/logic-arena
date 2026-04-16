@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from apps.practice.application import services
@@ -82,6 +84,71 @@ def _create_restricted_code_exercise(
         concept_summary='Correção guiada de código.',
         pedagogical_brief='Exercício com edição restrita e verificação estrutural.',
         starter_code=starter_code,
+        sample_input='',
+        sample_output='',
+        professor_note='',
+    )
+
+
+def _create_http_contract_exercise(
+    catalog_graph,
+    *,
+    slug: str,
+    title: str,
+    statement: str,
+    workspace_contract: dict | None = None,
+    evaluation_contract: dict | None = None,
+):
+    return Exercise.objects.create(
+        slug=slug,
+        title=title,
+        statement=statement,
+        difficulty='intermediário',
+        language='http',
+        family_key=Exercise.FAMILY_CONTRACT_BEHAVIOR_LAB,
+        category=catalog_graph['category'],
+        track=catalog_graph['track'],
+        estimated_time_minutes=12,
+        review_profile='contract_behavior_default',
+        content_blocks=[],
+        workspace_spec={
+            'instructions': 'Observe o contrato HTTP e registre a request e a response observadas.',
+            'contract': workspace_contract
+            or {
+                'request': {
+                    'method': 'POST',
+                    'path': '/api/users',
+                    'headers': {'content-type': 'application/json'},
+                    'body': {'name': 'Miguel'},
+                },
+            },
+        },
+        evaluation_plan={
+            'mechanism': 'contract_verifier',
+            'template': 'http-contract',
+            'contract': evaluation_contract
+            or {
+                'response': {
+                    'status_code': 201,
+                    'headers': {'content-type': 'application/json'},
+                    'body': {'id': 1, 'name': 'Miguel'},
+                    'body_schema': {
+                        'type': 'object',
+                        'required': ['id', 'name'],
+                        'properties': {
+                            'id': {'type': 'integer'},
+                            'name': {'type': 'string'},
+                        },
+                    },
+                },
+            },
+        },
+        misconception_tags=['contrato-http'],
+        progression_rules={},
+        track_position=110,
+        concept_summary='Contrato HTTP com verificação determinística.',
+        pedagogical_brief='Valide request, response, status e schema.',
+        starter_code='',
         sample_input='',
         sample_output='',
         professor_note='',
@@ -705,12 +772,12 @@ def test_restricted_code_fix_the_snippet_flow_uses_diff_surface_and_awards_xp(
     assert config_payload['family_key'] == 'restricted_code'
     assert config_payload['surface_key'] == 'restricted_diff'
     assert config_payload['workspace_spec']['template_meta']['key'] == 'fix-the-snippet'
-    assert config_payload['workspace_spec']['editable_code'].endswith('return valor - 1')
+    assert config_payload['workspace_spec']['editable_code'].endswith('return valor - 1\n')
 
     session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
     assert session_response.status_code == 201
     session_payload = session_response.json()
-    assert session_payload['answer_state']['source_code'].endswith('return valor - 1')
+    assert session_payload['answer_state']['source_code'].endswith('return valor - 1\n')
 
     submit_response = client.post(
         f"/api/practice/sessions/{session_payload['id']}/submit",
@@ -778,7 +845,7 @@ def test_restricted_code_fill_in_the_blanks_uses_blank_template_and_partial_feed
     )
     assert submit_response.status_code == 200
     payload = submit_response.json()
-    assert payload['evaluation']['verdict'] == 'partial'
+    assert payload['evaluation']['verdict'] == 'failed'
     assert payload['evaluation']['evaluator_results']['total_tests'] == 2
     assert payload['evaluation']['evidence_bundle']['blank_answers']['acao'] == 'print(valor)'
     assert 'Lacunas que ainda precisam de ajuste' in payload['review']['explanation']
@@ -951,3 +1018,107 @@ def test_code_lab_multifile_submit_executes_with_files_payload(
     assert payload['snapshot']['files']['main.py'] == 'from helpers import dobrar\nprint(dobrar(2))'
     assert payload['evaluation']['evidence_bundle']['entrypoint'] == 'main.py'
     assert captured['entrypoint'] == 'main.py'
+
+
+def test_contract_behavior_lab_session_config_and_submission(client, auth_headers, catalog_graph):
+    exercise = _create_http_contract_exercise(
+        catalog_graph,
+        slug='contrato-http-users',
+        title='Contrato HTTP de criação de usuário',
+        statement='Valide o contrato da rota de criação de usuário.',
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    config_payload = config_response.json()
+    assert config_payload['family_key'] == 'contract_behavior_lab'
+    assert config_payload['surface_key'] == 'http_contract_lab'
+    assert config_payload['workspace_spec']['workspace_kind'] == 'http_contract'
+    assert config_payload['workspace_spec']['template_meta']['key'] == 'http-contract'
+    assert config_payload['workspace_spec']['contract']['request']['path'] == '/api/users'
+    assert config_payload['workspace_spec']['contract']['response']['status_code'] == 201
+
+    session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert session_response.status_code == 201
+    session_payload = session_response.json()
+    assert session_payload['answer_state']['template'] == 'http-contract'
+
+    observed_payload = {
+        'request': {
+            'method': 'POST',
+            'path': '/api/users',
+            'headers': {'content-type': 'application/json'},
+            'body': {'name': 'Miguel'},
+        },
+        'observed_response': {
+            'status': 201,
+            'headers': {'content-type': 'application/json'},
+            'body': {'id': 1, 'name': 'Miguel'},
+        },
+    }
+    submit_response = client.post(
+        f"/api/practice/sessions/{session_payload['id']}/submit",
+        data=json.dumps({'response_text': json.dumps(observed_payload)}),
+        content_type='application/json',
+        **auth_headers,
+    )
+    assert submit_response.status_code == 200
+    payload = submit_response.json()
+    assert payload['evaluation']['verdict'] == 'passed'
+    assert payload['evaluation']['evaluator_results']['family_key'] == 'contract_behavior_lab'
+    assert payload['evaluation']['evaluator_results']['passed_tests'] == 8
+    assert payload['review']['profile_key'] == 'contract_behavior_default'
+    assert 'Revisão de contrato HTTP' in payload['review']['explanation']
+    assert payload['session']['xp_awarded'] == 40
+
+
+def test_contract_behavior_lab_partial_contract_does_not_require_default_headers(client, auth_headers, catalog_graph):
+    exercise = _create_http_contract_exercise(
+        catalog_graph,
+        slug='contrato-http-health-lite',
+        title='Contrato HTTP parcial sem headers',
+        statement='Valide apenas método, path e status da rota de healthcheck.',
+        workspace_contract={
+            'request': {
+                'method': 'GET',
+                'path': '/health',
+            },
+        },
+        evaluation_contract={
+            'response': {
+                'status_code': 204,
+            },
+        },
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    contract = config_response.json()['workspace_spec']['contract']
+    assert contract['request']['headers'] == {}
+    assert contract['response']['headers'] == {}
+
+    session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert session_response.status_code == 201
+    session_id = session_response.json()['id']
+
+    observed_payload = {
+        'request': {
+            'method': 'GET',
+            'path': '/health',
+        },
+        'observed_response': {
+            'status': 204,
+        },
+    }
+    submit_response = client.post(
+        f'/api/practice/sessions/{session_id}/submit',
+        data=json.dumps({'response_text': json.dumps(observed_payload)}),
+        content_type='application/json',
+        **auth_headers,
+    )
+
+    assert submit_response.status_code == 200
+    payload = submit_response.json()
+    assert payload['evaluation']['verdict'] == 'passed'
+    assert payload['evaluation']['evaluator_results']['passed_tests'] == 3
+    assert payload['evaluation']['evaluator_results']['total_tests'] == 3
