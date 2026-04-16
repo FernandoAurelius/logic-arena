@@ -28,6 +28,8 @@ const {
   activeSessionConfig,
   trackContext,
   code,
+  workspaceFiles,
+  activeFile,
   selectedOptions,
   responseText,
   latestSubmission,
@@ -178,6 +180,8 @@ const {
               <div class="right-column">
                 <ArenaSurfaceHost
                   v-model:code="code"
+                  v-model:workspace-files="workspaceFiles"
+                  v-model:active-file="activeFile"
                   v-model:selected-options="selectedOptions"
                   v-model:response-text="responseText"
                   :surface-key="activeSessionConfig?.surface_key ?? 'code_editor_single'"

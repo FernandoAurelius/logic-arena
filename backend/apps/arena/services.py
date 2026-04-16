@@ -543,6 +543,7 @@ def _start_feedback_job(
                 exercise_title=exercise_title,
                 statement=statement,
                 source_code=source_code,
+                project_files=None,
                 passed_tests=passed_tests,
                 total_tests=total_tests,
                 results=results,

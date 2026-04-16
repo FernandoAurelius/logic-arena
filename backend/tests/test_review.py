@@ -196,6 +196,43 @@ def test_evaluation_review_chat_endpoint_appends_history(client, auth_headers, a
     assert review.conversation_thread[-1]['content'] == 'Resposta contextual'
 
 
+def test_evaluation_review_chat_endpoint_passes_multifile_project_context(
+    client,
+    auth_headers,
+    arena_user,
+    catalog_graph,
+    monkeypatch,
+):
+    evaluation_run, _review = _make_evaluation_run(arena_user, catalog_graph['exercises'][0])
+    evaluation_run.evidence_bundle = {
+        'files': {
+            'main.py': 'from helpers import dobro\nprint(dobro(2))',
+            'helpers.py': 'def dobro(valor):\n    return valor * 2\n',
+        }
+    }
+    evaluation_run.save(update_fields=['evidence_bundle'])
+
+    captured = {}
+
+    def fake_review_submission_chat(**kwargs):
+        captured.update(kwargs)
+        return 'Resposta com contexto multifile'
+
+    monkeypatch.setattr(review_services, 'arena_review_submission_chat', fake_review_submission_chat)
+    monkeypatch.setattr(review_api, 'review_evaluation_chat_response', review_services.review_evaluation_chat_response)
+
+    response = client.post(
+        f'/api/review/evaluations/{evaluation_run.id}/chat',
+        data='{"message":"onde está meu erro?","history":[]}',
+        content_type='application/json',
+        **auth_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()['answer'] == 'Resposta com contexto multifile'
+    assert captured['project_files']['helpers.py'] == 'def dobro(valor):\n    return valor * 2\n'
+
+
 def test_evaluation_review_chat_endpoint_supports_objective_item_without_legacy_submission(client, auth_headers, arena_user, catalog_graph):
     evaluation_run, review = _make_objective_evaluation_run(arena_user, catalog_graph)
 

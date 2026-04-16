@@ -824,3 +824,130 @@ def test_restricted_code_persisted_workspace_spec_is_enriched_with_phase4_defaul
     assert config_payload['workspace_spec']['template'] == 'fill-in-the-blanks'
     assert config_payload['workspace_spec']['template_meta']['key'] == 'fill-in-the-blanks'
     assert config_payload['workspace_spec']['template_meta']['blank_count'] == 1
+
+
+def test_code_lab_persisted_workspace_spec_is_enriched_with_phase5_multifile_defaults(
+    client,
+    auth_headers,
+    catalog_graph,
+):
+    exercise = Exercise.objects.create(
+        slug='code-lab-multifile-persisted-spec',
+        title='Projeto multi-arquivo',
+        statement='Implemente usando mais de um arquivo.',
+        difficulty='intermediário',
+        language='python',
+        family_key=Exercise.FAMILY_CODE_LAB,
+        category=catalog_graph['category'],
+        track=catalog_graph['track'],
+        estimated_time_minutes=12,
+        review_profile='code_lab_default',
+        content_blocks=[],
+        workspace_spec={
+            'workspace_kind': 'multifile',
+            'entrypoint': 'main.py',
+            'readonly_files': ['tests.py'],
+            'files': {
+                'main.py': {'content': 'from helpers import dobrar\nprint(dobrar(2))', 'label': 'main.py'},
+                'helpers.py': {'content': 'def dobrar(valor):\n    return valor * 2\n'},
+                'tests.py': {'content': '# arquivo protegido\n', 'read_only': True},
+            },
+        },
+        evaluation_plan={'mechanism': 'runner_tests', 'template': 'implementation'},
+        misconception_tags=[],
+        progression_rules={},
+        track_position=130,
+        concept_summary='Projeto com mais de um arquivo.',
+        pedagogical_brief='Valida o workspace multifile.',
+        starter_code='from helpers import dobrar\nprint(dobrar(2))',
+        sample_input='',
+        sample_output='4',
+        professor_note='',
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    payload = config_response.json()
+    assert payload['surface_key'] == 'code_editor_multifile'
+    assert payload['workspace_spec']['workspace_kind'] == 'multifile'
+    assert payload['workspace_spec']['runner_supports_files'] is True
+    assert payload['workspace_spec']['files']['tests.py']['read_only'] is True
+    assert payload['workspace_spec']['files']['main.py']['role'] == 'entrypoint'
+
+
+def test_code_lab_multifile_submit_executes_with_files_payload(
+    client,
+    auth_headers,
+    catalog_graph,
+    monkeypatch,
+):
+    exercise = Exercise.objects.create(
+        slug='code-lab-multifile-submit',
+        title='Projeto multi-arquivo executável',
+        statement='Use helper importado para resolver.',
+        difficulty='intermediário',
+        language='python',
+        family_key=Exercise.FAMILY_CODE_LAB,
+        category=catalog_graph['category'],
+        track=catalog_graph['track'],
+        estimated_time_minutes=12,
+        review_profile='code_lab_default',
+        content_blocks=[],
+        workspace_spec={
+            'workspace_kind': 'multifile',
+            'entrypoint': 'main.py',
+            'active_file': 'main.py',
+            'readonly_files': ['tests.py'],
+            'files': {
+                'main.py': {'content': 'from helpers import dobrar\nprint(dobrar(2))', 'role': 'entrypoint'},
+                'helpers.py': {'content': 'def dobrar(valor):\n    return valor * 2\n'},
+                'tests.py': {'content': '# readonly', 'read_only': True},
+            },
+        },
+        evaluation_plan={'mechanism': 'runner_tests', 'template': 'implementation'},
+        misconception_tags=[],
+        progression_rules={},
+        track_position=131,
+        concept_summary='Projeto com imports.',
+        pedagogical_brief='Executa com arquivos reais.',
+        starter_code='from helpers import dobrar\nprint(dobrar(2))',
+        sample_input='',
+        sample_output='4',
+        professor_note='',
+    )
+    exercise.test_cases.create(input_data='', expected_output='4', is_hidden=False)
+
+    captured = {}
+
+    def fake_run_python(source_code, stdin, *, files=None, entrypoint=None):
+        captured['source_code'] = source_code
+        captured['stdin'] = stdin
+        captured['files'] = files
+        captured['entrypoint'] = entrypoint
+        assert files['helpers.py'] == 'def dobrar(valor):\n    return valor * 2\n'
+        return services.ExecutionResult(ok=True, stdout='4\n', stderr='')
+
+    monkeypatch.setattr(services, 'run_python', fake_run_python)
+    monkeypatch.setattr(services, 'schedule_submission_feedback', lambda *args, **kwargs: None)
+
+    session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert session_response.status_code == 201
+    session_id = session_response.json()['id']
+
+    submit_response = client.post(
+        f'/api/practice/sessions/{session_id}/submit',
+        data=(
+            '{"source_code":"from helpers import dobrar\\nprint(dobrar(2))",'
+            '"files":{"main.py":"from helpers import dobrar\\nprint(dobrar(2))","helpers.py":"def dobrar(valor):\\n    return valor * 2\\n","tests.py":"# readonly"}}'
+        ),
+        content_type='application/json',
+        **auth_headers,
+    )
+
+    assert submit_response.status_code == 200
+    payload = submit_response.json()
+    assert payload['evaluation']['verdict'] == 'passed'
+    assert payload['session']['current_workspace_state']['files']['helpers.py']['content'] == 'def dobrar(valor):\n    return valor * 2\n'
+    assert payload['snapshot']['files']['main.py'] == 'from helpers import dobrar\nprint(dobrar(2))'
+    assert payload['evaluation']['evidence_bundle']['entrypoint'] == 'main.py'
+    assert captured['entrypoint'] == 'main.py'

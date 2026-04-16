@@ -41,6 +41,107 @@ DEFAULT_OBJECTIVE_ITEM_XP = 35
 DEFAULT_RESTRICTED_CODE_XP = 40
 
 
+def _normalize_workspace_file_entry(file_name: str, raw_entry: object, *, default_read_only: bool = False) -> dict:
+    if isinstance(raw_entry, dict):
+        return {
+            'path': str(raw_entry.get('path') or file_name),
+            'content': str(raw_entry.get('content') or ''),
+            'read_only': bool(raw_entry.get('read_only', default_read_only)),
+            'label': str(raw_entry.get('label') or file_name),
+            'role': str(raw_entry.get('role') or ''),
+        }
+    return {
+        'path': str(file_name),
+        'content': str(raw_entry or ''),
+        'read_only': bool(default_read_only),
+        'label': str(file_name),
+        'role': '',
+    }
+
+
+def _normalize_workspace_files(raw_files: object, *, readonly_files: list[str] | None = None) -> dict[str, dict]:
+    normalized: dict[str, dict] = {}
+    readonly_set = {str(path) for path in (readonly_files or [])}
+    if not isinstance(raw_files, dict):
+        return normalized
+
+    for file_name, raw_entry in raw_files.items():
+        file_key = str(file_name)
+        normalized[file_key] = _normalize_workspace_file_entry(
+            file_key,
+            raw_entry,
+            default_read_only=file_key in readonly_set,
+        )
+    return normalized
+
+
+def _serialize_workspace_files_for_runner(files: dict[str, dict] | None) -> dict[str, str]:
+    serialized: dict[str, str] = {}
+    for file_name, descriptor in (files or {}).items():
+        if isinstance(descriptor, dict):
+            serialized[str(file_name)] = str(descriptor.get('content') or '')
+        else:
+            serialized[str(file_name)] = str(descriptor or '')
+    return serialized
+
+
+def _build_code_lab_workspace_spec(exercise: ExerciseDefinition) -> dict:
+    family_spec = get_family_spec(exercise.family_key)
+    evaluation_plan = exercise.evaluation_plan or {}
+    base_workspace_spec = dict(exercise.workspace_spec or {})
+    language = str(
+        base_workspace_spec.get('language')
+        or evaluation_plan.get('language')
+        or exercise.language
+        or 'python'
+    )
+    default_entrypoint = 'main.py' if language == 'python' else f'main.{language}'
+    entrypoint = str(base_workspace_spec.get('entrypoint') or default_entrypoint)
+    workspace_kind = str(base_workspace_spec.get('workspace_kind') or 'single_file')
+    readonly_files = [str(path) for path in (base_workspace_spec.get('readonly_files') or evaluation_plan.get('readonly_files') or [])]
+    starter_files = _normalize_workspace_files(base_workspace_spec.get('files'), readonly_files=readonly_files)
+
+    if not starter_files:
+        starter_files = {
+            entrypoint: _normalize_workspace_file_entry(
+                entrypoint,
+                {
+                    'content': exercise.starter_code,
+                    'label': entrypoint,
+                    'role': 'entrypoint',
+                },
+            )
+        }
+    elif entrypoint not in starter_files:
+        starter_files[entrypoint] = _normalize_workspace_file_entry(
+            entrypoint,
+            {
+                'content': exercise.starter_code,
+                'label': entrypoint,
+                'role': 'entrypoint',
+            },
+        )
+
+    if workspace_kind == 'multifile':
+        starter_files[entrypoint]['role'] = starter_files[entrypoint].get('role') or 'entrypoint'
+
+    file_order = [str(path) for path in (base_workspace_spec.get('file_order') or starter_files.keys())]
+    active_file = str(base_workspace_spec.get('active_file') or entrypoint)
+
+    return {
+        **base_workspace_spec,
+        'surface_key': base_workspace_spec.get('surface_key') or resolve_surface_key(exercise),
+        'workspace_kind': workspace_kind,
+        'language': language,
+        'entrypoint': entrypoint,
+        'active_file': active_file,
+        'readonly_files': readonly_files,
+        'file_order': file_order,
+        'files': starter_files,
+        'runner_supports_files': True,
+    }
+
+
 def _build_passed_once_reward_payload(exercise: ExerciseDefinition) -> dict:
     if exercise.family_key == ExerciseDefinition.FAMILY_RESTRICTED_CODE:
         return {
@@ -422,6 +523,7 @@ def build_default_workspace_spec(exercise: ExerciseDefinition) -> dict:
     if exercise.workspace_spec and exercise.family_key not in {
         ExerciseDefinition.FAMILY_OBJECTIVE_ITEM,
         ExerciseDefinition.FAMILY_RESTRICTED_CODE,
+        ExerciseDefinition.FAMILY_CODE_LAB,
     }:
         return dict(exercise.workspace_spec)
 
@@ -431,19 +533,10 @@ def build_default_workspace_spec(exercise: ExerciseDefinition) -> dict:
     if exercise.family_key == ExerciseDefinition.FAMILY_RESTRICTED_CODE:
         return _build_restricted_workspace_spec(exercise)
 
-    family_spec = get_family_spec(exercise.family_key)
     if exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
-        file_name = 'main.py' if exercise.language == 'python' else f'main.{exercise.language}'
-        return {
-            'surface_key': family_spec.default_surface_key,
-            'workspace_kind': 'single_file',
-            'language': exercise.language,
-            'entrypoint': file_name,
-            'files': {
-                file_name: exercise.starter_code,
-            },
-        }
+        return _build_code_lab_workspace_spec(exercise)
 
+    family_spec = get_family_spec(exercise.family_key)
     return {
         'surface_key': family_spec.default_surface_key,
         'workspace_kind': 'form',
@@ -744,7 +837,14 @@ def create_attempt_session_for_exercise(user: ArenaUser, exercise: ExerciseDefin
             'template': normalize_restricted_template_key(workspace_spec.get('template') or 'fix-the-snippet'),
         }
     elif exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
-        answer_state = {'source_code': exercise.starter_code}
+        starter_files = _serialize_workspace_files_for_runner(workspace_spec.get('files'))
+        entrypoint = str(workspace_spec.get('entrypoint') or 'main.py')
+        answer_state = {
+            'source_code': str(starter_files.get(entrypoint) or exercise.starter_code or ''),
+            'active_file': str(workspace_spec.get('active_file') or entrypoint),
+            'entrypoint': entrypoint,
+            'files': starter_files,
+        }
     else:
         answer_state = {}
 
@@ -797,13 +897,21 @@ class ExecutionResult:
     stderr: str
 
 
-def run_python(source_code: str, stdin: str) -> ExecutionResult:
+def run_python(
+    source_code: str,
+    stdin: str,
+    *,
+    files: dict[str, str] | None = None,
+    entrypoint: str | None = None,
+) -> ExecutionResult:
     payload = json.dumps(
         {
             'language': 'python',
             'source_code': source_code,
             'stdin': stdin,
             'timeout_seconds': 5,
+            'files': files or {},
+            'entrypoint': entrypoint or 'main.py',
         }
     ).encode()
     request = Request(
@@ -827,11 +935,25 @@ def run_python(source_code: str, stdin: str) -> ExecutionResult:
         return ExecutionResult(ok=False, stdout='', stderr=str(error))
 
 
-def execute_code_lab(exercise: ExerciseDefinition, source_code: str) -> tuple[list[dict], int, int, str, str]:
+def execute_code_lab(
+    exercise: ExerciseDefinition,
+    source_code: str,
+    *,
+    files: dict[str, str] | None = None,
+    entrypoint: str | None = None,
+) -> tuple[list[dict], int, int, str, str]:
     results: list[dict] = []
 
     for index, test_case in enumerate(exercise.test_cases.all(), start=1):
-        execution = run_python(source_code, test_case.input_data)
+        try:
+            execution = run_python(
+                source_code,
+                test_case.input_data,
+                files=files,
+                entrypoint=entrypoint,
+            )
+        except TypeError:
+            execution = run_python(source_code, test_case.input_data)
         actual_output = normalize_text(execution.stdout)
         expected_output = normalize_text(test_case.expected_output)
         passed = execution.ok and outputs_match_robust(expected_output, actual_output)
@@ -893,13 +1015,39 @@ def create_legacy_submission(
 def build_code_lab_evaluation(
     session: AttemptSession,
     source_code: str,
+    files: dict | None,
     snapshot_type: str,
 ) -> tuple[SubmissionSnapshot, EvaluationRun, Submission | None]:
     exercise = session.exercise
     if exercise is None:
         raise ValueError('Sessão sem exercício associado.')
 
-    results, passed_tests, total_tests, status, console_output = execute_code_lab(exercise, source_code)
+    workspace_spec = build_default_workspace_spec(exercise)
+    current_workspace_state = dict(session.current_workspace_state or {})
+    entrypoint = str(
+        current_workspace_state.get('entrypoint')
+        or workspace_spec.get('entrypoint')
+        or 'main.py'
+    )
+    base_runner_files = _serialize_workspace_files_for_runner(
+        current_workspace_state.get('files') or workspace_spec.get('files')
+    )
+    submitted_files = _serialize_workspace_files_for_runner(files)
+    merged_files = {
+        **base_runner_files,
+        **submitted_files,
+    }
+    if not merged_files:
+        merged_files[entrypoint] = source_code
+    else:
+        merged_files[entrypoint] = source_code or merged_files.get(entrypoint, '')
+
+    results, passed_tests, total_tests, status, console_output = execute_code_lab(
+        exercise,
+        source_code,
+        files=merged_files,
+        entrypoint=entrypoint,
+    )
     normalized_score = (passed_tests / total_tests) if total_tests else 0
     verdict = EvaluationRun.VERDICT_PASSED if status == Submission.STATUS_PASSED else EvaluationRun.VERDICT_FAILED
     legacy_submission = None
@@ -919,8 +1067,11 @@ def build_code_lab_evaluation(
     snapshot = SubmissionSnapshot.objects.create(
         session=session,
         type=snapshot_type,
-        payload={'source_code': source_code},
-        files=(session.current_workspace_state or {}).get('files', {}),
+        payload={
+            'source_code': source_code,
+            'entrypoint': entrypoint,
+        },
+        files=merged_files,
         selected_options=[],
         legacy_submission=legacy_submission,
     )
@@ -937,11 +1088,16 @@ def build_code_lab_evaluation(
         evidence_bundle={
             'console_output': console_output,
             'results': results,
+            'workspace_spec': workspace_spec,
+            'entrypoint': entrypoint,
+            'files': merged_files,
         },
         misconception_inference=[],
         raw_artifacts={
             'status': status,
             'source_code': source_code,
+            'entrypoint': entrypoint,
+            'files': merged_files,
         },
         legacy_submission=legacy_submission,
     )
@@ -959,6 +1115,7 @@ def build_code_lab_evaluation(
             exercise.title,
             exercise.statement,
             source_code,
+            merged_files,
             passed_tests,
             total_tests,
             results,
@@ -967,11 +1124,47 @@ def build_code_lab_evaluation(
 
     session.answer_state = {'source_code': source_code}
     session.current_workspace_state = {
-        **(session.current_workspace_state or {}),
+        **current_workspace_state,
+        'entrypoint': entrypoint,
+        'active_file': current_workspace_state.get('active_file') or entrypoint,
         'files': {
-            **((session.current_workspace_state or {}).get('files') or {}),
-            ((session.current_workspace_state or {}).get('entrypoint') or 'main.py'): source_code,
+            file_name: _normalize_workspace_file_entry(
+                file_name,
+                {
+                    'content': file_content,
+                    'path': (
+                        (current_workspace_state.get('files') or {}).get(file_name, {}).get('path')
+                        if isinstance((current_workspace_state.get('files') or {}).get(file_name), dict)
+                        else file_name
+                    ),
+                    'label': (
+                        (current_workspace_state.get('files') or {}).get(file_name, {}).get('label')
+                        if isinstance((current_workspace_state.get('files') or {}).get(file_name), dict)
+                        else file_name
+                    ),
+                    'read_only': bool(
+                        isinstance((current_workspace_state.get('files') or {}).get(file_name), dict)
+                        and (current_workspace_state.get('files') or {}).get(file_name, {}).get('read_only')
+                    ),
+                    'role': (
+                        'entrypoint'
+                        if file_name == entrypoint
+                        else (
+                            (current_workspace_state.get('files') or {}).get(file_name, {}).get('role')
+                            if isinstance((current_workspace_state.get('files') or {}).get(file_name), dict)
+                            else ''
+                        )
+                    ),
+                },
+            )
+            for file_name, file_content in merged_files.items()
         },
+    }
+    session.answer_state = {
+        'source_code': source_code,
+        'entrypoint': entrypoint,
+        'active_file': current_workspace_state.get('active_file') or entrypoint,
+        'files': merged_files,
     }
     session.attempt_status = (
         AttemptSession.STATUS_COMPLETED if snapshot_type == SubmissionSnapshot.TYPE_SUBMIT else AttemptSession.STATUS_ACTIVE
@@ -999,9 +1192,18 @@ def evaluate_attempt_session(
         raise ValueError(f'Tipo de snapshot "{snapshot_type}" não suportado para {exercise.family_key}.')
 
     if exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
+        workspace_spec = build_default_workspace_spec(exercise)
+        effective_entrypoint = str(
+            (session.current_workspace_state or {}).get('entrypoint')
+            or workspace_spec.get('entrypoint')
+            or 'main.py'
+        )
+        runner_files = _serialize_workspace_files_for_runner(files)
+        effective_source_code = source_code or runner_files.get(effective_entrypoint, '')
         snapshot, evaluation_run, legacy_submission = build_code_lab_evaluation(
             session=session,
-            source_code=source_code,
+            source_code=effective_source_code,
+            files=files,
             snapshot_type=snapshot_type,
         )
         review = AIReview.objects.filter(evaluation_run=evaluation_run).first()
