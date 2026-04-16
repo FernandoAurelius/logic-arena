@@ -26,6 +26,7 @@ def schedule_submission_feedback(
     exercise_title: str,
     statement: str,
     source_code: str,
+    project_files: dict[str, str] | None,
     passed_tests: int,
     total_tests: int,
     results: list[dict],
@@ -38,6 +39,7 @@ def schedule_submission_feedback(
                 exercise_title=exercise_title,
                 statement=statement,
                 source_code=source_code,
+                project_files=project_files,
                 passed_tests=passed_tests,
                 total_tests=total_tests,
                 results=results,
@@ -124,11 +126,18 @@ def schedule_submission_feedback(
     threading.Thread(target=job, daemon=True).start()
 
 
-def review_submission_chat_response(submission: Submission, user_message: str, history: list[dict[str, str]]) -> str:
+def review_submission_chat_response(
+    submission: Submission,
+    user_message: str,
+    history: list[dict[str, str]],
+    *,
+    project_files: dict[str, str] | None = None,
+) -> str:
     return arena_review_submission_chat(
         exercise_title=submission.exercise.title,
         statement=submission.exercise.statement,
         source_code=submission.source_code,
+        project_files=project_files,
         console_output=submission.console_output,
         feedback_summary=submission.feedback,
         user_message=user_message,
@@ -138,11 +147,17 @@ def review_submission_chat_response(submission: Submission, user_message: str, h
 
 def review_evaluation_chat_response(evaluation_run, user_message: str, history: list[dict[str, str]]) -> str:
     legacy_submission = evaluation_run.legacy_submission
+    evidence_bundle = evaluation_run.evidence_bundle or {}
+    project_files = evidence_bundle.get('files') if isinstance(evidence_bundle.get('files'), dict) else None
     if legacy_submission is not None:
-        return review_submission_chat_response(legacy_submission, user_message, history)
+        return review_submission_chat_response(
+            legacy_submission,
+            user_message,
+            history,
+            project_files=project_files,
+        )
 
     evaluator_results = evaluation_run.evaluator_results or {}
-    evidence_bundle = evaluation_run.evidence_bundle or {}
     family_key = evaluator_results.get('family_key')
 
     if family_key == 'objective_item':

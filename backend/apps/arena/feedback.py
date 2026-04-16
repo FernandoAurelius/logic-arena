@@ -15,6 +15,25 @@ class FeedbackPayload(BaseModel):
     source: str
 
 
+def _format_project_files(project_files: dict[str, str] | None) -> str:
+    if not project_files:
+        return '(projeto com arquivo único ou sem arquivos auxiliares)'
+
+    rendered_chunks: list[str] = []
+    for file_name, content in project_files.items():
+        rendered_chunks.append(
+            '\n'.join(
+                [
+                    f'Arquivo: {file_name}',
+                    '```python',
+                    str(content),
+                    '```',
+                ]
+            )
+        )
+    return '\n\n'.join(rendered_chunks)
+
+
 def _build_agent() -> Agent:
     return Agent(
         model=Gemini(id=settings.AGNO_GEMINI_MODEL, api_key=settings.GEMINI_API_KEY),
@@ -34,6 +53,7 @@ def build_agno_feedback(
     exercise_title: str,
     statement: str,
     source_code: str,
+    project_files: dict[str, str] | None,
     passed_tests: int,
     total_tests: int,
     results: list[dict[str, Any]],
@@ -68,6 +88,9 @@ Código submetido:
 ```python
 {source_code}
 ```
+
+Arquivos do projeto:
+{_format_project_files(project_files)}
 
 Gere um feedback curto, útil e acionável.
 """
@@ -106,6 +129,7 @@ def review_submission_chat(
     exercise_title: str,
     statement: str,
     source_code: str,
+    project_files: dict[str, str] | None,
     console_output: str,
     feedback_summary: str,
     user_message: str,
@@ -123,6 +147,9 @@ Código submetido:
 ```python
 {source_code}
 ```
+
+Arquivos do projeto:
+{_format_project_files(project_files)}
 
 Console da avaliação:
 {console_output}
@@ -153,6 +180,7 @@ def generate_feedback(
     exercise_title: str,
     statement: str,
     source_code: str,
+    project_files: dict[str, str] | None,
     passed_tests: int,
     total_tests: int,
     results: list[dict[str, Any]],
@@ -161,6 +189,7 @@ def generate_feedback(
         exercise_title=exercise_title,
         statement=statement,
         source_code=source_code,
+        project_files=project_files,
         passed_tests=passed_tests,
         total_tests=total_tests,
         results=results,

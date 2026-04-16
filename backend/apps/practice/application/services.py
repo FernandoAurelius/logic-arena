@@ -1115,6 +1115,7 @@ def build_code_lab_evaluation(
             exercise.title,
             exercise.statement,
             source_code,
+            merged_files,
             passed_tests,
             total_tests,
             results,
