@@ -57,6 +57,9 @@ export type Submission = {
   passed_tests: number
   total_tests: number
   source_code: string
+  files: Record<string, string>
+  entrypoint: string | null
+  active_file: string | null
   selected_options: string[]
   response_text: string
   console_output: string

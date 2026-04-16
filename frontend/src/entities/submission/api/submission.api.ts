@@ -89,6 +89,42 @@ function mapSessionToSubmission(session: AttemptSession): Submission {
   const review = session.latest_review
   const feedbackPayload = mapReviewToFeedbackPayload(session)
   const evaluationCounts = deriveEvaluationCounts(session)
+  const snapshotFiles =
+    session.latest_snapshot?.files && typeof session.latest_snapshot.files === 'object'
+      ? Object.fromEntries(
+          Object.entries(session.latest_snapshot.files as Record<string, unknown>).map(([fileName, value]) => [
+            fileName,
+            typeof value === 'object' && value !== null && 'content' in value
+              ? String((value as Record<string, unknown>).content ?? '')
+              : String(value ?? ''),
+          ]),
+        )
+      : {}
+  const answerFiles =
+    session.answer_state?.files && typeof session.answer_state.files === 'object'
+      ? Object.fromEntries(
+          Object.entries(session.answer_state.files as Record<string, unknown>).map(([fileName, value]) => [
+            fileName,
+            String(value ?? ''),
+          ]),
+        )
+      : {}
+  const workspaceFiles =
+    session.current_workspace_state?.files && typeof session.current_workspace_state.files === 'object'
+      ? Object.fromEntries(
+          Object.entries(session.current_workspace_state.files as Record<string, unknown>).map(([fileName, value]) => [
+            fileName,
+            typeof value === 'object' && value !== null && 'content' in value
+              ? String((value as Record<string, unknown>).content ?? '')
+              : String(value ?? ''),
+          ]),
+        )
+      : {}
+  const files = Object.keys(answerFiles).length > 0
+    ? answerFiles
+    : Object.keys(snapshotFiles).length > 0
+      ? snapshotFiles
+      : workspaceFiles
   return {
     id: session.id,
     session_id: session.id,
@@ -103,6 +139,18 @@ function mapSessionToSubmission(session: AttemptSession): Submission {
       ?? session.latest_snapshot?.payload?.source_code
       ?? '',
     ),
+    files,
+    entrypoint: String(
+      session.answer_state?.entrypoint
+      ?? session.latest_snapshot?.payload?.entrypoint
+      ?? session.current_workspace_state?.entrypoint
+      ?? '',
+    ) || null,
+    active_file: String(
+      session.answer_state?.active_file
+      ?? session.current_workspace_state?.active_file
+      ?? '',
+    ) || null,
     selected_options: Array.isArray(session.answer_state?.selected_options)
       ? (session.answer_state.selected_options as string[])
       : Array.isArray(session.latest_snapshot?.selected_options)

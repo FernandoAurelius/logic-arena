@@ -9,6 +9,8 @@ Sem esse isolamento, a API principal teria de executar código arbitrário no me
 ## Responsabilidade atual
 
 - receber `source_code`, `stdin` e `timeout_seconds`;
+- opcionalmente receber `files` e `entrypoint` para workspaces multi-arquivo;
+- materializar o workspace temporário em disco quando a tentativa for multifile;
 - executar a solução em Python;
 - devolver `stdout`, `stderr` e um status `ok`;
 - responder rápido o suficiente para o backend montar a avaliação por caso de teste.

@@ -11,6 +11,8 @@ type UseArenaSubmissionFlowOptions = {
   activeSessionId: Ref<number | null>
   activeSessionConfig: Ref<SessionConfig | null>
   code: Ref<string>
+  workspaceFiles: Ref<Record<string, string>>
+  activeFile: Ref<string>
   selectedOptions: Ref<string[]>
   responseText: Ref<string>
   latestSubmission: Ref<Submission | null>
@@ -126,11 +128,26 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
     options.chatMessages.value = []
 
     try {
+      const normalizedFiles = {
+        ...options.workspaceFiles.value,
+      }
+      if (options.activeFile.value) {
+        normalizedFiles[options.activeFile.value] = options.code.value
+      }
+      const entrypoint = String(
+        options.activeSessionConfig.value?.workspace_spec?.entrypoint
+        ?? options.latestSubmission.value?.entrypoint
+        ?? options.activeFile.value
+        ?? '',
+      )
+      const canonicalSourceCode = entrypoint
+        ? (normalizedFiles[entrypoint] ?? options.code.value)
+        : options.code.value
       const payload = {
-        source_code: options.code.value,
+        source_code: canonicalSourceCode,
         selected_options: [...options.selectedOptions.value],
         response_text: options.responseText.value,
-        files: {},
+        files: normalizedFiles,
       }
       const submission = await submissionApi.submit(
         options.activeSessionId.value,

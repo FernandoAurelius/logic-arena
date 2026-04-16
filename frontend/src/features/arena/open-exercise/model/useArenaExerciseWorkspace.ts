@@ -33,6 +33,8 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
   const submissions = ref<SubmissionSummary[]>([])
   const trackContext = ref<TrackDetail | null>(null)
   const code = ref('')
+  const workspaceFiles = ref<Record<string, string>>({})
+  const activeFile = ref('')
   const selectedOptions = ref<string[]>([])
   const responseText = ref('')
   const latestSubmission = ref<Submission | null>(null)
@@ -97,9 +99,52 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     options.onStopFeedbackPolling?.()
     latestSubmission.value = null
     code.value = ''
+    workspaceFiles.value = {}
+    activeFile.value = ''
     selectedOptions.value = []
     responseText.value = ''
     chatMessages.value = []
+  }
+
+  function normalizeWorkspaceFiles(rawFiles: unknown): Record<string, string> {
+    if (!rawFiles || typeof rawFiles !== 'object') return {}
+    return Object.fromEntries(
+      Object.entries(rawFiles as Record<string, unknown>).map(([fileName, value]) => [
+        fileName,
+        typeof value === 'object' && value !== null && 'content' in value
+          ? String((value as Record<string, unknown>).content ?? '')
+          : String(value ?? ''),
+      ]),
+    )
+  }
+
+  function resolveWorkspaceFiles(
+    sessionConfig: SessionConfig,
+    initialSession?: AttemptSession | null,
+    submission?: Submission | null,
+  ) {
+    return {
+      files: {
+        ...normalizeWorkspaceFiles(sessionConfig.workspace_spec?.files),
+        ...normalizeWorkspaceFiles(initialSession?.current_workspace_state?.files),
+        ...normalizeWorkspaceFiles(initialSession?.answer_state?.files),
+        ...normalizeWorkspaceFiles(submission?.files),
+      },
+      entrypoint: String(
+        submission?.entrypoint
+        ?? initialSession?.answer_state?.entrypoint
+        ?? initialSession?.current_workspace_state?.entrypoint
+        ?? sessionConfig.workspace_spec?.entrypoint
+        ?? '',
+      ),
+      active: String(
+        submission?.active_file
+        ?? initialSession?.answer_state?.active_file
+        ?? initialSession?.current_workspace_state?.active_file
+        ?? sessionConfig.workspace_spec?.active_file
+        ?? '',
+      ),
+    }
   }
 
   function resolveInitialSourceCode(
@@ -121,6 +166,10 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     latestSubmission.value = submission
     activeSessionId.value = submission.session_id
     code.value = submission.source_code
+    if (Object.keys(submission.files ?? {}).length > 0) {
+      workspaceFiles.value = { ...(submission.files ?? {}) }
+    }
+    activeFile.value = submission.active_file ?? submission.entrypoint ?? activeFile.value
     selectedOptions.value = [...(submission.selected_options ?? [])]
     responseText.value = submission.response_text ?? ''
     chatMessages.value = submission.review_chat_history ?? []
@@ -252,7 +301,13 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
       activeSessionId.value = initialSession.id
       activeSessionConfig.value = sessionConfig
       clearDraftForExercise()
+      const resolvedWorkspace = resolveWorkspaceFiles(sessionConfig, initialSession, null)
+      workspaceFiles.value = resolvedWorkspace.files
+      activeFile.value = resolvedWorkspace.active || resolvedWorkspace.entrypoint || Object.keys(resolvedWorkspace.files)[0] || ''
       code.value = resolveInitialSourceCode(exercise, sessionConfig, initialSession)
+      if (activeFile.value && workspaceFiles.value[activeFile.value] !== undefined) {
+        code.value = workspaceFiles.value[activeFile.value]
+      }
       selectedOptions.value = Array.isArray(initialSession.answer_state?.selected_options)
         ? [...(initialSession.answer_state.selected_options as string[])]
         : []
@@ -297,6 +352,11 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
       activeExercise.value = exercise
       activeSessionConfig.value = sessionConfig
       setHydratedSubmission(submission)
+      if (Object.keys(submission.files ?? {}).length === 0) {
+        const resolvedWorkspace = resolveWorkspaceFiles(sessionConfig, null, submission)
+        workspaceFiles.value = resolvedWorkspace.files
+        activeFile.value = resolvedWorkspace.active || resolvedWorkspace.entrypoint || Object.keys(resolvedWorkspace.files)[0] || ''
+      }
       options.onSubmissionHydrated?.(submission)
     } catch (error) {
       console.error(error)
@@ -328,6 +388,8 @@ export function useArenaExerciseWorkspace(options: ArenaExerciseWorkspaceOptions
     submissions,
     trackContext,
     code,
+    workspaceFiles,
+    activeFile,
     selectedOptions,
     responseText,
     latestSubmission,

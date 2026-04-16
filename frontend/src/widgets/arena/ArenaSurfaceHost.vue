@@ -14,6 +14,8 @@ import { getArenaSurfaceDescriptor } from './surfaces/arenaSurfaceRegistry'
 import SurfacePlaceholder from './surfaces/SurfacePlaceholder.vue'
 
 const code = defineModel<string>('code', { default: '' })
+const workspaceFiles = defineModel<Record<string, string>>('workspaceFiles', { default: {} })
+const activeFile = defineModel<string>('activeFile', { default: '' })
 const selectedOptions = defineModel<string[]>('selectedOptions', { default: [] })
 const responseText = defineModel<string>('responseText', { default: '' })
 
@@ -51,6 +53,8 @@ const surface = computed(() => getArenaSurfaceDescriptor(props.surfaceKey))
       <CodeWorkspaceSurface
         v-if="surface.kind === 'code'"
         v-model="code"
+        v-model:workspace-files="workspaceFiles"
+        v-model:active-file="activeFile"
         :surface-key="surface.key"
         :read-only="props.readOnly"
         :exercise-title="props.exerciseTitle"
