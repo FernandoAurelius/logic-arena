@@ -478,12 +478,12 @@ def _build_contract_behavior_workspace_spec(exercise: ExerciseDefinition) -> dic
         'request': {
             'method': 'GET',
             'path': '/health',
-            'headers': {'content-type': 'application/json'},
+            'headers': {},
             'body': None,
         },
         'response': {
             'status_code': 200,
-            'headers': {'content-type': 'application/json'},
+            'headers': {},
             'body': None,
             'body_schema': None,
         },

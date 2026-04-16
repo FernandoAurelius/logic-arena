@@ -96,6 +96,8 @@ def _create_http_contract_exercise(
     slug: str,
     title: str,
     statement: str,
+    workspace_contract: dict | None = None,
+    evaluation_contract: dict | None = None,
 ):
     return Exercise.objects.create(
         slug=slug,
@@ -111,7 +113,8 @@ def _create_http_contract_exercise(
         content_blocks=[],
         workspace_spec={
             'instructions': 'Observe o contrato HTTP e registre a request e a response observadas.',
-            'contract': {
+            'contract': workspace_contract
+            or {
                 'request': {
                     'method': 'POST',
                     'path': '/api/users',
@@ -123,7 +126,8 @@ def _create_http_contract_exercise(
         evaluation_plan={
             'mechanism': 'contract_verifier',
             'template': 'http-contract',
-            'contract': {
+            'contract': evaluation_contract
+            or {
                 'response': {
                     'status_code': 201,
                     'headers': {'content-type': 'application/json'},
@@ -1066,3 +1070,55 @@ def test_contract_behavior_lab_session_config_and_submission(client, auth_header
     assert payload['review']['profile_key'] == 'contract_behavior_default'
     assert 'Revisão de contrato HTTP' in payload['review']['explanation']
     assert payload['session']['xp_awarded'] == 40
+
+
+def test_contract_behavior_lab_partial_contract_does_not_require_default_headers(client, auth_headers, catalog_graph):
+    exercise = _create_http_contract_exercise(
+        catalog_graph,
+        slug='contrato-http-health-lite',
+        title='Contrato HTTP parcial sem headers',
+        statement='Valide apenas método, path e status da rota de healthcheck.',
+        workspace_contract={
+            'request': {
+                'method': 'GET',
+                'path': '/health',
+            },
+        },
+        evaluation_contract={
+            'response': {
+                'status_code': 204,
+            },
+        },
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    contract = config_response.json()['workspace_spec']['contract']
+    assert contract['request']['headers'] == {}
+    assert contract['response']['headers'] == {}
+
+    session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert session_response.status_code == 201
+    session_id = session_response.json()['id']
+
+    observed_payload = {
+        'request': {
+            'method': 'GET',
+            'path': '/health',
+        },
+        'observed_response': {
+            'status': 204,
+        },
+    }
+    submit_response = client.post(
+        f'/api/practice/sessions/{session_id}/submit',
+        data=json.dumps({'response_text': json.dumps(observed_payload)}),
+        content_type='application/json',
+        **auth_headers,
+    )
+
+    assert submit_response.status_code == 200
+    payload = submit_response.json()
+    assert payload['evaluation']['verdict'] == 'passed'
+    assert payload['evaluation']['evaluator_results']['passed_tests'] == 3
+    assert payload['evaluation']['evaluator_results']['total_tests'] == 3
