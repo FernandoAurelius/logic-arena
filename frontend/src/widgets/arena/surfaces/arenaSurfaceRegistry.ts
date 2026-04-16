@@ -81,7 +81,7 @@ const surfaceDescriptors: Record<ArenaSurfaceKey, ArenaSurfaceDescriptor> = {
     title: 'Contrato HTTP',
     description: 'Lab de API com request, response, schema e divergências observáveis.',
     kind: 'contract',
-    implemented: false,
+    implemented: true,
     anatomy: ['request', 'response', 'schema', 'assertions'],
     accent: 'violet',
   },

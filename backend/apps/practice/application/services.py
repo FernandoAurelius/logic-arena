@@ -22,6 +22,7 @@ from apps.arena.models import (
 from apps.practice.application.registry import OBJECTIVE_SNIPPET_TEMPLATES, get_family_spec, resolve_surface_key
 from apps.practice.domain import (
     build_objective_option_catalog,
+    evaluate_http_contract_submission,
     evaluate_restricted_code_submission,
     evaluate_objective_selection,
     format_execution_results_console,
@@ -39,6 +40,7 @@ DEFAULT_EXERCISE_TYPE_SLUG = 'drill-de-implementacao'
 DEFAULT_EXERCISE_TYPE_LABEL = 'Drill de implementação'
 DEFAULT_OBJECTIVE_ITEM_XP = 35
 DEFAULT_RESTRICTED_CODE_XP = 40
+DEFAULT_CONTRACT_BEHAVIOR_XP = 40
 
 
 def _normalize_workspace_file_entry(file_name: str, raw_entry: object, *, default_read_only: bool = False) -> dict:
@@ -83,6 +85,16 @@ def _serialize_workspace_files_for_runner(files: dict[str, dict] | None) -> dict
         else:
             serialized[str(file_name)] = str(descriptor or '')
     return serialized
+
+
+def _deep_merge_dicts(base: dict, override: dict) -> dict:
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(merged.get(key), dict) and isinstance(value, dict):
+            merged[key] = _deep_merge_dicts(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
 
 
 def _build_code_lab_workspace_spec(exercise: ExerciseDefinition) -> dict:
@@ -148,6 +160,12 @@ def _build_passed_once_reward_payload(exercise: ExerciseDefinition) -> dict:
             'milestone_key': 'passed_once',
             'label': 'Correção validada',
             'xp_awarded': DEFAULT_RESTRICTED_CODE_XP,
+        }
+    if exercise.family_key == ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB:
+        return {
+            'milestone_key': 'passed_once',
+            'label': 'Contrato validado',
+            'xp_awarded': DEFAULT_CONTRACT_BEHAVIOR_XP,
         }
     return {
         'milestone_key': 'passed_once',
@@ -452,6 +470,73 @@ def _build_restricted_workspace_spec(exercise: ExerciseDefinition) -> dict:
     }
 
 
+def _build_contract_behavior_workspace_spec(exercise: ExerciseDefinition) -> dict:
+    family_spec = get_family_spec(exercise.family_key)
+    base_workspace_spec = dict(exercise.workspace_spec or {})
+    evaluation_plan = dict(exercise.evaluation_plan or {})
+    default_contract = {
+        'request': {
+            'method': 'GET',
+            'path': '/health',
+            'headers': {'content-type': 'application/json'},
+            'body': None,
+        },
+        'response': {
+            'status_code': 200,
+            'headers': {'content-type': 'application/json'},
+            'body': None,
+            'body_schema': None,
+        },
+    }
+    contract = _deep_merge_dicts(
+        default_contract,
+        evaluation_plan.get('contract') if isinstance(evaluation_plan.get('contract'), dict) else {},
+    )
+    contract = _deep_merge_dicts(
+        contract,
+        base_workspace_spec.get('contract') if isinstance(base_workspace_spec.get('contract'), dict) else {},
+    )
+    template_meta = {
+        'key': 'http-contract',
+        'title': 'Contrato HTTP',
+        'response_shape': 'http_contract_observation',
+        'analysis_steps': [
+            'Valide método e path antes de discutir a resposta.',
+            'Compare status, headers e body com o contrato esperado.',
+            'Use o schema para separar formato inválido de conteúdo incorreto.',
+        ],
+        'validation_axes': [
+            'request_method',
+            'request_path',
+            'request_headers',
+            'request_body',
+            'response_status',
+            'response_headers',
+            'response_body',
+            'response_schema',
+        ],
+    }
+    return {
+        **base_workspace_spec,
+        'surface_key': base_workspace_spec.get('surface_key') or family_spec.default_surface_key,
+        'workspace_kind': base_workspace_spec.get('workspace_kind') or 'http_contract',
+        'template': base_workspace_spec.get('template') or evaluation_plan.get('template') or 'http-contract',
+        'template_meta': _deep_merge_dicts(
+            template_meta,
+            base_workspace_spec.get('template_meta') if isinstance(base_workspace_spec.get('template_meta'), dict) else {},
+        ),
+        'contract': contract,
+        'instructions': str(
+            base_workspace_spec.get('instructions')
+            or evaluation_plan.get('instructions')
+            or exercise.pedagogical_brief
+            or ''
+        ),
+        'request_examples': list(base_workspace_spec.get('request_examples') or evaluation_plan.get('request_examples') or []),
+        'response_examples': list(base_workspace_spec.get('response_examples') or evaluation_plan.get('response_examples') or []),
+    }
+
+
 def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
     if exercise.content_blocks:
         return list(exercise.content_blocks)
@@ -510,6 +595,25 @@ def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
                 }
             )
         return blocks
+    if exercise.family_key == ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB:
+        workspace_spec = _build_contract_behavior_workspace_spec(exercise)
+        contract = workspace_spec.get('contract') if isinstance(workspace_spec.get('contract'), dict) else {}
+        request = contract.get('request') if isinstance(contract.get('request'), dict) else {}
+        response = contract.get('response') if isinstance(contract.get('response'), dict) else {}
+        return [
+            {
+                'kind': 'statement',
+                'title': exercise.title,
+                'content': exercise.statement,
+            },
+            {
+                'kind': 'http-contract',
+                'title': 'Contrato esperado',
+                'request': request,
+                'response': response,
+                'instructions': workspace_spec.get('instructions') or '',
+            },
+        ]
     return [
         {
             'kind': 'statement',
@@ -524,6 +628,7 @@ def build_default_workspace_spec(exercise: ExerciseDefinition) -> dict:
         ExerciseDefinition.FAMILY_OBJECTIVE_ITEM,
         ExerciseDefinition.FAMILY_RESTRICTED_CODE,
         ExerciseDefinition.FAMILY_CODE_LAB,
+        ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB,
     }:
         return dict(exercise.workspace_spec)
 
@@ -535,6 +640,9 @@ def build_default_workspace_spec(exercise: ExerciseDefinition) -> dict:
 
     if exercise.family_key == ExerciseDefinition.FAMILY_CODE_LAB:
         return _build_code_lab_workspace_spec(exercise)
+
+    if exercise.family_key == ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB:
+        return _build_contract_behavior_workspace_spec(exercise)
 
     family_spec = get_family_spec(exercise.family_key)
     return {
@@ -844,6 +952,13 @@ def create_attempt_session_for_exercise(user: ArenaUser, exercise: ExerciseDefin
             'active_file': str(workspace_spec.get('active_file') or entrypoint),
             'entrypoint': entrypoint,
             'files': starter_files,
+        }
+    elif exercise.family_key == ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB:
+        answer_state = {
+            'response_text': '',
+            'observed_request': {},
+            'observed_response': {},
+            'template': str(workspace_spec.get('template') or 'http-contract'),
         }
     else:
         answer_state = {}
@@ -1490,6 +1605,114 @@ def evaluate_attempt_session(
         update_restricted_code_progress(session.user, exercise, restricted_result)
         return snapshot, evaluation_run, review, None
 
+    if exercise.family_key == ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB:
+        evaluation_plan = build_default_evaluation_plan(exercise)
+        workspace_spec = build_default_workspace_spec(exercise)
+        contract_result = evaluate_http_contract_submission(
+            workspace_spec=workspace_spec,
+            evaluation_plan=evaluation_plan,
+            response_text=response_text,
+        )
+        snapshot = SubmissionSnapshot.objects.create(
+            session=session,
+            type=snapshot_type,
+            payload={
+                'response_text': response_text,
+                'template': contract_result['template'],
+                'observed_request': contract_result['observed_request'],
+                'observed_response': contract_result['observed_response'],
+            },
+            files=files or {},
+            selected_options=[],
+        )
+        explanation_lines = [
+            '### Revisão de contrato HTTP',
+            f"Checks atendidos: {contract_result['passed_tests']}/{contract_result['total_tests']}",
+        ]
+        if contract_result['passed']:
+            explanation_lines.append('A requisição observada e a resposta retornada respeitam o contrato configurado.')
+        else:
+            explanation_lines.append('O contrato ainda não fecha completamente entre o esperado e o observado.')
+            if contract_result['divergences']:
+                explanation_lines.append('Divergências: ' + ' | '.join(contract_result['divergences']))
+        explanation_lines.extend(
+            [
+                '',
+                'Leia o contrato como acordo entre cliente e servidor: primeiro request, depois status, headers, body e schema.',
+            ]
+        )
+        next_steps = [
+            'Compare método e path enviados com o contrato esperado.',
+            'Revise status, headers e body observados antes de reenviar a tentativa.',
+        ]
+        if contract_result['divergences']:
+            next_steps.append('Corrija primeiro a divergência mais estrutural antes de ajustar detalhes de payload.')
+
+        evaluation_run = EvaluationRun.objects.create(
+            submission=snapshot,
+            evaluator_results={
+                'family_key': exercise.family_key,
+                'mechanism': evaluation_plan.get('mechanism') or 'contract_verifier',
+                'template': contract_result['template'],
+                'passed': contract_result['passed'],
+                'passed_tests': contract_result['passed_tests'],
+                'total_tests': contract_result['total_tests'],
+                'checks': contract_result['checks'],
+            },
+            normalized_score=contract_result['normalized_score'],
+            verdict=contract_result['verdict'],
+            evidence_bundle={
+                'workspace_spec': workspace_spec,
+                'evaluation_plan': evaluation_plan,
+                'request': contract_result['request'],
+                'expected_response': contract_result['expected_response'],
+                'observed_request': contract_result['observed_request'],
+                'observed_response': contract_result['observed_response'],
+                'checks': contract_result['checks'],
+                'results': contract_result['results'],
+                'divergences': contract_result['divergences'],
+                'console_output': contract_result['console_output'],
+            },
+            misconception_inference=[] if contract_result['passed'] else list(exercise.misconception_tags or []),
+            raw_artifacts={
+                'response_text': response_text,
+                'payload': contract_result['payload'],
+                'files': files or {},
+            },
+        )
+        review = AIReview.objects.create(
+            evaluation_run=evaluation_run,
+            profile_key=exercise.review_profile,
+            explanation='\n'.join(explanation_lines).strip(),
+            next_steps=next_steps,
+            conversation_thread=[
+                {
+                    'role': 'assistant',
+                    'content': '\n'.join(explanation_lines).strip(),
+                }
+            ],
+        )
+        session.answer_state = {
+            'response_text': response_text,
+            'observed_request': contract_result['observed_request'],
+            'observed_response': contract_result['observed_response'],
+            'normalized_score': contract_result['normalized_score'],
+            'verdict': contract_result['verdict'],
+            'template': contract_result['template'],
+        }
+        session.current_workspace_state = {
+            **(session.current_workspace_state or {}),
+            'last_contract_checks': contract_result['checks'],
+            'last_observed_request': contract_result['observed_request'],
+            'last_observed_response': contract_result['observed_response'],
+        }
+        session.attempt_status = (
+            AttemptSession.STATUS_COMPLETED if snapshot_type == SubmissionSnapshot.TYPE_SUBMIT else AttemptSession.STATUS_ACTIVE
+        )
+        session.save(update_fields=['answer_state', 'current_workspace_state', 'attempt_status', 'updated_at'])
+        update_contract_behavior_progress(session.user, exercise, contract_result)
+        return snapshot, evaluation_run, review, None
+
     snapshot = SubmissionSnapshot.objects.create(
         session=session,
         type=snapshot_type,
@@ -1606,6 +1829,59 @@ def update_restricted_code_progress(
             awarded_progress_markers.append('passed_once')
             unlocked_rewards.append(_build_passed_once_reward_payload(exercise))
             xp_awarded += DEFAULT_RESTRICTED_CODE_XP
+            progress.first_passed_at = progress.first_passed_at or timezone.now()
+
+        progress.awarded_progress_markers = awarded_progress_markers
+        progress.xp_awarded_total += xp_awarded
+        progress.save()
+
+        if xp_awarded:
+            locked_user.xp_total += xp_awarded
+            locked_user.save(update_fields=['xp_total', 'updated_at'])
+
+        user.xp_total = locked_user.xp_total
+        return progress, unlocked_rewards, xp_awarded
+
+
+def update_contract_behavior_progress(
+    user: ArenaUser,
+    exercise: ExerciseDefinition,
+    contract_result: dict,
+) -> tuple[UserExerciseProgress, list, int]:
+    with transaction.atomic():
+        locked_user = ArenaUser.objects.select_for_update().get(pk=user.pk)
+        progress, _ = UserExerciseProgress.objects.select_for_update().get_or_create(
+            user=locked_user,
+            exercise=exercise,
+        )
+
+        progress.attempts_count += 1
+        current_ratio = float(contract_result.get('normalized_score', 0) or 0)
+        best_ratio = progress.best_ratio or 0
+        improved = (
+            current_ratio > best_ratio
+            or (current_ratio == best_ratio and contract_result.get('passed') and (progress.best_total_tests or 0) == 0)
+        )
+
+        if improved:
+            progress.best_passed_tests = int(contract_result.get('passed_tests', 0) or 0)
+            progress.best_total_tests = int(contract_result.get('total_tests', 0) or 0)
+            progress.best_ratio = current_ratio
+
+        awarded_progress_markers = list(progress.awarded_progress_markers or [])
+        unlocked_rewards = []
+        xp_awarded = 0
+
+        if contract_result.get('passed') and 'passed_once' not in awarded_progress_markers:
+            awarded_progress_markers.append('passed_once')
+            unlocked_rewards.append(
+                {
+                    'milestone_key': 'passed_once',
+                    'label': 'Contrato validado',
+                    'xp_awarded': DEFAULT_CONTRACT_BEHAVIOR_XP,
+                }
+            )
+            xp_awarded += DEFAULT_CONTRACT_BEHAVIOR_XP
             progress.first_passed_at = progress.first_passed_at or timezone.now()
 
         progress.awarded_progress_markers = awarded_progress_markers

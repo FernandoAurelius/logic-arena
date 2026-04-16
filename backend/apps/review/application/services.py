@@ -289,6 +289,51 @@ def review_evaluation_chat_response(evaluation_run, user_message: str, history: 
 
         return '\n'.join(lines).strip()
 
+    if family_key == 'contract_behavior_lab':
+        checks = evaluator_results.get('checks') or evidence_bundle.get('checks') or []
+        divergences = evidence_bundle.get('divergences') or []
+        observed_request = evidence_bundle.get('observed_request') or {}
+        observed_response = evidence_bundle.get('observed_response') or {}
+        lines = [
+            '### Revisão de contrato HTTP',
+            (
+                f"Checks atendidos: "
+                f"{evaluator_results.get('passed_tests', 0)}/{evaluator_results.get('total_tests', 0)}"
+            ),
+            (
+                f"Request observada: "
+                f"{observed_request.get('method') or '(método ausente)'} "
+                f"{observed_request.get('path') or '(path ausente)'}"
+            ),
+            f"Status observado: {observed_response.get('status_code')!r}",
+        ]
+        if evaluation_run.verdict == EvaluationRun.VERDICT_PASSED:
+            lines.append('O contrato foi respeitado do request ao body de resposta.')
+        elif evaluation_run.verdict == EvaluationRun.VERDICT_PARTIAL:
+            lines.append('Há aderência parcial ao contrato, mas ainda existem divergências objetivas.')
+        else:
+            lines.append('O contrato ainda não foi respeitado nos pontos observáveis principais.')
+
+        failed_checks = [check for check in checks if not check.get('passed')]
+        if failed_checks:
+            lines.append(
+                'Checks que falharam: '
+                + ' | '.join(str(check.get('check')) for check in failed_checks if check.get('check'))
+            )
+        if divergences:
+            lines.append('Divergências detectadas: ' + ' | '.join(str(item) for item in divergences))
+
+        if user_message.strip():
+            lines.extend(
+                [
+                    '',
+                    f'Pergunta do aluno: {user_message.strip()}',
+                    'Compare primeiro o acordo esperado no contrato com o que foi realmente observado, sem pular direto para o body.',
+                ]
+            )
+
+        return '\n'.join(lines).strip()
+
     return (
         'Ainda não há uma revisão especializada para esta família. '
         'Use a evidência objetiva desta avaliação como base e retorne depois para uma revisão mais profunda.'
