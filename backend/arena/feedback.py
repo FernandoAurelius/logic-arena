@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from django.conf import settings
@@ -21,8 +22,8 @@ def _build_agent() -> Agent:
         name='logic-arena-feedback',
         instructions=[
             'Você é um professor de lógica de programação extremamente didático.',
-            'Analise soluções submetidas em Python com foco em clareza, correção, aderência ao enunciado e estilo de prova prática.',
-            'Use os resultados dos testes como evidência principal.',
+            'Analise a tentativa submetida com foco em clareza, correção, aderência ao enunciado e evidências objetivas.',
+            'Use os resultados, o contrato esperado e o contexto estruturado como evidência principal.',
             'Seja objetivo, útil e acionável.',
             'Nunca invente erros que não estejam sustentados pelos resultados recebidos.',
         ],
@@ -37,14 +38,15 @@ def build_agno_feedback(
     passed_tests: int,
     total_tests: int,
     results: list[dict[str, Any]],
+    context: dict[str, Any] | None = None,
 ) -> FeedbackPayload:
     agent = Agent(
         model=Gemini(id=settings.AGNO_GEMINI_MODEL, api_key=settings.GEMINI_API_KEY),
         name='logic-arena-feedback-structured',
         instructions=[
             'Você é um professor de lógica de programação extremamente didático.',
-            'Analise a solução submetida em Python com foco em clareza, correção, aderência ao enunciado e estilo de prova prática.',
-            'Use os resultados dos testes como evidência principal.',
+            'Analise a tentativa submetida com foco em clareza, correção, aderência ao enunciado e evidências objetivas.',
+            'Use os resultados, o contrato esperado e o contexto estruturado como evidência principal.',
             'Seja objetivo, útil e acionável.',
             'Nunca invente erros que não estejam sustentados pelos resultados recebidos.',
         ],
@@ -53,6 +55,7 @@ def build_agno_feedback(
         markdown=False,
     )
 
+    context_block = json.dumps(context or {}, ensure_ascii=False, indent=2, default=str)
     prompt = f"""
 Exercício: {exercise_title}
 
@@ -64,10 +67,13 @@ Resultado dos testes: {passed_tests}/{total_tests}
 Resultados detalhados:
 {results}
 
-Código submetido:
-```python
+Artefato submetido:
+```text
 {source_code}
 ```
+
+Contexto estruturado:
+{context_block}
 
 Gere um feedback curto, útil e acionável.
 """
@@ -110,17 +116,19 @@ def review_submission_chat(
     feedback_summary: str,
     user_message: str,
     history: list[dict[str, str]],
+    context: dict[str, Any] | None = None,
 ) -> str:
     agent = _build_agent()
     conversation = '\n'.join([f"{item['role']}: {item['content']}" for item in history]) if history else '(sem histórico anterior)'
+    context_block = json.dumps(context or {}, ensure_ascii=False, indent=2, default=str)
     prompt = f"""
 Exercício: {exercise_title}
 
 Enunciado:
 {statement}
 
-Código submetido:
-```python
+Artefato submetido:
+```text
 {source_code}
 ```
 
@@ -132,6 +140,9 @@ Resumo do feedback atual:
 
 Histórico da conversa:
 {conversation}
+
+Contexto estruturado:
+{context_block}
 
 Pergunta do aluno:
 {user_message}
@@ -156,6 +167,7 @@ def generate_feedback(
     passed_tests: int,
     total_tests: int,
     results: list[dict[str, Any]],
+    context: dict[str, Any] | None = None,
 ) -> FeedbackPayload:
     return build_agno_feedback(
         exercise_title=exercise_title,
@@ -164,4 +176,5 @@ def generate_feedback(
         passed_tests=passed_tests,
         total_tests=total_tests,
         results=results,
+        context=context,
     )

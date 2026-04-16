@@ -1478,6 +1478,11 @@
             "title": "Title",
             "type": "string"
           },
+          "family_key": {
+            "default": "code_lab",
+            "title": "Family Key",
+            "type": "string"
+          },
           "difficulty": {
             "title": "Difficulty",
             "type": "string"
@@ -1514,6 +1519,16 @@
             "default": 0,
             "title": "Track Position",
             "type": "integer"
+          },
+          "surface_key": {
+            "default": "code_editor_single",
+            "title": "Surface Key",
+            "type": "string"
+          },
+          "workspace_kind": {
+            "default": "single_file",
+            "title": "Workspace Kind",
+            "type": "string"
           },
           "module_slug": {
             "anyOf": [
@@ -1607,6 +1622,11 @@
             "title": "Title",
             "type": "string"
           },
+          "family_key": {
+            "default": "code_lab",
+            "title": "Family Key",
+            "type": "string"
+          },
           "difficulty": {
             "title": "Difficulty",
             "type": "string"
@@ -1643,6 +1663,16 @@
             "default": 0,
             "title": "Track Position",
             "type": "integer"
+          },
+          "surface_key": {
+            "default": "code_editor_single",
+            "title": "Surface Key",
+            "type": "string"
+          },
+          "workspace_kind": {
+            "default": "single_file",
+            "title": "Workspace Kind",
+            "type": "string"
           },
           "module_slug": {
             "anyOf": [
@@ -1726,6 +1756,29 @@
             "title": "Sample Output",
             "type": "string"
           },
+          "content_blocks": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Content Blocks",
+            "type": "array"
+          },
+          "workspace_spec": {
+            "additionalProperties": true,
+            "title": "Workspace Spec",
+            "type": "object"
+          },
+          "evaluation_plan": {
+            "additionalProperties": true,
+            "title": "Evaluation Plan",
+            "type": "object"
+          },
+          "review_profile": {
+            "additionalProperties": true,
+            "title": "Review Profile",
+            "type": "object"
+          },
           "test_cases": {
             "items": {
               "$ref": "#/components/schemas/ExerciseTestCaseSchema"
@@ -1745,6 +1798,10 @@
           "starter_code",
           "sample_input",
           "sample_output",
+          "content_blocks",
+          "workspace_spec",
+          "evaluation_plan",
+          "review_profile",
           "test_cases"
         ],
         "title": "ExerciseDetailSchema",
@@ -1790,6 +1847,11 @@
           },
           "statement": {
             "title": "Statement",
+            "type": "string"
+          },
+          "family_key": {
+            "default": "code_lab",
+            "title": "Family Key",
             "type": "string"
           },
           "difficulty": {
@@ -1861,6 +1923,33 @@
             "default": 0,
             "title": "Track Position",
             "type": "integer"
+          },
+          "content_blocks": {
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Content Blocks",
+            "type": "array"
+          },
+          "workspace_spec": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Workspace Spec",
+            "type": "object"
+          },
+          "evaluation_plan": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Evaluation Plan",
+            "type": "object"
+          },
+          "review_profile": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Review Profile",
+            "type": "object"
           },
           "concept_summary": {
             "default": "",
@@ -2090,6 +2179,16 @@
             "title": "Source Code",
             "type": "string"
           },
+          "submission_payload": {
+            "additionalProperties": true,
+            "title": "Submission Payload",
+            "type": "object"
+          },
+          "evidence_bundle": {
+            "additionalProperties": true,
+            "title": "Evidence Bundle",
+            "type": "object"
+          },
           "console_output": {
             "title": "Console Output",
             "type": "string"
@@ -2152,6 +2251,8 @@
           "passed_tests",
           "total_tests",
           "source_code",
+          "submission_payload",
+          "evidence_bundle",
           "console_output",
           "feedback",
           "feedback_status",
@@ -2237,13 +2338,58 @@
       "SubmissionInputSchema": {
         "properties": {
           "source_code": {
+            "default": "",
             "title": "Source Code",
+            "type": "string"
+          },
+          "request_method": {
+            "default": "",
+            "title": "Request Method",
+            "type": "string"
+          },
+          "request_path": {
+            "default": "",
+            "title": "Request Path",
+            "type": "string"
+          },
+          "request_headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Request Headers",
+            "type": "object"
+          },
+          "request_body": {
+            "default": "",
+            "title": "Request Body",
+            "type": "string"
+          },
+          "response_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Status"
+          },
+          "response_headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Response Headers",
+            "type": "object"
+          },
+          "response_body": {
+            "default": "",
+            "title": "Response Body",
             "type": "string"
           }
         },
-        "required": [
-          "source_code"
-        ],
         "title": "SubmissionInputSchema",
         "type": "object"
       },
@@ -2858,6 +3004,11 @@
             "title": "Title",
             "type": "string"
           },
+          "family_key": {
+            "default": "code_lab",
+            "title": "Family Key",
+            "type": "string"
+          },
           "difficulty": {
             "title": "Difficulty",
             "type": "string"
@@ -2894,6 +3045,16 @@
             "default": 0,
             "title": "Track Position",
             "type": "integer"
+          },
+          "surface_key": {
+            "default": "code_editor_single",
+            "title": "Surface Key",
+            "type": "string"
+          },
+          "workspace_kind": {
+            "default": "single_file",
+            "title": "Workspace Kind",
+            "type": "string"
           },
           "module_slug": {
             "anyOf": [

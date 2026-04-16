@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from ninja import Schema
 
@@ -38,6 +39,7 @@ class ExerciseCreateSchema(Schema):
     slug: str
     title: str
     statement: str
+    family_key: str = 'code_lab'
     difficulty: str = 'iniciante'
     language: str = 'python'
     module_slug: str = ''
@@ -52,6 +54,10 @@ class ExerciseCreateSchema(Schema):
     exercise_type_slug: str = ''
     estimated_time_minutes: int = 15
     track_position: int = 0
+    content_blocks: list[dict[str, Any]] = []
+    workspace_spec: dict[str, Any] = {}
+    evaluation_plan: dict[str, Any] = {}
+    review_profile: dict[str, Any] = {}
     concept_summary: str = ''
     pedagogical_brief: str = ''
     starter_code: str = ''
@@ -65,6 +71,7 @@ class ExerciseSummarySchema(Schema):
     id: int
     slug: str
     title: str
+    family_key: str = 'code_lab'
     difficulty: str
     language: str
     professor_note: str
@@ -73,6 +80,8 @@ class ExerciseSummarySchema(Schema):
     estimated_time_minutes: int = 15
     concept_summary: str = ''
     track_position: int = 0
+    surface_key: str = 'code_editor_single'
+    workspace_kind: str = 'single_file'
     module_slug: str | None = None
     module_name: str | None = None
     category_slug: str | None = None
@@ -93,11 +102,22 @@ class ExerciseDetailSchema(ExerciseSummarySchema):
     starter_code: str
     sample_input: str
     sample_output: str
+    content_blocks: list[dict[str, Any]]
+    workspace_spec: dict[str, Any]
+    evaluation_plan: dict[str, Any]
+    review_profile: dict[str, Any]
     test_cases: list[ExerciseTestCaseSchema]
 
 
 class SubmissionInputSchema(Schema):
-    source_code: str
+    source_code: str = ''
+    request_method: str = ''
+    request_path: str = ''
+    request_headers: dict[str, str] = {}
+    request_body: str = ''
+    response_status: int | None = None
+    response_headers: dict[str, str] = {}
+    response_body: str = ''
 
 
 class FeedbackPayloadSchema(Schema):
@@ -160,6 +180,8 @@ class SubmissionSchema(Schema):
     passed_tests: int
     total_tests: int
     source_code: str
+    submission_payload: dict[str, Any]
+    evidence_bundle: dict[str, Any]
     console_output: str
     feedback: str
     feedback_status: str

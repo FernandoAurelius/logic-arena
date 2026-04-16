@@ -38,6 +38,9 @@ from .services import (
     ensure_exercise_explanation,
     evaluate_submission,
     get_or_create_session,
+    resolve_evaluation_plan,
+    resolve_exercise_family_key,
+    resolve_workspace_spec,
     sync_exercise_explanation,
 )
 
@@ -82,6 +85,8 @@ def serialize_submission(submission: Submission) -> dict:
         'passed_tests': submission.passed_tests,
         'total_tests': submission.total_tests,
         'source_code': submission.source_code,
+        'submission_payload': submission.submission_payload,
+        'evidence_bundle': submission.evidence_bundle,
         'console_output': submission.console_output,
         'feedback': submission.feedback,
         'feedback_status': submission.feedback_status,
@@ -111,6 +116,7 @@ def serialize_exercise_summary(exercise: Exercise) -> dict:
         'id': exercise.id,
         'slug': exercise.slug,
         'title': exercise.title,
+        'family_key': meta['family_key'],
         'difficulty': exercise.difficulty,
         'language': exercise.language,
         'professor_note': exercise.professor_note,
@@ -119,6 +125,8 @@ def serialize_exercise_summary(exercise: Exercise) -> dict:
         'estimated_time_minutes': meta['estimated_time_minutes'],
         'concept_summary': meta['concept_summary'],
         'track_position': meta['track_position'],
+        'surface_key': meta['surface_key'],
+        'workspace_kind': meta['workspace_kind'],
         'module_slug': exercise.track.module.slug if exercise.track and exercise.track.module else None,
         'module_name': exercise.track.module.name if exercise.track and exercise.track.module else None,
         'category_slug': exercise.category.slug if exercise.category else None,
@@ -179,6 +187,10 @@ def get_exercise(request, slug: str, authorization: str | None = Header(default=
         'starter_code': exercise.starter_code,
         'sample_input': exercise.sample_input,
         'sample_output': exercise.sample_output,
+        'content_blocks': exercise.content_blocks,
+        'workspace_spec': resolve_workspace_spec(exercise),
+        'evaluation_plan': resolve_evaluation_plan(exercise),
+        'review_profile': exercise.review_profile,
         'test_cases': list(exercise.test_cases.filter(is_hidden=False)),
     }
 
@@ -792,6 +804,10 @@ def post_exercise(request, payload: ExerciseCreateSchema, authorization: str | N
         'starter_code': exercise.starter_code,
         'sample_input': exercise.sample_input,
         'sample_output': exercise.sample_output,
+        'content_blocks': exercise.content_blocks,
+        'workspace_spec': resolve_workspace_spec(exercise),
+        'evaluation_plan': resolve_evaluation_plan(exercise),
+        'review_profile': exercise.review_profile,
         'test_cases': list(exercise.test_cases.all()),
     }
 
@@ -804,7 +820,7 @@ def submit_exercise(request, slug: str, payload: SubmissionInputSchema, authoriz
         return 401, {'message': str(error)}
 
     exercise = get_object_or_404(Exercise.objects.prefetch_related('test_cases'), slug=slug, is_active=True)
-    submission, results = evaluate_submission(session.user, exercise, payload.source_code)
+    submission, results = evaluate_submission(session.user, exercise, payload)
     serialized = serialize_submission(submission)
     serialized['results'] = results
     return 200, serialized
@@ -867,6 +883,13 @@ def review_chat(request, submission_id: int, payload: ReviewChatInputSchema, aut
         feedback_summary=submission.feedback,
         user_message=payload.message,
         history=persisted_history,
+        context={
+            'family_key': resolve_exercise_family_key(submission.exercise),
+            'workspace_spec': resolve_workspace_spec(submission.exercise),
+            'evaluation_plan': resolve_evaluation_plan(submission.exercise),
+            'submission_payload': submission.submission_payload,
+            'evidence_bundle': submission.evidence_bundle,
+        },
     )
     updated_history = [
         *persisted_history,
