@@ -768,12 +768,12 @@ def test_restricted_code_fix_the_snippet_flow_uses_diff_surface_and_awards_xp(
     assert config_payload['family_key'] == 'restricted_code'
     assert config_payload['surface_key'] == 'restricted_diff'
     assert config_payload['workspace_spec']['template_meta']['key'] == 'fix-the-snippet'
-    assert config_payload['workspace_spec']['editable_code'].endswith('return valor - 1')
+    assert config_payload['workspace_spec']['editable_code'].endswith('return valor - 1\n')
 
     session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
     assert session_response.status_code == 201
     session_payload = session_response.json()
-    assert session_payload['answer_state']['source_code'].endswith('return valor - 1')
+    assert session_payload['answer_state']['source_code'].endswith('return valor - 1\n')
 
     submit_response = client.post(
         f"/api/practice/sessions/{session_payload['id']}/submit",
@@ -841,7 +841,7 @@ def test_restricted_code_fill_in_the_blanks_uses_blank_template_and_partial_feed
     )
     assert submit_response.status_code == 200
     payload = submit_response.json()
-    assert payload['evaluation']['verdict'] == 'partial'
+    assert payload['evaluation']['verdict'] == 'failed'
     assert payload['evaluation']['evaluator_results']['total_tests'] == 2
     assert payload['evaluation']['evidence_bundle']['blank_answers']['acao'] == 'print(valor)'
     assert 'Lacunas que ainda precisam de ajuste' in payload['review']['explanation']

@@ -352,6 +352,15 @@ def _resolve_output_option_keys(
     if semantic_keys:
         return semantic_keys
 
+    heuristic_keys = {
+        option['canonical_key']
+        for option in option_catalog
+        if option['canonical_key'] in correct_options
+        and any(token in option['canonical_key'] for token in ('output', 'saida'))
+    }
+    if heuristic_keys:
+        return heuristic_keys
+
     return set()
 
 
@@ -405,7 +414,7 @@ def evaluate_objective_selection(
     expected_output_text = _resolve_expected_output_text(evaluation_plan)
     output_option_keys = _resolve_output_option_keys(evaluation_plan, option_catalog, correct_options)
     requires_output_text = bool(expected_output_text) and bool(correct_set & output_option_keys) and template == 'compile-runtime-output'
-    output_text_matches = None
+    output_text_matches = True if not requires_output_text else None
     if requires_output_text and bool(selected_set & output_option_keys):
         output_text_matches = outputs_match_robust(expected_output_text, response_text)
         if selected_set == correct_set and output_text_matches is False:
