@@ -200,6 +200,7 @@ const {
       :tab="submissionFlow.resultsTab.value"
       :active-exercise-title="activeExercise?.title ?? ''"
       :family-key="activeSessionConfig?.family_key ?? 'code_lab'"
+      :surface-key="activeSessionConfig?.surface_key ?? 'code_editor_single'"
       :submission="latestSubmission"
       :console-lines="submissionFlow.consoleLines.value"
       :submission-outcome-tone="submissionFlow.submissionOutcomeTone.value"

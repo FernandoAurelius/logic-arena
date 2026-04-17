@@ -21,6 +21,7 @@ const props = withDefaults(defineProps<{
   tab: ResultsTab
   activeExerciseTitle?: string
   familyKey?: string
+  surfaceKey?: string
   submission: Submission | null
   consoleLines?: string[]
   submissionOutcomeTone?: string
@@ -35,6 +36,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   activeExerciseTitle: '',
   familyKey: 'code_lab',
+  surfaceKey: 'code_editor_single',
   consoleLines: () => [],
   submissionOutcomeTone: 'idle',
   submissionOutcomeTitle: 'Aguardando execução',
@@ -149,12 +151,15 @@ function consoleTagLabel(line: string) {
   return '[EXEC]'
 }
 
-function completionUnitLabel(familyKey?: string) {
+function completionUnitLabel(familyKey?: string, surfaceKey?: string) {
   if (familyKey === 'objective_item') return 'critérios'
   if (familyKey === 'restricted_code') return 'critérios estruturais'
+  if (surfaceKey === 'component_behavior_lab') return 'checks de comportamento'
   if (familyKey === 'contract_behavior_lab') return 'checks de contrato'
   return 'testes'
 }
+
+const isComponentBehaviorSurface = computed(() => props.surfaceKey === 'component_behavior_lab')
 </script>
 
 <template>
@@ -164,7 +169,7 @@ function completionUnitLabel(familyKey?: string) {
         <DialogTitle>Central da tentativa</DialogTitle>
         <DialogDescription>
           {{
-            `${activeExerciseTitle} · ${submission.passed_tests}/${submission.total_tests} ${completionUnitLabel(familyKey)}`
+            `${activeExerciseTitle} · ${submission.passed_tests}/${submission.total_tests} ${completionUnitLabel(familyKey, surfaceKey)}`
           }}
         </DialogDescription>
       </DialogHeader>
@@ -213,9 +218,9 @@ function completionUnitLabel(familyKey?: string) {
               </CardHeader>
               <CardContent class="outcome-grid">
                 <div class="outcome-block">
-                  <p class="section-label">{{ isObjectiveFamily ? 'Decisão' : isRestrictedFamily ? 'Validação' : isContractFamily ? 'Contrato' : 'Execução' }}</p>
+                  <p class="section-label">{{ isObjectiveFamily ? 'Decisão' : isRestrictedFamily ? 'Validação' : isComponentBehaviorSurface ? 'Componente' : isContractFamily ? 'Contrato' : 'Execução' }}</p>
                   <strong>
-                    {{ `${submission.passed_tests}/${submission.total_tests} ${completionUnitLabel(familyKey)}` }}
+                    {{ `${submission.passed_tests}/${submission.total_tests} ${completionUnitLabel(familyKey, surfaceKey)}` }}
                   </strong>
                   <p>{{ submissionOutcomeCopy }}</p>
                 </div>
@@ -231,6 +236,13 @@ function completionUnitLabel(familyKey?: string) {
                   <strong>{{ submission.passed_tests }}/{{ submission.total_tests }}</strong>
                   <p>
                     A rodada foi julgada por critérios estruturais da correção, não por execução livre do programa.
+                  </p>
+                </div>
+                <div v-else-if="isComponentBehaviorSurface" class="outcome-block">
+                  <p class="section-label">Checks de comportamento</p>
+                  <strong>{{ submission.passed_tests }}/{{ submission.total_tests }}</strong>
+                  <p>
+                    A rodada foi julgada pelo contraste entre contrato visual esperado e comportamento observável do componente.
                   </p>
                 </div>
                 <div v-else-if="isContractFamily" class="outcome-block">

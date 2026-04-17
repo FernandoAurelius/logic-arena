@@ -90,7 +90,7 @@ const surfaceDescriptors: Record<ArenaSurfaceKey, ArenaSurfaceDescriptor> = {
     title: 'Comportamento de componente',
     description: 'Preview de UI, estado e DOM para contratos de frontend mais ricos.',
     kind: 'contract',
-    implemented: false,
+    implemented: true,
     anatomy: ['props', 'preview', 'estado', 'DOM'],
     accent: 'violet',
   },
