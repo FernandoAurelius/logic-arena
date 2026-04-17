@@ -413,6 +413,14 @@ class TrackDetailSchema(Schema):
     milestone: TrackMilestoneSchema
 
 
+class ExplanationOptionRationaleSchema(Schema):
+    key: str
+    marker: str
+    text: str
+    explanation: str
+    is_correct: bool
+
+
 class ExerciseExplanationSchema(Schema):
     module_slug: str | None = None
     module_name: str | None = None
@@ -436,6 +444,10 @@ class ExerciseExplanationSchema(Schema):
     prerequisites: list[str]
     concepts: list[ExplanationConceptSchema]
     code_examples: list[ExplanationCodeExampleSchema]
+    presentation_mode: str = 'default'
+    question_focus: str = ''
+    answer_rationale: str = ''
+    distractor_rationales: list[ExplanationOptionRationaleSchema] = []
 
 
 class AssessmentContainerPartSchema(Schema):

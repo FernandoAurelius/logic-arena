@@ -5,12 +5,87 @@ from apps.accounts.schemas import ErrorSchema
 from apps.arena.models import Exercise
 from apps.arena.schemas import ExerciseExplanationSchema, TrackDetailSchema
 from apps.arena.services import build_exercise_catalog_meta
-from apps.learning.application.services import ensure_exercise_explanation
+from apps.learning.application.services import build_explanation_blueprint_for_exercise, ensure_exercise_explanation
 from apps.learning.selectors import get_track_by_slug
 from apps.progress.application.services import build_track_progress_summary
 
 
 router = Router(tags=['learning'])
+
+
+def _collapse_inline(value: str) -> str:
+    return ' '.join(part.strip() for part in str(value).splitlines() if part.strip())
+
+
+def _format_objective_marker(raw: str, index: int) -> str:
+    cleaned = raw.strip()
+    if len(cleaned) == 1 and cleaned.isalpha():
+        return cleaned.upper()
+    return chr(65 + (index % 26))
+
+
+def _build_objective_explanation_payload(exercise: Exercise) -> dict:
+    workspace_spec = exercise.workspace_spec or {}
+    evaluation_plan = exercise.evaluation_plan or {}
+    raw_options = workspace_spec.get('options', [])
+    correct_options = {
+        str(option).strip().lower()
+        for option in evaluation_plan.get('correct_options', [])
+        if str(option).strip()
+    }
+
+    distractor_rationales = []
+    answer_rationale = ''
+    question_focus = _collapse_inline(
+        exercise.pedagogical_brief
+        or exercise.concept_summary
+        or exercise.statement
+    )
+
+    if isinstance(raw_options, list):
+        for index, raw_option in enumerate(raw_options):
+            if not isinstance(raw_option, dict):
+                continue
+            key = str(raw_option.get('canonical_key') or raw_option.get('key') or '').strip()
+            label = str(raw_option.get('label') or key or '').strip()
+            marker = _format_objective_marker(label or key, index)
+            text = _collapse_inline(
+                raw_option.get('text')
+                or raw_option.get('content')
+                or raw_option.get('value')
+                or raw_option.get('title')
+                or label
+                or key
+                or 'Alternativa'
+            )
+            explanation = _collapse_inline(raw_option.get('explanation') or '')
+            is_correct = (
+                bool(raw_option.get('is_correct'))
+                or bool(raw_option.get('correct'))
+                or key.lower() in correct_options
+                or label.lower() in correct_options
+            )
+            payload = {
+                'key': key or label or marker.lower(),
+                'marker': marker,
+                'text': text,
+                'explanation': explanation,
+                'is_correct': is_correct,
+            }
+            if is_correct and not answer_rationale:
+                answer_rationale = (
+                    f'**{marker}. {text}** é a correta.'
+                    + (f' {explanation}' if explanation else '')
+                )
+            elif not is_correct:
+                distractor_rationales.append(payload)
+
+    return {
+        'presentation_mode': 'objective_review',
+        'question_focus': question_focus,
+        'answer_rationale': answer_rationale,
+        'distractor_rationales': distractor_rationales,
+    }
 
 
 @router.get('/tracks/{track_slug}', response={200: TrackDetailSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Retorna a página de trilha com progresso, conceitos e exercícios.')
@@ -145,6 +220,11 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
 
     explanation = ensure_exercise_explanation(exercise)
     explanation = type(explanation).objects.prefetch_related('concepts', 'code_examples').get(pk=explanation.pk)
+    objective_blueprint = (
+        build_explanation_blueprint_for_exercise(exercise)
+        if exercise.family_key == Exercise.FAMILY_OBJECTIVE_ITEM
+        else None
+    )
     meta = build_exercise_catalog_meta(exercise)
 
     return 200, {
@@ -160,13 +240,13 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
         'estimated_time_minutes': meta['estimated_time_minutes'],
         'concept_summary': meta['concept_summary'],
         'pedagogical_brief': meta['pedagogical_brief'],
-        'learning_goal': explanation.learning_goal,
-        'concept_focus_markdown': explanation.concept_focus_markdown,
-        'reading_strategy_markdown': explanation.reading_strategy_markdown,
-        'implementation_strategy_markdown': explanation.implementation_strategy_markdown,
-        'assessment_notes_markdown': explanation.assessment_notes_markdown,
-        'common_mistakes': list(explanation.common_mistakes or []),
-        'mastery_checklist': list(explanation.mastery_checklist or []),
+        'learning_goal': objective_blueprint.learning_goal if objective_blueprint else explanation.learning_goal,
+        'concept_focus_markdown': objective_blueprint.concept_focus_markdown if objective_blueprint else explanation.concept_focus_markdown,
+        'reading_strategy_markdown': objective_blueprint.reading_strategy_markdown if objective_blueprint else explanation.reading_strategy_markdown,
+        'implementation_strategy_markdown': objective_blueprint.implementation_strategy_markdown if objective_blueprint else explanation.implementation_strategy_markdown,
+        'assessment_notes_markdown': objective_blueprint.assessment_notes_markdown if objective_blueprint else explanation.assessment_notes_markdown,
+        'common_mistakes': list(objective_blueprint.common_mistakes if objective_blueprint else (explanation.common_mistakes or [])),
+        'mastery_checklist': list(objective_blueprint.mastery_checklist if objective_blueprint else (explanation.mastery_checklist or [])),
         'prerequisites': [prerequisite.label for prerequisite in track.prerequisites.all()],
         'concepts': [
             {
@@ -175,7 +255,11 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
                 'why_it_matters': concept.why_it_matters,
                 'common_mistake': concept.common_mistake,
             }
-            for concept in explanation.concepts.all()
+            for concept in (
+                objective_blueprint.concepts
+                if objective_blueprint
+                else explanation.concepts.all()
+            )
         ],
         'code_examples': [
             {
@@ -184,6 +268,20 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
                 'language': example.language,
                 'code': example.code,
             }
-            for example in explanation.code_examples.all()
+            for example in (
+                objective_blueprint.code_examples
+                if objective_blueprint
+                else explanation.code_examples.all()
+            )
         ],
+        **(
+            _build_objective_explanation_payload(exercise)
+            if exercise.family_key == Exercise.FAMILY_OBJECTIVE_ITEM
+            else {
+                'presentation_mode': 'default',
+                'question_focus': '',
+                'answer_rationale': '',
+                'distractor_rationales': [],
+            }
+        ),
     }

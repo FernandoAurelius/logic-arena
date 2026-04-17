@@ -2627,6 +2627,29 @@
             },
             "title": "Code Examples",
             "type": "array"
+          },
+          "presentation_mode": {
+            "default": "default",
+            "title": "Presentation Mode",
+            "type": "string"
+          },
+          "question_focus": {
+            "default": "",
+            "title": "Question Focus",
+            "type": "string"
+          },
+          "answer_rationale": {
+            "default": "",
+            "title": "Answer Rationale",
+            "type": "string"
+          },
+          "distractor_rationales": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ExplanationOptionRationaleSchema"
+            },
+            "title": "Distractor Rationales",
+            "type": "array"
           }
         },
         "required": [
@@ -2708,6 +2731,39 @@
           "common_mistake"
         ],
         "title": "ExplanationConceptSchema",
+        "type": "object"
+      },
+      "ExplanationOptionRationaleSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "marker": {
+            "title": "Marker",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "is_correct": {
+            "title": "Is Correct",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "marker",
+          "text",
+          "explanation",
+          "is_correct"
+        ],
+        "title": "ExplanationOptionRationaleSchema",
         "type": "object"
       },
       "LoginResponseSchema": {

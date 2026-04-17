@@ -1152,6 +1152,9 @@
 
 .explanation-workspace {
   align-content: start;
+  min-height: calc(100vh - 5rem);
+  height: calc(100vh - 5rem);
+  overflow: hidden;
 }
 
 .explanation-layout {
@@ -1159,24 +1162,33 @@
   grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
+  min-height: 0;
+  height: 100%;
 }
 
 .explanation-sidebar {
-  display: grid;
-  gap: 1rem;
-  align-content: start;
+  min-height: 0;
+  height: 100%;
 }
 
 .explanation-article {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
 }
 
 .explanation-article-card {
-  min-height: calc(100vh - 8.75rem);
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .explanation-article-body {
   padding: 2rem 2.25rem;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .explanation-markdown {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import '@/styles/catalog.css'
 import '@/pages/arena/style.css'
+import { computed } from 'vue'
 import { LogOut, UserRound } from 'lucide-vue-next'
 
 import ArenaResultsDialog from '@/widgets/arena/ArenaResultsDialog.vue'
@@ -66,6 +67,8 @@ const {
   goTrack,
   logout,
 } = useArenaPage()
+
+const isObjectiveArena = computed(() => activeSessionConfig.value?.family_key === 'objective_item')
 </script>
 
 <template>
@@ -155,8 +158,8 @@ const {
               @submit="submitSolution"
             />
 
-            <section v-if="activeExercise" class="two-column">
-              <div class="left-column">
+            <section v-if="activeExercise" class="two-column" :class="{ 'two-column--single': isObjectiveArena }">
+              <div v-if="!isObjectiveArena" class="left-column">
                 <ArenaSpecPanel
                   :spec-tab="specTab"
                   :route-track-slug="routeTrackSlug"
@@ -177,7 +180,7 @@ const {
                 />
               </div>
 
-              <div class="right-column">
+              <div class="right-column" :class="{ 'right-column--full': isObjectiveArena }">
                 <ArenaSurfaceHost
                   v-model:code="code"
                   v-model:workspace-files="workspaceFiles"
