@@ -5,7 +5,7 @@ from apps.accounts.schemas import ErrorSchema
 from apps.arena.models import Exercise
 from apps.arena.schemas import ExerciseExplanationSchema, TrackDetailSchema
 from apps.arena.services import build_exercise_catalog_meta
-from apps.learning.application.services import ensure_exercise_explanation
+from apps.learning.application.services import build_explanation_blueprint_for_exercise, ensure_exercise_explanation
 from apps.learning.selectors import get_track_by_slug
 from apps.progress.application.services import build_track_progress_summary
 
@@ -220,6 +220,11 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
 
     explanation = ensure_exercise_explanation(exercise)
     explanation = type(explanation).objects.prefetch_related('concepts', 'code_examples').get(pk=explanation.pk)
+    objective_blueprint = (
+        build_explanation_blueprint_for_exercise(exercise)
+        if exercise.family_key == Exercise.FAMILY_OBJECTIVE_ITEM
+        else None
+    )
     meta = build_exercise_catalog_meta(exercise)
 
     return 200, {
@@ -235,13 +240,13 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
         'estimated_time_minutes': meta['estimated_time_minutes'],
         'concept_summary': meta['concept_summary'],
         'pedagogical_brief': meta['pedagogical_brief'],
-        'learning_goal': explanation.learning_goal,
-        'concept_focus_markdown': explanation.concept_focus_markdown,
-        'reading_strategy_markdown': explanation.reading_strategy_markdown,
-        'implementation_strategy_markdown': explanation.implementation_strategy_markdown,
-        'assessment_notes_markdown': explanation.assessment_notes_markdown,
-        'common_mistakes': list(explanation.common_mistakes or []),
-        'mastery_checklist': list(explanation.mastery_checklist or []),
+        'learning_goal': objective_blueprint.learning_goal if objective_blueprint else explanation.learning_goal,
+        'concept_focus_markdown': objective_blueprint.concept_focus_markdown if objective_blueprint else explanation.concept_focus_markdown,
+        'reading_strategy_markdown': objective_blueprint.reading_strategy_markdown if objective_blueprint else explanation.reading_strategy_markdown,
+        'implementation_strategy_markdown': objective_blueprint.implementation_strategy_markdown if objective_blueprint else explanation.implementation_strategy_markdown,
+        'assessment_notes_markdown': objective_blueprint.assessment_notes_markdown if objective_blueprint else explanation.assessment_notes_markdown,
+        'common_mistakes': list(objective_blueprint.common_mistakes if objective_blueprint else (explanation.common_mistakes or [])),
+        'mastery_checklist': list(objective_blueprint.mastery_checklist if objective_blueprint else (explanation.mastery_checklist or [])),
         'prerequisites': [prerequisite.label for prerequisite in track.prerequisites.all()],
         'concepts': [
             {
@@ -250,7 +255,11 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
                 'why_it_matters': concept.why_it_matters,
                 'common_mistake': concept.common_mistake,
             }
-            for concept in explanation.concepts.all()
+            for concept in (
+                objective_blueprint.concepts
+                if objective_blueprint
+                else explanation.concepts.all()
+            )
         ],
         'code_examples': [
             {
@@ -259,7 +268,11 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
                 'language': example.language,
                 'code': example.code,
             }
-            for example in explanation.code_examples.all()
+            for example in (
+                objective_blueprint.code_examples
+                if objective_blueprint
+                else explanation.code_examples.all()
+            )
         ],
         **(
             _build_objective_explanation_payload(exercise)
