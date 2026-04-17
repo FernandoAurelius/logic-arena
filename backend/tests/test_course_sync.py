@@ -9,6 +9,11 @@ from apps.arena.models import Exercise, ExerciseCategory, ExerciseTrack, Exercis
 pytestmark = pytest.mark.django_db
 
 
+def test_curated_course_slug_fields_allow_editorial_prefixes():
+    assert ExerciseTrack._meta.get_field('slug').max_length >= 100
+    assert Exercise._meta.get_field('slug').max_length >= 100
+
+
 def test_sync_curated_course_catalog_creates_module_track_and_objective_items(tmp_path):
     source = tmp_path / 'course.json'
     source.write_text(

@@ -82,7 +82,7 @@ class ExerciseType(TimestampedModel):
 class ExerciseTrack(TimestampedModel):
     category = models.ForeignKey(ExerciseCategory, on_delete=models.CASCADE, related_name='tracks')
     module = models.ForeignKey('LearningModule', null=True, blank=True, on_delete=models.SET_NULL, related_name='tracks')
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, max_length=100)
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     goal = models.TextField(blank=True)
@@ -141,7 +141,7 @@ class ExerciseDefinition(TimestampedModel):
         (FAMILY_GUIDED_RESPONSE, 'Guided response'),
     ]
 
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, max_length=100)
     title = models.CharField(max_length=140)
     statement = models.TextField()
     learning_objectives = models.JSONField(default=list, blank=True)
