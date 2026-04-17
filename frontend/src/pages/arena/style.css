@@ -60,6 +60,10 @@
   height: calc(100vh - 13.25rem);
 }
 
+.two-column--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .left-column,
 .right-column {
   min-height: 0;
@@ -73,6 +77,10 @@
 
 .right-column {
   grid-template-rows: minmax(0, 1fr) auto auto;
+}
+
+.right-column--full {
+  max-width: 70rem;
 }
 
 .spec-card,

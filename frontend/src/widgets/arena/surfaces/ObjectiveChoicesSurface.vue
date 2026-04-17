@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  BadgeCheck,
-  CheckCircle2,
-  Circle,
-  Sparkles,
-  Timer,
-} from 'lucide-vue-next'
+import { CheckCircle2, Circle, Clock3 } from 'lucide-vue-next'
 
 import type { SessionConfig } from '@/entities/practice-session'
 import { Badge } from '@/shared/ui/badge'
@@ -15,14 +9,11 @@ import MonacoEditor from '@/shared/ui/editor/MonacoEditor.vue'
 
 import {
   formatAttemptMode,
-  getObjectiveContextTags,
+  formatObjectiveOptionMarker,
   getObjectiveLearningObjectives,
   getObjectiveOptions,
-  getObjectiveSelectedOptionDetails,
   getObjectiveSnippet,
   getObjectiveStatement,
-  getObjectiveTemplateInfo,
-  getObjectiveTemplateMeta,
   isObjectiveMultiple,
   toggleObjectiveSelection,
 } from './objectiveSurfaceShared'
@@ -40,664 +31,270 @@ const props = withDefaults(defineProps<{
   sessionConfig: null,
 })
 
+const exercise = computed(() => props.sessionConfig?.exercise ?? null)
 const options = computed(() => getObjectiveOptions(props.sessionConfig))
 const snippet = computed(() => getObjectiveSnippet(props.sessionConfig))
 const allowMultiple = computed(() => isObjectiveMultiple(props.sessionConfig))
-const objectiveInfo = computed(() => getObjectiveTemplateInfo(props.sessionConfig))
-const templateMeta = computed(() => getObjectiveTemplateMeta(props.sessionConfig))
 const objectiveStatement = computed(() => getObjectiveStatement(props.sessionConfig))
 const learningObjectives = computed(() => getObjectiveLearningObjectives(props.sessionConfig))
-const contextTags = computed(() => getObjectiveContextTags(props.sessionConfig))
-const selectedDetails = computed(() => getObjectiveSelectedOptionDetails(props.sessionConfig, selectedOptions.value))
-const selectedLabels = computed(() => selectedDetails.value.map((option) => option.label))
-const selectedMisconceptions = computed(() =>
-  selectedDetails.value
-    .map((option) => option.misconception_tag)
-    .filter((tag): tag is string => Boolean(tag)),
-)
-const difficulty = computed(() => props.sessionConfig?.exercise?.difficulty ?? 'intermediário')
-const estimatedTime = computed(() => props.sessionConfig?.exercise?.estimated_time_minutes ?? 10)
 const modeLabel = computed(() => formatAttemptMode(props.sessionConfig?.mode))
-const analysisSteps = computed(() => templateMeta.value.analysis_steps ?? [])
-const snippetTone = computed(() => {
-  if (snippet.value.template === 'compile-runtime-output') return 'diagnóstico de execução'
-  if (snippet.value.template === 'behavior-classification') return 'comportamento observável'
-  if (snippet.value.template === 'snippet-read-only') return 'leitura read-only'
-  if (snippet.value.template === 'output-prediction') return 'previsão de saída'
-  return allowMultiple.value ? 'discriminação múltipla' : 'resposta única'
-})
+const difficulty = computed(() => exercise.value?.difficulty ?? 'intermediário')
+const estimatedTime = computed(() => exercise.value?.estimated_time_minutes ?? 10)
+const trackName = computed(() => exercise.value?.track_name ?? '')
+const moduleName = computed(() => exercise.value?.module_name ?? '')
+const trackStep = computed(() => exercise.value?.track_position ?? 0)
+const contextSummary = computed(() =>
+  [
+    exercise.value?.concept_summary,
+    exercise.value?.pedagogical_brief,
+    exercise.value?.professor_note,
+  ]
+    .map((item) => String(item ?? '').trim())
+    .find(Boolean) ?? '',
+)
 
 function toggleOption(key: string) {
   if (props.readOnly) return
   selectedOptions.value = toggleObjectiveSelection(selectedOptions.value, key, allowMultiple.value)
 }
+
+function isSelected(key: string) {
+  return selectedOptions.value.includes(key)
+}
 </script>
 
 <template>
-  <div class="objective-surface">
-    <Card class="objective-surface__hero">
-      <CardHeader class="objective-surface__hero-header">
-        <div class="objective-surface__hero-copy">
-          <p class="eyebrow">Fase 3 · objective_item</p>
-          <CardTitle class="objective-surface__hero-title">{{ props.exerciseTitle }}</CardTitle>
-          <CardDescription class="objective-surface__hero-description">
-            {{ objectiveInfo.subtitle }}
-            {{ objectiveStatement }}
-          </CardDescription>
-          <div class="objective-surface__hero-pills">
-            <Badge>{{ objectiveInfo.badge }}</Badge>
-            <Badge variant="outline">{{ modeLabel }}</Badge>
-            <Badge variant="outline">{{ allowMultiple ? 'múltipla resposta' : 'resposta única' }}</Badge>
-            <Badge variant="outline">{{ snippet.readOnly ? 'snippet read-only' : 'estímulo aberto' }}</Badge>
-          </div>
-        </div>
-        <div class="objective-surface__hero-metrics">
-          <div class="objective-metric">
-            <span class="objective-metric__label">Dificuldade</span>
-            <strong>{{ difficulty }}</strong>
-          </div>
-          <div class="objective-metric">
-            <span class="objective-metric__label">Tempo</span>
-            <strong>{{ estimatedTime }} MIN</strong>
-          </div>
-          <div class="objective-metric">
-            <span class="objective-metric__label">Estímulo</span>
-            <strong>{{ snippetTone }}</strong>
-          </div>
-          <div class="objective-metric">
-            <span class="objective-metric__label">Selecionadas</span>
-            <strong>{{ selectedOptions.length }}</strong>
-          </div>
+  <div class="objective-clean">
+    <header class="objective-clean__header">
+      <div class="objective-clean__eyebrow">
+        <span v-if="trackName">{{ trackName }}</span>
+        <span v-if="trackStep > 0">Etapa {{ trackStep }}</span>
+        <span v-else>{{ modeLabel }}</span>
+      </div>
+      <div class="objective-clean__meta">
+        <Badge variant="outline">{{ difficulty }}</Badge>
+        <Badge variant="outline">
+          <Clock3 :size="14" />
+          {{ estimatedTime }} min
+        </Badge>
+        <Badge v-if="allowMultiple" variant="outline">múltiplas respostas</Badge>
+      </div>
+    </header>
+
+    <Card class="objective-clean__statement-card">
+      <CardHeader class="objective-clean__statement-header">
+        <div>
+          <p class="eyebrow">Enunciado</p>
+          <CardTitle class="objective-clean__title">{{ props.exerciseTitle }}</CardTitle>
+          <CardDescription v-if="moduleName">{{ moduleName }}</CardDescription>
         </div>
       </CardHeader>
+      <CardContent class="objective-clean__statement-body">
+        <p class="objective-clean__statement">{{ objectiveStatement }}</p>
+        <p v-if="contextSummary" class="objective-clean__support">{{ contextSummary }}</p>
+        <div v-if="learningObjectives.length" class="objective-clean__goals">
+          <Badge v-for="item in learningObjectives.slice(0, 3)" :key="item" variant="outline">
+            {{ item }}
+          </Badge>
+        </div>
+      </CardContent>
     </Card>
 
-    <div class="objective-surface__layout">
-      <aside class="objective-surface__aside">
-        <Card class="objective-card objective-card--featured">
-          <CardHeader>
-            <p class="eyebrow">Objetivo pedagógico</p>
-            <CardTitle>{{ objectiveInfo.lens_title }}</CardTitle>
-            <CardDescription>{{ objectiveInfo.subtitle }}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p class="objective-copy">{{ objectiveStatement }}</p>
-            <ol v-if="analysisSteps.length" class="objective-analysis-steps">
-              <li v-for="step in analysisSteps" :key="step">{{ step }}</li>
-            </ol>
-          </CardContent>
-        </Card>
+    <Card v-if="snippet.lineCount > 0" class="objective-clean__snippet-card">
+      <CardHeader>
+        <p class="eyebrow">Trecho de referência</p>
+        <CardTitle>{{ snippet.title }}</CardTitle>
+        <CardDescription>Use o estímulo apenas como leitura; a decisão vem da interpretação.</CardDescription>
+      </CardHeader>
+      <CardContent class="objective-clean__snippet-body">
+        <MonacoEditor
+          :model-value="snippet.code"
+          :language="snippet.language"
+          height="18rem"
+          :read-only="true"
+        />
+      </CardContent>
+    </Card>
 
-        <Card class="objective-card">
-          <CardHeader>
-            <p class="eyebrow">Conceitos-alvo</p>
-            <CardTitle>O que precisa ficar claro</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div class="objective-badge-cloud">
-              <Badge v-for="item in learningObjectives" :key="item" variant="outline">{{ item }}</Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card class="objective-card objective-card--dark">
-          <CardHeader>
-            <p class="eyebrow">Sinal do template</p>
-            <CardTitle>{{ objectiveInfo.action_title }}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p class="objective-copy objective-copy--inverse">{{ objectiveInfo.action_copy }}</p>
-            <div class="objective-mini-stats">
-              <div>
-                <span class="objective-mini-stats__label">Surface</span>
-                <strong>{{ props.sessionConfig?.surface_key ?? 'objective_choices' }}</strong>
-              </div>
-              <div>
-                <span class="objective-mini-stats__label">Choice mode</span>
-                <strong>{{ allowMultiple ? 'multiple' : 'single' }}</strong>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card class="objective-card objective-card--progress">
-          <CardHeader>
-            <p class="eyebrow">Status da seleção</p>
-            <CardTitle>{{ selectedOptions.length }} selecionada(s)</CardTitle>
-          </CardHeader>
-          <CardContent class="objective-progress">
-            <div class="objective-progress__row">
-              <span>Alternativas</span>
-              <strong>{{ options.length }}</strong>
-            </div>
-            <div class="objective-progress__row">
-              <span>Snippet</span>
-              <strong>{{ snippet.readOnly ? 'read-only' : 'editável' }}</strong>
-            </div>
-            <div class="objective-progress__row">
-              <span>Modo</span>
-              <strong>{{ modeLabel }}</strong>
-            </div>
-          </CardContent>
-        </Card>
-      </aside>
-
-      <section class="objective-surface__main">
-        <Card class="objective-frame">
-          <div class="objective-frame__chrome">
-            <div class="objective-frame__lights">
-              <span class="objective-frame__light"></span>
-              <span class="objective-frame__light"></span>
-              <span class="objective-frame__light"></span>
-            </div>
-            <div class="objective-frame__title">
-              {{ snippet.title.toUpperCase() }} | {{ snippet.lineCount }} LINES
-            </div>
-            <Badge variant="outline">{{ props.sessionConfig?.surface_key ?? 'objective_choices' }}</Badge>
+    <Card class="objective-clean__choices-card">
+      <CardHeader>
+        <p class="eyebrow">Alternativas</p>
+        <CardTitle>
+          {{ allowMultiple ? 'Selecione todas as corretas' : 'Escolha a melhor resposta' }}
+        </CardTitle>
+      </CardHeader>
+      <CardContent class="objective-clean__choices">
+        <button
+          v-for="(option, index) in options"
+          :key="option.canonical_key ?? option.key"
+          class="objective-clean__choice"
+          :class="{ 'objective-clean__choice--selected': isSelected(option.canonical_key ?? option.key) }"
+          type="button"
+          :disabled="props.readOnly"
+          :aria-pressed="isSelected(option.canonical_key ?? option.key)"
+          @click="toggleOption(option.canonical_key ?? option.key)"
+        >
+          <div class="objective-clean__choice-leading">
+            <span class="objective-clean__choice-marker">
+              {{ formatObjectiveOptionMarker(option, index) }}
+            </span>
+            <span class="objective-clean__choice-icon" aria-hidden="true">
+              <CheckCircle2 v-if="isSelected(option.canonical_key ?? option.key)" :size="18" />
+              <Circle v-else :size="18" />
+            </span>
           </div>
-          <CardContent class="objective-frame__content">
-            <MonacoEditor
-              :model-value="snippet.code"
-              :language="snippet.language"
-              height="24rem"
-              :read-only="true"
-            />
-          </CardContent>
-          <div class="objective-frame__footer">
-            <div class="objective-frame__footer-copy">
-              <BadgeCheck :size="16" />
-              <span>{{ snippet.readOnly ? 'Leitura imutável. A resposta depende da interpretação do estímulo.' : 'Superfície objetiva preparada para leitura e decisão.' }}</span>
-            </div>
-            <div class="objective-frame__footer-copy objective-frame__footer-copy--muted">
-              <Sparkles :size="16" />
-              <span>{{ objectiveInfo.review_copy }}</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card class="objective-card objective-card--choices">
-          <CardHeader>
-            <p class="eyebrow">Alternativas</p>
-            <CardTitle>
-              {{ allowMultiple ? 'Selecione todas as respostas corretas' : 'Escolha a melhor resposta' }}
-            </CardTitle>
-            <CardDescription>
-              As alternativas foram desenhadas para medir leitura técnica e discriminação conceitual.
-            </CardDescription>
-          </CardHeader>
-          <CardContent class="objective-surface__choices-list">
-            <button
-              v-for="option in options"
-              :key="option.canonical_key ?? option.key"
-              class="objective-choice"
-              :class="{ 'objective-choice--selected': selectedOptions.includes(option.canonical_key ?? option.key) }"
-              type="button"
-              :disabled="props.readOnly"
-              :aria-pressed="selectedOptions.includes(option.canonical_key ?? option.key)"
-              @click="toggleOption(option.canonical_key ?? option.key)"
-            >
-              <div class="objective-choice__marker">
-                <CheckCircle2
-                  v-if="selectedOptions.includes(option.canonical_key ?? option.key)"
-                  :size="18"
-                />
-                <Circle v-else :size="18" />
-              </div>
-              <div class="objective-choice__body">
-                <div class="objective-choice__label-row">
-                  <strong>{{ option.key.toUpperCase() }}</strong>
-                  <Badge
-                    v-if="option.misconception_tag"
-                    variant="outline"
-                  >
-                    misconception
-                  </Badge>
-                </div>
-                <p>{{ option.label }}</p>
-              </div>
-            </button>
-          </CardContent>
-        </Card>
-      </section>
-
-      <aside class="objective-surface__mentor">
-        <Card class="objective-card objective-card--analysis">
-          <CardHeader>
-            <p class="eyebrow">AI mentor</p>
-            <CardTitle>{{ objectiveInfo.review_title }}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p class="objective-copy">{{ objectiveInfo.review_copy }}</p>
-            <div class="objective-mentor-grid">
-              <div>
-                <span class="objective-mini-stats__label">Focus</span>
-                <strong>{{ objectiveInfo.lens_title }}</strong>
-              </div>
-              <div>
-                <span class="objective-mini-stats__label">Template</span>
-                <strong>{{ objectiveInfo.badge }}</strong>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card class="objective-card">
-          <CardHeader>
-            <p class="eyebrow">Seleção atual</p>
-            <CardTitle>{{ selectedOptions.length ? 'Resposta em construção' : 'Nenhuma opção marcada' }}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div v-if="selectedLabels.length" class="objective-selection-stack">
-              <Badge v-for="label in selectedLabels" :key="label" variant="outline">{{ label }}</Badge>
-            </div>
-            <p v-else class="objective-copy objective-copy--muted">
-              Marque uma ou mais alternativas para ver a síntese da resposta aqui.
-            </p>
-            <div v-if="selectedMisconceptions.length" class="objective-misconceptions">
-              <span class="objective-mini-stats__label">Misconceptions capturadas</span>
-              <Badge v-for="item in selectedMisconceptions" :key="item" variant="outline">{{ item }}</Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card class="objective-card objective-card--note">
-          <CardHeader>
-            <p class="eyebrow">Leitura final</p>
-            <CardTitle>{{ objectiveInfo.action_title }}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p class="objective-copy">{{ objectiveInfo.lens_copy }}</p>
-            <div class="objective-note-footer">
-              <Timer :size="16" />
-              <span>{{ estimatedTime }} min · {{ contextTags.join(' · ') || 'contexto objetivo' }}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </aside>
-    </div>
+          <p class="objective-clean__choice-text">{{ option.text }}</p>
+        </button>
+      </CardContent>
+    </Card>
   </div>
 </template>
 
 <style scoped>
-.objective-surface {
+.objective-clean {
   display: grid;
   gap: 1rem;
   min-height: 0;
 }
 
-.objective-surface__hero {
-  overflow: hidden;
-}
-
-.objective-surface__hero-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+.objective-clean__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 1rem;
-  align-items: stretch;
+  flex-wrap: wrap;
 }
 
-.objective-surface__hero-copy {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.objective-surface__hero-title {
-  font-size: clamp(2rem, 3vw, 3.6rem);
-  line-height: 0.92;
-  letter-spacing: -0.08em;
+.objective-clean__eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--primary);
 }
 
-.objective-surface__hero-description {
-  max-width: 54rem;
-  line-height: 1.55;
-}
-
-.objective-surface__hero-pills {
+.objective-clean__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.objective-surface__hero-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(8.8rem, 1fr));
-  gap: 0.75rem;
-  align-self: start;
-}
-
-.objective-metric {
-  display: grid;
-  gap: 0.3rem;
-  padding: 0.85rem 0.95rem;
-  border: 2px solid var(--on-surface);
-  background: color-mix(in srgb, var(--surface-container) 82%, var(--primary) 18%);
-  box-shadow: 4px 4px 0 0 var(--on-surface);
-}
-
-.objective-metric__label {
-  font-size: 0.68rem;
-  font-weight: 800;
+.objective-clean__title {
+  font-size: clamp(1.9rem, 3vw, 2.8rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--on-surface-variant);
 }
 
-.objective-metric strong {
-  font-size: 0.98rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.objective-clean__statement-card,
+.objective-clean__snippet-card,
+.objective-clean__choices-card {
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
-.objective-surface__layout {
-  display: grid;
-  grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr) minmax(18rem, 21rem);
-  gap: 1rem;
-  min-height: 0;
-  align-items: start;
+.objective-clean__statement-header {
+  padding-bottom: 0.5rem;
 }
 
-.objective-surface__aside,
-.objective-surface__main,
-.objective-surface__mentor {
+.objective-clean__statement-body {
   display: grid;
   gap: 1rem;
-  min-height: 0;
 }
 
-.objective-card {
-  overflow: hidden;
-  border: 2px solid var(--on-surface);
-  box-shadow: 4px 4px 0 0 var(--on-surface);
-  background: color-mix(in srgb, var(--surface) 94%, var(--primary) 6%);
+.objective-clean__statement {
+  font-size: 1.24rem;
+  line-height: 1.65;
+  color: var(--on-surface);
 }
 
-.objective-card--featured {
-  background: color-mix(in srgb, var(--surface) 88%, var(--primary-container) 12%);
-}
-
-.objective-card--dark {
-  background: var(--on-surface);
-  color: var(--surface);
-  box-shadow: 4px 4px 0 0 color-mix(in srgb, var(--primary) 72%, var(--on-surface));
-}
-
-.objective-card--analysis {
-  background: color-mix(in srgb, var(--surface) 88%, #d9f0dd 12%);
-  box-shadow: 4px 4px 0 0 color-mix(in srgb, #2f9e44 75%, var(--on-surface));
-  border-color: #2f9e44;
-}
-
-.objective-card--note {
-  background: color-mix(in srgb, var(--on-surface) 94%, var(--primary) 6%);
-  color: var(--surface);
-}
-
-.objective-card--choices {
-  background: color-mix(in srgb, var(--surface) 96%, var(--primary) 4%);
-}
-
-.objective-card--progress {
-  background: color-mix(in srgb, var(--surface) 92%, var(--primary) 8%);
-}
-
-.objective-copy {
-  margin: 0;
-  line-height: 1.55;
-}
-
-.objective-copy--inverse {
-  color: color-mix(in srgb, var(--surface) 92%, white 8%);
-}
-
-.objective-copy--muted {
+.objective-clean__support {
+  font-size: 1rem;
+  line-height: 1.7;
   color: var(--muted-foreground);
 }
 
-.objective-note-footer {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  margin-top: 0.95rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.objective-badge-cloud,
-.objective-selection-stack,
-.objective-misconceptions {
+.objective-clean__goals {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.objective-mini-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.95rem;
+.objective-clean__snippet-body {
+  padding-top: 0;
 }
 
-.objective-mini-stats > div,
-.objective-mentor-grid > div {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.objective-mini-stats__label {
-  font-size: 0.65rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, currentColor 68%, transparent);
-}
-
-.objective-frame {
-  display: grid;
-  gap: 0;
-  overflow: hidden;
-}
-
-.objective-frame__chrome {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 0.95rem;
-  border-bottom: 2px solid var(--on-surface);
-  background: color-mix(in srgb, var(--surface-container) 94%, var(--surface));
-}
-
-.objective-frame__lights {
-  display: flex;
-  gap: 0.35rem;
-}
-
-.objective-frame__light {
-  width: 0.72rem;
-  height: 0.72rem;
-  border: 2px solid var(--on-surface);
-  background: color-mix(in srgb, var(--surface-container-high) 70%, var(--primary) 30%);
-}
-
-.objective-frame__title {
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--on-surface-variant);
-  text-align: center;
-  flex: 1;
-}
-
-.objective-frame__content {
-  padding: 0;
-}
-
-.objective-frame__footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: center;
-  padding: 0.8rem 0.95rem;
-  border-top: 2px solid var(--on-surface);
-  background: color-mix(in srgb, var(--surface-container) 92%, var(--primary) 8%);
-}
-
-.objective-frame__footer-copy {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.objective-frame__footer-copy--muted {
-  color: var(--on-surface-variant);
-}
-
-.objective-surface__choices-list {
+.objective-clean__choices {
   display: grid;
   gap: 0.85rem;
 }
 
-.objective-choice {
+.objective-clean__choice {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  gap: 0.9rem;
-  width: 100%;
-  text-align: left;
-  align-items: start;
-  padding: 1rem 1.05rem;
-  border: 2px solid var(--on-surface);
-  background: color-mix(in srgb, var(--surface) 92%, var(--primary) 8%);
-  box-shadow: 4px 4px 0 0 var(--on-surface);
-  transition:
-    transform 140ms ease,
-    box-shadow 140ms ease,
-    background 140ms ease,
-    border-color 140ms ease;
-}
-
-.objective-choice:hover:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 0 var(--on-surface);
-}
-
-.objective-choice--selected {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--surface) 86%, var(--primary-container) 14%);
-  box-shadow: 4px 4px 0 0 var(--primary);
-}
-
-.objective-choice__marker {
-  display: flex;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
   align-items: flex-start;
-  padding-top: 0.1rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border: 2px solid var(--outline);
+  background: color-mix(in srgb, var(--surface) 92%, white);
+  text-align: left;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
 }
 
-.objective-choice__body {
-  display: grid;
-  gap: 0.45rem;
+.objective-clean__choice:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--primary) 20%, transparent);
+  border-color: var(--primary);
 }
 
-.objective-choice__label-row {
+.objective-clean__choice--selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary-container) 22%, var(--surface));
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.objective-clean__choice-leading {
   display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
   align-items: center;
+  gap: 0.75rem;
 }
 
-.objective-choice__body p {
-  margin: 0;
-  font-size: 0.98rem;
-  line-height: 1.5;
+.objective-clean__choice-marker {
+  min-width: 2rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
   font-weight: 700;
+  color: var(--primary);
 }
 
-.objective-choice__body small {
-  color: var(--on-surface-variant);
-  line-height: 1.45;
-}
-
-.objective-progress {
-  display: grid;
-  gap: 0.7rem;
-}
-
-.objective-analysis-steps {
-  margin: 0.9rem 0 0;
-  padding-left: 1.1rem;
-  display: grid;
-  gap: 0.45rem;
-  font-size: 0.88rem;
-  color: var(--on-surface-variant);
-}
-
-.objective-progress__row {
-  display: flex;
+.objective-clean__choice-icon {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-top: 0.4rem;
-  border-top: 1px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
-  font-size: 0.9rem;
+  justify-content: center;
+  color: var(--primary);
 }
 
-.objective-progress__row:first-child {
-  border-top: 0;
-  padding-top: 0;
+.objective-clean__choice-text {
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--on-surface);
 }
 
-.objective-mentor-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.9rem;
-}
-
-.objective-card :deep(.card-header) {
-  gap: 0.45rem;
-}
-
-@media (max-width: 1360px) {
-  .objective-surface__layout {
-    grid-template-columns: minmax(17rem, 20rem) minmax(0, 1fr);
+@media (max-width: 900px) {
+  .objective-clean__title {
+    font-size: 1.7rem;
   }
 
-  .objective-surface__mentor {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .objective-clean__statement {
+    font-size: 1.08rem;
   }
-}
 
-@media (max-width: 1120px) {
-  .objective-surface__hero-header,
-  .objective-surface__layout,
-  .objective-surface__mentor {
+  .objective-clean__choice {
     grid-template-columns: 1fr;
-  }
-
-  .objective-surface__hero-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .objective-surface__aside,
-  .objective-surface__main,
-  .objective-surface__mentor {
-    grid-column: auto;
-  }
-}
-
-@media (max-width: 760px) {
-  .objective-surface__hero-metrics,
-  .objective-mentor-grid,
-  .objective-mini-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .objective-choice {
-    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.75rem;
   }
 }
 </style>

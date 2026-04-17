@@ -4,6 +4,7 @@ export type ObjectiveOption = {
   key: string
   canonical_key?: string
   label: string
+  text: string
   explanation?: string
   is_correct?: boolean
   correct?: boolean
@@ -177,6 +178,16 @@ export function getObjectiveOptions(sessionConfig?: SessionConfig | null): Objec
       key: String(option.key ?? option.canonical_key ?? ''),
       canonical_key: String(option.canonical_key ?? option.key ?? ''),
       label: String(option.label ?? option.key ?? option.canonical_key ?? 'Alternativa'),
+      text: String(
+        option.text
+        ?? option.content
+        ?? option.value
+        ?? option.title
+        ?? option.label
+        ?? option.key
+        ?? option.canonical_key
+        ?? 'Alternativa',
+      ),
       explanation: option.explanation ? String(option.explanation) : undefined,
       is_correct: Boolean(option.is_correct),
       correct: Boolean(option.correct),
@@ -261,4 +272,11 @@ export function toggleObjectiveSelection(
     return current.filter((item) => item !== key)
   }
   return [...current, key]
+}
+
+export function formatObjectiveOptionMarker(option: ObjectiveOption, index: number) {
+  const raw = String(option.label || option.key || '').trim()
+  if (/^[a-z]$/i.test(raw)) return `${raw.toUpperCase()}.`
+  const fallback = String.fromCharCode(65 + (index % 26))
+  return `${fallback}.`
 }

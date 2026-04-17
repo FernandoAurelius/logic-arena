@@ -34,11 +34,12 @@ const props = withDefaults(defineProps<{
 })
 
 const surface = computed(() => getArenaSurfaceDescriptor(props.surfaceKey))
+const useBareSurface = computed(() => props.sessionConfig?.family_key === 'objective_item')
 </script>
 
 <template>
-  <Card class="surface-host">
-    <CardHeader class="surface-host__header">
+  <component :is="useBareSurface ? 'div' : Card" :class="['surface-host', { 'surface-host--bare': useBareSurface }]">
+    <CardHeader v-if="!useBareSurface" class="surface-host__header">
       <div>
         <p class="eyebrow">Superfície canônica</p>
         <CardTitle>{{ surface.title }}</CardTitle>
@@ -51,7 +52,7 @@ const surface = computed(() => getArenaSurfaceDescriptor(props.surfaceKey))
         <Badge variant="outline">{{ props.sessionConfig?.mode ?? 'practice' }}</Badge>
       </div>
     </CardHeader>
-    <CardContent class="surface-host__content">
+    <component :is="useBareSurface ? 'div' : CardContent" class="surface-host__content">
       <CodeWorkspaceSurface
         v-if="surface.kind === 'code'"
         v-model="code"
@@ -115,8 +116,8 @@ const surface = computed(() => getArenaSurfaceDescriptor(props.surfaceKey))
         :exercise-title="props.exerciseTitle"
         :session-config="props.sessionConfig"
       />
-    </CardContent>
-  </Card>
+    </component>
+  </component>
 </template>
 
 <style scoped>
@@ -145,5 +146,13 @@ const surface = computed(() => getArenaSurfaceDescriptor(props.surfaceKey))
   min-height: 0;
   overflow: hidden;
   padding-top: 0;
+}
+
+.surface-host--bare {
+  display: block;
+}
+
+.surface-host--bare .surface-host__content {
+  padding: 0;
 }
 </style>

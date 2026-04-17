@@ -98,6 +98,15 @@ const ExplanationCodeExampleSchema = z
     code: z.string(),
   })
   .passthrough();
+const ExplanationOptionRationaleSchema = z
+  .object({
+    key: z.string(),
+    marker: z.string(),
+    text: z.string(),
+    explanation: z.string(),
+    is_correct: z.boolean(),
+  })
+  .passthrough();
 const ExerciseExplanationSchema = z
   .object({
     module_slug: z.union([z.string(), z.null()]).optional(),
@@ -122,6 +131,13 @@ const ExerciseExplanationSchema = z
     prerequisites: z.array(z.string()),
     concepts: z.array(ExplanationConceptSchema),
     code_examples: z.array(ExplanationCodeExampleSchema),
+    presentation_mode: z.string().optional().default("default"),
+    question_focus: z.string().optional().default(""),
+    answer_rationale: z.string().optional().default(""),
+    distractor_rationales: z
+      .array(ExplanationOptionRationaleSchema)
+      .optional()
+      .default([]),
   })
   .passthrough();
 const LoginInputSchema = z
@@ -575,6 +591,7 @@ export const schemas = {
   ErrorSchema,
   ExplanationConceptSchema,
   ExplanationCodeExampleSchema,
+  ExplanationOptionRationaleSchema,
   ExerciseExplanationSchema,
   LoginInputSchema,
   UserSchema,

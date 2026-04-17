@@ -13,6 +13,81 @@ from apps.progress.application.services import build_track_progress_summary
 router = Router(tags=['learning'])
 
 
+def _collapse_inline(value: str) -> str:
+    return ' '.join(part.strip() for part in str(value).splitlines() if part.strip())
+
+
+def _format_objective_marker(raw: str, index: int) -> str:
+    cleaned = raw.strip()
+    if len(cleaned) == 1 and cleaned.isalpha():
+        return cleaned.upper()
+    return chr(65 + (index % 26))
+
+
+def _build_objective_explanation_payload(exercise: Exercise) -> dict:
+    workspace_spec = exercise.workspace_spec or {}
+    evaluation_plan = exercise.evaluation_plan or {}
+    raw_options = workspace_spec.get('options', [])
+    correct_options = {
+        str(option).strip().lower()
+        for option in evaluation_plan.get('correct_options', [])
+        if str(option).strip()
+    }
+
+    distractor_rationales = []
+    answer_rationale = ''
+    question_focus = _collapse_inline(
+        exercise.pedagogical_brief
+        or exercise.concept_summary
+        or exercise.statement
+    )
+
+    if isinstance(raw_options, list):
+        for index, raw_option in enumerate(raw_options):
+            if not isinstance(raw_option, dict):
+                continue
+            key = str(raw_option.get('canonical_key') or raw_option.get('key') or '').strip()
+            label = str(raw_option.get('label') or key or '').strip()
+            marker = _format_objective_marker(label or key, index)
+            text = _collapse_inline(
+                raw_option.get('text')
+                or raw_option.get('content')
+                or raw_option.get('value')
+                or raw_option.get('title')
+                or label
+                or key
+                or 'Alternativa'
+            )
+            explanation = _collapse_inline(raw_option.get('explanation') or '')
+            is_correct = (
+                bool(raw_option.get('is_correct'))
+                or bool(raw_option.get('correct'))
+                or key.lower() in correct_options
+                or label.lower() in correct_options
+            )
+            payload = {
+                'key': key or label or marker.lower(),
+                'marker': marker,
+                'text': text,
+                'explanation': explanation,
+                'is_correct': is_correct,
+            }
+            if is_correct and not answer_rationale:
+                answer_rationale = (
+                    f'**{marker}. {text}** é a correta.'
+                    + (f' {explanation}' if explanation else '')
+                )
+            elif not is_correct:
+                distractor_rationales.append(payload)
+
+    return {
+        'presentation_mode': 'objective_review',
+        'question_focus': question_focus,
+        'answer_rationale': answer_rationale,
+        'distractor_rationales': distractor_rationales,
+    }
+
+
 @router.get('/tracks/{track_slug}', response={200: TrackDetailSchema, 401: ErrorSchema, 404: ErrorSchema}, summary='Retorna a página de trilha com progresso, conceitos e exercícios.')
 def get_track_detail(request, track_slug: str, authorization: str | None = Header(default=None)):
     try:
@@ -186,4 +261,14 @@ def get_track_explanation(request, track_slug: str, exercise_slug: str, authoriz
             }
             for example in explanation.code_examples.all()
         ],
+        **(
+            _build_objective_explanation_payload(exercise)
+            if exercise.family_key == Exercise.FAMILY_OBJECTIVE_ITEM
+            else {
+                'presentation_mode': 'default',
+                'question_focus': '',
+                'answer_rationale': '',
+                'distractor_rationales': [],
+            }
+        ),
     }

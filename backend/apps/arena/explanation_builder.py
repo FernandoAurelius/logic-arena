@@ -34,6 +34,15 @@ class ExplanationBlueprint:
     code_examples: list[ExplanationCodeExampleSeed]
 
 
+@dataclass(frozen=True)
+class ObjectiveOptionSeed:
+    key: str
+    marker: str
+    text: str
+    explanation: str
+    is_correct: bool
+
+
 def _normalize_topic(value: str) -> str:
     return (
         value.lower()
@@ -73,6 +82,195 @@ def _get_exercise_type_label(exercise: Exercise) -> str:
     if exercise_type:
         return exercise_type.name
     return 'Drill de implementação'
+
+
+def _format_objective_marker(raw: str, index: int) -> str:
+    cleaned = raw.strip()
+    if len(cleaned) == 1 and cleaned.isalpha():
+        return cleaned.upper()
+    return chr(65 + (index % 26))
+
+
+def _extract_objective_options(exercise: Exercise) -> list[ObjectiveOptionSeed]:
+    workspace_spec = exercise.workspace_spec or {}
+    evaluation_plan = exercise.evaluation_plan or {}
+    correct_options = {
+        str(option).strip().lower()
+        for option in evaluation_plan.get('correct_options', [])
+        if str(option).strip()
+    }
+
+    raw_options = workspace_spec.get('options', [])
+    if not isinstance(raw_options, list):
+        return []
+
+    options: list[ObjectiveOptionSeed] = []
+    for index, raw_option in enumerate(raw_options):
+        if not isinstance(raw_option, dict):
+            continue
+        key = str(raw_option.get('canonical_key') or raw_option.get('key') or '').strip()
+        label = str(raw_option.get('label') or key or '').strip()
+        marker = _format_objective_marker(label or key, index)
+        text = _collapse_inline(
+            str(
+                raw_option.get('text')
+                or raw_option.get('content')
+                or raw_option.get('value')
+                or raw_option.get('title')
+                or label
+                or key
+                or 'Alternativa'
+            )
+        )
+        explanation = _collapse_inline(str(raw_option.get('explanation') or ''))
+        is_correct = (
+            bool(raw_option.get('is_correct'))
+            or bool(raw_option.get('correct'))
+            or key.lower() in correct_options
+            or label.lower() in correct_options
+        )
+        options.append(
+            ObjectiveOptionSeed(
+                key=key or label or marker.lower(),
+                marker=marker,
+                text=text,
+                explanation=explanation,
+                is_correct=is_correct,
+            )
+        )
+    return options
+
+
+def _build_objective_concepts(exercise: Exercise, track: ExerciseTrack | None) -> list[ExplanationConceptSeed]:
+    track_concepts = getattr(track, 'concepts', None)
+    concepts = [
+        ExplanationConceptSeed(
+            title=concept.title,
+            explanation_text=concept.summary,
+            why_it_matters=concept.why_it_matters,
+            common_mistake=concept.common_mistake,
+        )
+        for concept in (track_concepts.all() if track_concepts is not None else ())
+    ]
+    if concepts:
+        return concepts
+
+    fallback_summary = _collapse_inline(exercise.concept_summary or exercise.pedagogical_brief or exercise.statement)
+    fallback_why = _collapse_inline(exercise.professor_note or exercise.pedagogical_brief or exercise.concept_summary)
+    fallback_mistake = (
+        str(exercise.misconception_tags[0]).replace('_', ' ')
+        if exercise.misconception_tags
+        else 'Responder por impressão geral sem verificar o conceito realmente cobrado.'
+    )
+    return [
+        ExplanationConceptSeed(
+            title=exercise.title,
+            explanation_text=fallback_summary,
+            why_it_matters=fallback_why,
+            common_mistake=fallback_mistake,
+        )
+    ]
+
+
+def _build_objective_blueprint(exercise: Exercise, track: ExerciseTrack | None) -> ExplanationBlueprint:
+    exercise_type_label = _get_exercise_type_label(exercise)
+    statement_excerpt = _first_non_empty_line(exercise.statement) or exercise.title
+    pedagogical_brief = _collapse_inline(exercise.pedagogical_brief)
+    professor_note = _collapse_inline(exercise.professor_note)
+    options = _extract_objective_options(exercise)
+    correct_options = [option for option in options if option.is_correct]
+    distractors = [option for option in options if not option.is_correct]
+    concepts = _build_objective_concepts(exercise, track)
+    concept_titles = ', '.join(concept.title for concept in concepts[:3]) if concepts else 'leitura conceitual'
+    track_goal = _collapse_inline(getattr(track, 'goal', '') or getattr(track, 'description', '') or '')
+    main_correct = correct_options[0] if correct_options else None
+
+    focus_copy = pedagogical_brief or exercise.concept_summary or statement_excerpt
+    question_focus = (
+        f'Esta questão mede principalmente **{concept_titles}**. '
+        f'O núcleo da decisão está em reconhecer o que o enunciado pede sem confundir com categorias vizinhas.'
+    )
+    if track_goal:
+        question_focus += f' No contexto da trilha, isso reforça: {track_goal}.'
+
+    identification_steps = [
+        '1. Leia o enunciado procurando a palavra ou relação que realmente decide a resposta.',
+        '2. Isole o conceito central antes de olhar para as alternativas.',
+        '3. Compare cada alternativa com o que o enunciado afirma literalmente.',
+        '4. Elimine primeiro as opções que trocam categoria, época, papel ou definição.',
+    ]
+    if main_correct is not None and main_correct.explanation:
+        identification_steps.append(
+            f'5. A alternativa **{main_correct.marker}** sobrevive porque {main_correct.explanation}.'
+        )
+
+    distractor_lines = []
+    for option in distractors[:4]:
+        rationale = option.explanation or 'ela parece plausível, mas não corresponde ao conceito pedido.'
+        distractor_lines.append(f'- **{option.marker}. {option.text}**: {rationale}')
+    if not distractor_lines:
+        distractor_lines.append('- Elimine toda alternativa que responda a outra pergunta diferente da que foi feita.')
+
+    common_mistakes = [
+        *(concept.common_mistake for concept in concepts if concept.common_mistake),
+        *(tag.replace('_', ' ') for tag in (exercise.misconception_tags or [])),
+    ]
+    deduped_common_mistakes = list(dict.fromkeys(item for item in common_mistakes if item))[:5]
+    if not deduped_common_mistakes:
+        deduped_common_mistakes = [
+            'Responder pela impressão geral sem voltar ao enunciado.',
+            'Confundir o conceito principal com uma categoria parecida.',
+        ]
+
+    mastery_checklist = [
+        'Consigo dizer em uma frase qual conceito a questão está cobrando.',
+        'Sei justificar por que a alternativa correta responde exatamente ao enunciado.',
+        'Consigo explicar por que pelo menos um distrator parece plausível, mas está errado.',
+        'Consigo refazer a decisão sem depender de chute ou de eliminação superficial.',
+    ]
+
+    assessment_notes = (
+        f'Em **{exercise_type_label}**, a cobrança aqui é de leitura conceitual e discriminação entre alternativas próximas. '
+        f'O enunciado-base é: **{statement_excerpt}**.'
+    )
+    if professor_note:
+        assessment_notes += f'\n\nObservação do professor: {professor_note}.'
+
+    implementation_strategy = (
+        'Use a decisão em duas camadas:\n'
+        '- primeiro, confirme qual conceito ou relação o enunciado está cobrando;\n'
+        '- depois, compare esse filtro com cada alternativa sem adicionar interpretação extra.\n\n'
+        '**Como eliminar os distratores**\n'
+        + '\n'.join(distractor_lines)
+    )
+    if main_correct is not None:
+        main_rationale = main_correct.explanation or 'é a única que responde ao conceito pedido sem trocar a categoria em jogo.'
+        implementation_strategy += (
+            f'\n\n**Alternativa correta e por quê**\n'
+            f'- **{main_correct.marker}. {main_correct.text}**: {main_rationale}'
+        )
+
+    return ExplanationBlueprint(
+        learning_goal=(
+            f'Consolidar a leitura conceitual por trás de `{exercise.title}`, reconhecendo o foco real da questão '
+            f'e justificando a alternativa correta com critérios de {exercise_type_label}.'
+        ),
+        concept_focus_markdown=(
+            question_focus
+            + (
+                f'\n\nResumo útil do módulo: {focus_copy}.'
+                if focus_copy
+                else ''
+            )
+        ),
+        reading_strategy_markdown='\n'.join(identification_steps),
+        implementation_strategy_markdown=implementation_strategy,
+        assessment_notes_markdown=assessment_notes,
+        common_mistakes=deduped_common_mistakes,
+        mastery_checklist=mastery_checklist,
+        concepts=concepts,
+        code_examples=[],
+    )
 
 
 def _build_code_examples(exercise: Exercise, track: ExerciseTrack | None) -> list[ExplanationCodeExampleSeed]:
@@ -200,6 +398,9 @@ print(resultado)""",
 
 def build_explanation_blueprint(exercise: Exercise) -> ExplanationBlueprint:
     track = getattr(exercise, 'track', None)
+    if getattr(exercise, 'family_key', None) == Exercise.FAMILY_OBJECTIVE_ITEM:
+        return _build_objective_blueprint(exercise, track)
+
     exercise_type_label = _get_exercise_type_label(exercise)
     statement_excerpt = _first_non_empty_line(exercise.statement) or exercise.title
     professor_note = _collapse_inline(exercise.professor_note)
