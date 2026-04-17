@@ -87,7 +87,7 @@ class ExerciseTrack(TimestampedModel):
     description = models.TextField(blank=True)
     goal = models.TextField(blank=True)
     level_label = models.CharField(max_length=120, blank=True)
-    concept_kicker = models.CharField(max_length=120, blank=True)
+    concept_kicker = models.CharField(max_length=200, blank=True)
     milestone_title = models.CharField(max_length=140, blank=True)
     milestone_summary = models.TextField(blank=True)
     milestone_requirement_label = models.TextField(blank=True)
