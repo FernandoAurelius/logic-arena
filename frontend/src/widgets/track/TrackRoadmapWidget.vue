@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { toRef } from 'vue'
-import { ArrowRight, BookOpenText, Lock, Play, ShieldCheck } from 'lucide-vue-next'
+import { ArrowRight, BookOpenText, CircleHelp, Lock, Play, ShieldCheck } from 'lucide-vue-next'
 
 import type { TrackDetail } from '@/entities/track'
 import { useTrackRoadmap } from '@/features/track/roadmap/model/useTrackRoadmap'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/shared/ui/drawer'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/ui/tooltip'
 
 const props = defineProps<{
   track: TrackDetail
@@ -79,12 +80,6 @@ function openArena(slug?: string) {
           <div class="track-map-shell" :style="{ height: `${roadmap.roadmapHeight.value}px`, width: `${roadmap.MAP_WIDTH}px` }">
             <svg class="track-map-svg" :viewBox="roadmap.roadmapViewBox.value" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
               <path class="track-map-path" :d="roadmap.roadmapPath.value" />
-              <path
-                v-for="tip in roadmap.roadmapTips.value"
-                :key="`tip-path-${tip.id}`"
-                class="track-map-tip-path"
-                :d="tip.pathD"
-              />
             </svg>
 
             <div
@@ -124,6 +119,30 @@ function openArena(slug?: string) {
               ]"
               :style="roadmap.cardStyle(layout)"
             >
+              <TooltipProvider v-if="roadmap.roadmapTips.value.some((tip) => tip.exerciseSlug === layout.exercise.slug)" :delay-duration="120">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <button
+                      type="button"
+                      class="track-map-tip-trigger"
+                      :class="`track-map-tip-trigger--${layout.exercise.progress.status}`"
+                      :aria-label="`Abrir dica de estudo de ${layout.exercise.title}`"
+                      @click.stop
+                    >
+                      <CircleHelp :size="15" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent class="track-map-tip-popover" side="top" :side-offset="10">
+                    <template v-for="tip in roadmap.roadmapTips.value" :key="tip.id">
+                      <div v-if="tip.exerciseSlug === layout.exercise.slug" class="track-map-tip-popover-copy">
+                        <p class="eyebrow">Tip de estudo</p>
+                        <strong>{{ tip.title }}</strong>
+                        <p>{{ tip.copy }}</p>
+                      </div>
+                    </template>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <button class="track-map-callout-hit" type="button" @click="roadmap.openExercisePanel(layout.exercise.slug)">
                 <div class="track-map-callout-head">
                   <span class="track-status-badge" :class="`track-status-badge--${layout.exercise.progress.status}`">
@@ -161,18 +180,6 @@ function openArena(slug?: string) {
                   {{ !track.milestone.unlocked ? `${track.milestone.remaining_exercises} exercício(s) restantes.` : 'Pronto para tentativa.' }}
                 </small>
               </div>
-            </article>
-
-            <article
-              v-for="tip in roadmap.roadmapTips.value"
-              :key="tip.id"
-              class="track-map-tip"
-              :class="`track-map-tip--${tip.status}`"
-              :style="roadmap.tipStyle(tip)"
-            >
-              <p class="eyebrow">Tip de estudo</p>
-              <strong>{{ tip.title }}</strong>
-              <p>{{ tip.copy }}</p>
             </article>
           </div>
         </div>
@@ -513,6 +520,39 @@ function openArena(slug?: string) {
   z-index: 2;
 }
 
+.track-map-tip-trigger {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  z-index: 3;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border: 1px dashed color-mix(in srgb, var(--primary) 45%, var(--map-card-border));
+  background: color-mix(in srgb, var(--map-surface) 92%, transparent);
+  color: var(--primary);
+  cursor: help;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.track-map-tip-trigger:hover,
+.track-map-tip-trigger:focus-visible {
+  transform: translate(-1px, -1px);
+  border-color: color-mix(in srgb, var(--primary) 72%, var(--map-card-border));
+  background: color-mix(in srgb, var(--primary) 10%, var(--map-surface));
+}
+
+.track-map-tip-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 55%, white);
+  outline-offset: 2px;
+}
+
+.track-map-tip-trigger--locked {
+  color: var(--map-text-muted);
+  border-color: color-mix(in srgb, var(--outline) 58%, transparent);
+}
+
 .track-map-callout-hit {
   width: 100%;
   display: grid;
@@ -541,6 +581,7 @@ function openArena(slug?: string) {
   text-transform: uppercase;
   letter-spacing: -0.03em;
   color: var(--map-text);
+  padding-right: 2.3rem;
 }
 
 .track-map-callout p {
@@ -614,55 +655,26 @@ function openArena(slug?: string) {
   background: color-mix(in srgb, var(--map-surface) 65%, var(--map-surface-elevated));
 }
 
-.track-map-tip {
-  position: absolute;
-  z-index: 1;
-  width: 220px;
-  min-height: 112px;
+.track-map-tip-popover {
+  max-width: 18rem;
+  border-width: 2px;
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--map-card-shadow) 78%, transparent);
+}
+
+.track-map-tip-popover-copy {
   display: grid;
-  align-content: start;
-  gap: 0.4rem;
-  padding: 0.8rem 0.9rem;
-  border: 1px dashed color-mix(in srgb, var(--primary) 46%, var(--map-card-border));
-  background: color-mix(in srgb, var(--map-surface-elevated) 94%, transparent);
-  box-shadow: 4px 4px 0 color-mix(in srgb, var(--map-card-shadow) 70%, transparent);
+  gap: 0.38rem;
 }
 
-.track-map-tip-path {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 3 9;
-  stroke-width: 2;
-  stroke: color-mix(in srgb, var(--primary) 34%, var(--map-line));
-}
-
-.track-map-tip--locked {
-  color: color-mix(in srgb, var(--map-text-muted) 88%, transparent);
-  background: color-mix(in srgb, var(--map-surface) 74%, var(--map-surface-elevated));
-  border-color: color-mix(in srgb, var(--outline) 56%, transparent);
-  box-shadow: 4px 4px 0 color-mix(in srgb, var(--outline) 28%, transparent);
-  opacity: 0.72;
-  filter: saturate(0.25) blur(0.35px);
-}
-
-.track-map-tip--locked strong,
-.track-map-tip--locked p,
-.track-map-tip--locked .eyebrow {
-  color: color-mix(in srgb, var(--map-text-muted) 92%, transparent);
-}
-
-.track-map-tip strong {
+.track-map-tip-popover-copy strong {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.92rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--map-text);
 }
 
-.track-map-tip p {
+.track-map-tip-popover-copy p {
   margin: 0;
-  color: var(--map-text-muted);
   line-height: 1.45;
   font-size: 0.82rem;
 }

@@ -13,11 +13,9 @@ type TrackNodeLayout = {
 
 type TrackTipLayout = {
   id: string
+  exerciseSlug: string
   title: string
   copy: string
-  x: number
-  y: number
-  pathD: string
   status: string
 }
 
@@ -27,54 +25,14 @@ type TrackUnitLayout = {
   y: number
 }
 
-type Rect = {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
 const MAP_WIDTH = 1080
 const MAP_CALLOUT_WIDTH = 258
 const MAP_CALLOUT_HEIGHT = 116
-const MAP_TIP_WIDTH = 220
-const MAP_TIP_HEIGHT = 112
-const MAP_TIP_GAP_X = 52
-const MAP_TIP_GAP_Y = 34
 const MAP_TOP_PADDING = 90
 const MAP_ROW_GAP = 206
 const MILESTONE_CARD_WIDTH = 408
 const MILESTONE_CARD_HEIGHT = 132
 const ROADMAP_CURVE_OFFSETS = [-148, 122, -102, 152, -124, 104, -86, 132]
-
-function rectsOverlap(a: Rect, b: Rect, gap = 0) {
-  return !(
-    a.x + a.width + gap <= b.x ||
-    b.x + b.width + gap <= a.x ||
-    a.y + a.height + gap <= b.y ||
-    b.y + b.height + gap <= a.y
-  )
-}
-
-function clampRect(rect: Rect): Rect {
-  return {
-    ...rect,
-    x: Math.max(24, Math.min(MAP_WIDTH - rect.width - 24, rect.x)),
-    y: Math.max(20, rect.y),
-  }
-}
-
-function buildTipPath(callout: Rect, tip: Rect) {
-  const tipOnLeft = tip.x + tip.width / 2 < callout.x + callout.width / 2
-  const tipAbove = tip.y + tip.height / 2 < callout.y + callout.height / 2
-  const startX = tipOnLeft ? callout.x : callout.x + callout.width
-  const startY = tipAbove ? callout.y + 16 : callout.y + callout.height - 16
-  const endX = tipOnLeft ? tip.x + tip.width - 18 : tip.x + 18
-  const endY = tipAbove ? tip.y + tip.height - 18 : tip.y + 18
-  const midX = tipOnLeft ? startX - 30 : startX + 30
-
-  return `M ${startX} ${startY} C ${midX} ${startY} ${midX} ${endY} ${endX} ${endY}`
-}
 
 export function useTrackRoadmap(track: Ref<TrackDetail>) {
   const selectedExerciseSlug = ref('')
@@ -142,64 +100,22 @@ export function useTrackRoadmap(track: Ref<TrackDetail>) {
       })),
     ].slice(0, 3)
 
-    const placedTips: Rect[] = []
-
     return source.map((tip, index) => {
       const current = trackNodeLayouts.value[index]
       const tipId = `${current?.exercise.slug ?? track.value.slug}-tip-${index}`
       if (!current) {
         return {
           id: tipId,
+          exerciseSlug: '',
           ...tip,
-          x: 88,
-          y: MAP_TOP_PADDING + index * 200 + 80,
-          pathD: '',
           status: 'locked',
         }
       }
 
-      const calloutRect: Rect = {
-        x: current.calloutX,
-        y: current.calloutY,
-        width: MAP_CALLOUT_WIDTH,
-        height: MAP_CALLOUT_HEIGHT,
-      }
-
-      const centeredX = calloutRect.x + (calloutRect.width - MAP_TIP_WIDTH) / 2
-      const preferredCandidates: Rect[] = [
-        { x: centeredX, y: calloutRect.y + calloutRect.height + MAP_TIP_GAP_Y, width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT },
-        { x: centeredX, y: calloutRect.y - MAP_TIP_HEIGHT - (MAP_TIP_GAP_Y + 8), width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT },
-        current.side === 'left'
-          ? { x: calloutRect.x - MAP_TIP_WIDTH - MAP_TIP_GAP_X, y: calloutRect.y + calloutRect.height + MAP_TIP_GAP_Y, width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT }
-          : { x: calloutRect.x + calloutRect.width + MAP_TIP_GAP_X, y: calloutRect.y + calloutRect.height + MAP_TIP_GAP_Y, width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT },
-        current.side === 'left'
-          ? { x: calloutRect.x - MAP_TIP_WIDTH - MAP_TIP_GAP_X, y: calloutRect.y - MAP_TIP_HEIGHT - (MAP_TIP_GAP_Y + 8), width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT }
-          : { x: calloutRect.x + calloutRect.width + MAP_TIP_GAP_X, y: calloutRect.y - MAP_TIP_HEIGHT - (MAP_TIP_GAP_Y + 8), width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT },
-        current.side === 'left'
-          ? { x: calloutRect.x + calloutRect.width + MAP_TIP_GAP_X, y: calloutRect.y + calloutRect.height + MAP_TIP_GAP_Y, width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT }
-          : { x: calloutRect.x - MAP_TIP_WIDTH - MAP_TIP_GAP_X, y: calloutRect.y + calloutRect.height + MAP_TIP_GAP_Y, width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT },
-        current.side === 'left'
-          ? { x: calloutRect.x + calloutRect.width + MAP_TIP_GAP_X, y: calloutRect.y - MAP_TIP_HEIGHT - (MAP_TIP_GAP_Y + 8), width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT }
-          : { x: calloutRect.x - MAP_TIP_WIDTH - MAP_TIP_GAP_X, y: calloutRect.y - MAP_TIP_HEIGHT - (MAP_TIP_GAP_Y + 8), width: MAP_TIP_WIDTH, height: MAP_TIP_HEIGHT },
-      ]
-
-      const candidate =
-        preferredCandidates
-          .map(clampRect)
-          .find(
-            (rect) =>
-              !rectsOverlap(rect, calloutRect, 18) &&
-              placedTips.every((placed) => !rectsOverlap(rect, placed, 18)),
-          ) ?? clampRect(preferredCandidates[0]!)
-
-      placedTips.push(candidate)
-
       return {
         id: tipId,
+        exerciseSlug: current.exercise.slug,
         ...tip,
-        x: candidate.x,
-        y: candidate.y,
-        pathD: buildTipPath(calloutRect, candidate),
         status: current.exercise.progress.status,
       }
     })
@@ -254,13 +170,6 @@ export function useTrackRoadmap(track: Ref<TrackDetail>) {
     }
   }
 
-  function tipStyle(tip: TrackTipLayout) {
-    return {
-      left: `${tip.x}px`,
-      top: `${tip.y}px`,
-    }
-  }
-
   function unitStyle(unit: TrackUnitLayout) {
     return {
       left: `${unit.x}px`,
@@ -304,7 +213,6 @@ export function useTrackRoadmap(track: Ref<TrackDetail>) {
     roadmapPath,
     statusLabel,
     cardStyle,
-    tipStyle,
     unitStyle,
     openExercisePanel,
     closeExercisePanel,
