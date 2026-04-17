@@ -62,6 +62,9 @@ export function useArenaSubmissionFlow(options: UseArenaSubmissionFlowOptions) {
     if (submission.status === 'passed') {
       return 'A solução está correta, mas esta rodada não mudou seu estado estrutural de progresso.'
     }
+    if (options.activeSessionConfig.value?.surface_key === 'component_behavior_lab') {
+      return 'O componente ainda diverge do contrato visual. Compare props, estado, eventos e DOM observado antes de tentar de novo.'
+    }
     if (familyKey === 'contract_behavior_lab') {
       return 'O contrato ainda tem divergências observáveis. Compare request, status, headers e body antes de tentar de novo.'
     }

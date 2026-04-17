@@ -11,6 +11,7 @@ import ObjectiveClassifierSurface from './surfaces/ObjectiveClassifierSurface.vu
 import RestrictedDiffSurface from './surfaces/RestrictedDiffSurface.vue'
 import RestrictedFillBlanksSurface from './surfaces/RestrictedFillBlanksSurface.vue'
 import HttpContractLabSurface from './surfaces/HttpContractLabSurface.vue'
+import ComponentBehaviorLabSurface from './surfaces/ComponentBehaviorLabSurface.vue'
 import { getArenaSurfaceDescriptor } from './surfaces/arenaSurfaceRegistry'
 import SurfacePlaceholder from './surfaces/SurfacePlaceholder.vue'
 
@@ -93,6 +94,16 @@ const surface = computed(() => getArenaSurfaceDescriptor(props.surfaceKey))
       />
       <HttpContractLabSurface
         v-else-if="surface.key === 'http_contract_lab'"
+        v-model:response-text="responseText"
+        :read-only="props.readOnly"
+        :exercise-title="props.exerciseTitle"
+        :session-config="props.sessionConfig"
+      />
+      <ComponentBehaviorLabSurface
+        v-else-if="surface.key === 'component_behavior_lab'"
+        v-model:code="code"
+        v-model:workspace-files="workspaceFiles"
+        v-model:active-file="activeFile"
         v-model:response-text="responseText"
         :read-only="props.readOnly"
         :exercise-title="props.exerciseTitle"

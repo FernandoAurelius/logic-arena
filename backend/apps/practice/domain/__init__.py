@@ -19,4 +19,5 @@ from .evaluation import (
     outputs_match_robust,
     render_blank_template,
 )
+from .component_behavior import evaluate_component_behavior_submission
 from .http_contracts import evaluate_http_contract_submission

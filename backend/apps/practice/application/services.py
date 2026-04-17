@@ -21,6 +21,7 @@ from apps.arena.models import (
 )
 from apps.practice.application.registry import OBJECTIVE_SNIPPET_TEMPLATES, get_family_spec, resolve_surface_key
 from apps.practice.domain import (
+    evaluate_component_behavior_submission,
     build_objective_option_catalog,
     evaluate_http_contract_submission,
     evaluate_restricted_code_submission,
@@ -95,6 +96,17 @@ def _deep_merge_dicts(base: dict, override: dict) -> dict:
         else:
             merged[key] = value
     return merged
+
+
+def _coerce_string_list(values: object) -> list[str]:
+    if values is None:
+        return []
+    if isinstance(values, str):
+        cleaned = values.strip()
+        return [cleaned] if cleaned else []
+    if isinstance(values, (list, tuple, set)):
+        return [str(value).strip() for value in values if str(value).strip()]
+    return [str(values).strip()]
 
 
 def _build_code_lab_workspace_spec(exercise: ExerciseDefinition) -> dict:
@@ -474,6 +486,85 @@ def _build_contract_behavior_workspace_spec(exercise: ExerciseDefinition) -> dic
     family_spec = get_family_spec(exercise.family_key)
     base_workspace_spec = dict(exercise.workspace_spec or {})
     evaluation_plan = dict(exercise.evaluation_plan or {})
+    template_key = normalize_objective_template_key(
+        base_workspace_spec.get('template')
+        or evaluation_plan.get('template')
+        or evaluation_plan.get('kind')
+        or 'http-contract'
+    )
+
+    if template_key in {'component-behavior', 'ui-behavior'}:
+        entrypoint = str(base_workspace_spec.get('entrypoint') or 'ComponentUnderTest.vue')
+        starter_files = _normalize_workspace_files(
+            base_workspace_spec.get('files')
+            or {
+                entrypoint: {
+                    'content': base_workspace_spec.get('source_code') or exercise.starter_code or '',
+                    'label': 'ComponentUnderTest.vue',
+                    'role': 'entrypoint',
+                }
+            }
+        )
+        if entrypoint not in starter_files:
+            starter_files[entrypoint] = _normalize_workspace_file_entry(
+                entrypoint,
+                {
+                    'content': exercise.starter_code or '',
+                    'label': entrypoint,
+                    'role': 'entrypoint',
+                },
+            )
+        component_contract = {
+            'name': str(base_workspace_spec.get('component_name') or evaluation_plan.get('component_name') or exercise.title),
+            'expected_props': _coerce_string_list(base_workspace_spec.get('expected_props') or evaluation_plan.get('required_props')),
+            'expected_state': _coerce_string_list(base_workspace_spec.get('expected_state') or evaluation_plan.get('required_state')),
+            'expected_events': _coerce_string_list(base_workspace_spec.get('expected_events') or evaluation_plan.get('required_events')),
+            'expected_render': _coerce_string_list(base_workspace_spec.get('expected_render') or evaluation_plan.get('required_render')),
+            'expected_dom': _coerce_string_list(base_workspace_spec.get('expected_dom') or evaluation_plan.get('required_dom')),
+            'forbidden_tokens': _coerce_string_list(base_workspace_spec.get('forbidden_tokens') or evaluation_plan.get('forbidden_tokens')),
+            'expected_dom_snapshot': str(base_workspace_spec.get('expected_dom_snapshot') or evaluation_plan.get('expected_dom_snapshot') or ''),
+        }
+        template_meta = {
+            'key': 'component-behavior',
+            'title': 'Comportamento de componente',
+            'response_shape': 'component_behavior_observation',
+            'analysis_steps': [
+                'Leia primeiro o contrato visual e os estados esperados.',
+                'Compare props, estado, eventos e DOM antes de concluir.',
+                'Use a evidência observada para separar divergência de implementação e divergência de comportamento.',
+            ],
+            'validation_axes': [
+                'props',
+                'state',
+                'events',
+                'render',
+                'dom',
+                'forbidden_tokens',
+            ],
+        }
+        return {
+            **base_workspace_spec,
+            'surface_key': 'component_behavior_lab',
+            'workspace_kind': 'component_behavior',
+            'template': template_key,
+            'language': str(base_workspace_spec.get('language') or exercise.language or 'vue'),
+            'entrypoint': entrypoint,
+            'active_file': str(base_workspace_spec.get('active_file') or entrypoint),
+            'file_order': list(base_workspace_spec.get('file_order') or starter_files.keys()),
+            'files': starter_files,
+            'template_meta': _deep_merge_dicts(
+                template_meta,
+                base_workspace_spec.get('template_meta') if isinstance(base_workspace_spec.get('template_meta'), dict) else {},
+            ),
+            'component_contract': component_contract,
+            'instructions': str(
+                base_workspace_spec.get('instructions')
+                or evaluation_plan.get('instructions')
+                or exercise.pedagogical_brief
+                or ''
+            ),
+        }
+
     default_contract = {
         'request': {
             'method': 'GET',
@@ -597,6 +688,25 @@ def build_default_content_blocks(exercise: ExerciseDefinition) -> list[dict]:
         return blocks
     if exercise.family_key == ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB:
         workspace_spec = _build_contract_behavior_workspace_spec(exercise)
+        if workspace_spec.get('template') in {'component-behavior', 'ui-behavior'}:
+            component_contract = (
+                workspace_spec.get('component_contract')
+                if isinstance(workspace_spec.get('component_contract'), dict)
+                else {}
+            )
+            return [
+                {
+                    'kind': 'statement',
+                    'title': exercise.title,
+                    'content': exercise.statement,
+                },
+                {
+                    'kind': 'component-contract',
+                    'title': 'Contrato do componente',
+                    'component_contract': component_contract,
+                    'instructions': workspace_spec.get('instructions') or '',
+                },
+            ]
         contract = workspace_spec.get('contract') if isinstance(workspace_spec.get('contract'), dict) else {}
         request = contract.get('request') if isinstance(contract.get('request'), dict) else {}
         response = contract.get('response') if isinstance(contract.get('response'), dict) else {}
@@ -954,12 +1064,25 @@ def create_attempt_session_for_exercise(user: ArenaUser, exercise: ExerciseDefin
             'files': starter_files,
         }
     elif exercise.family_key == ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB:
-        answer_state = {
-            'response_text': '',
-            'observed_request': {},
-            'observed_response': {},
-            'template': str(workspace_spec.get('template') or 'http-contract'),
-        }
+        template = str(workspace_spec.get('template') or 'http-contract')
+        if template in {'component-behavior', 'ui-behavior'}:
+            starter_files = _serialize_workspace_files_for_runner(workspace_spec.get('files'))
+            entrypoint = str(workspace_spec.get('entrypoint') or 'ComponentUnderTest.vue')
+            answer_state = {
+                'source_code': str(starter_files.get(entrypoint) or exercise.starter_code or ''),
+                'active_file': str(workspace_spec.get('active_file') or entrypoint),
+                'entrypoint': entrypoint,
+                'files': starter_files,
+                'response_text': '',
+                'template': template,
+            }
+        else:
+            answer_state = {
+                'response_text': '',
+                'observed_request': {},
+                'observed_response': {},
+                'template': template,
+            }
     else:
         answer_state = {}
 
@@ -1608,6 +1731,111 @@ def evaluate_attempt_session(
     if exercise.family_key == ExerciseDefinition.FAMILY_CONTRACT_BEHAVIOR_LAB:
         evaluation_plan = build_default_evaluation_plan(exercise)
         workspace_spec = build_default_workspace_spec(exercise)
+        template = str(workspace_spec.get('template') or evaluation_plan.get('template') or 'http-contract')
+        if template in {'component-behavior', 'ui-behavior'}:
+            component_result = evaluate_component_behavior_submission(
+                workspace_spec=workspace_spec,
+                evaluation_plan=evaluation_plan,
+                source_code=source_code,
+                response_text=response_text,
+            )
+            snapshot = SubmissionSnapshot.objects.create(
+                session=session,
+                type=snapshot_type,
+                payload={
+                    'source_code': source_code,
+                    'response_text': response_text,
+                    'template': component_result['template'],
+                },
+                files=files or {},
+                selected_options=[],
+            )
+            explanation_lines = [
+                '### Revisão de comportamento de componente',
+                f"Checks atendidos: {component_result['passed_tests']}/{component_result['total_tests']}",
+            ]
+            if component_result['passed']:
+                explanation_lines.append('O componente atende ao contrato observável de props, estado, eventos e DOM.')
+            else:
+                explanation_lines.append('Ainda existem divergências entre o contrato esperado do componente e a evidência observada.')
+                if component_result['divergences']:
+                    explanation_lines.append('Divergências: ' + ' | '.join(component_result['divergences']))
+            explanation_lines.extend(
+                [
+                    '',
+                    'Leia o componente como contrato observável: primeiro sinais de props e estado, depois eventos, renderização e DOM.',
+                ]
+            )
+            next_steps = [
+                'Confirme se os sinais obrigatórios de props e estado aparecem no componente.',
+                'Revise eventos emitidos e a renderização observável antes de submeter novamente.',
+            ]
+            evaluation_run = EvaluationRun.objects.create(
+                submission=snapshot,
+                evaluator_results={
+                    'family_key': exercise.family_key,
+                    'mechanism': evaluation_plan.get('mechanism') or 'component_behavior_verifier',
+                    'template': component_result['template'],
+                    'passed': component_result['passed'],
+                    'passed_tests': component_result['passed_tests'],
+                    'total_tests': component_result['total_tests'],
+                    'checks': component_result['checks'],
+                },
+                normalized_score=component_result['normalized_score'],
+                verdict=component_result['verdict'],
+                evidence_bundle={
+                    'workspace_spec': workspace_spec,
+                    'evaluation_plan': evaluation_plan,
+                    'component_contract': component_result['component_contract'],
+                    'source_summary': component_result['source_summary'],
+                    'observation': component_result['observation'],
+                    'checks': component_result['checks'],
+                    'results': component_result['results'],
+                    'divergences': component_result['divergences'],
+                    'console_output': component_result['console_output'],
+                },
+                misconception_inference=[] if component_result['passed'] else list(exercise.misconception_tags or []),
+                raw_artifacts={
+                    'source_code': source_code,
+                    'response_text': response_text,
+                    'files': files or {},
+                },
+            )
+            review = AIReview.objects.create(
+                evaluation_run=evaluation_run,
+                profile_key=exercise.review_profile,
+                explanation='\n'.join(explanation_lines).strip(),
+                next_steps=next_steps,
+                conversation_thread=[
+                    {
+                        'role': 'assistant',
+                        'content': '\n'.join(explanation_lines).strip(),
+                    }
+                ],
+            )
+            session.answer_state = {
+                'source_code': source_code,
+                'response_text': response_text,
+                'normalized_score': component_result['normalized_score'],
+                'verdict': component_result['verdict'],
+                'template': component_result['template'],
+                'files': files or {},
+                'active_file': str(workspace_spec.get('active_file') or workspace_spec.get('entrypoint') or ''),
+                'entrypoint': str(workspace_spec.get('entrypoint') or ''),
+            }
+            session.current_workspace_state = {
+                **(session.current_workspace_state or {}),
+                'files': workspace_spec.get('files') or {},
+                'last_component_checks': component_result['checks'],
+                'last_component_observation': component_result['observation'],
+            }
+            session.attempt_status = (
+                AttemptSession.STATUS_COMPLETED if snapshot_type == SubmissionSnapshot.TYPE_SUBMIT else AttemptSession.STATUS_ACTIVE
+            )
+            session.save(update_fields=['answer_state', 'current_workspace_state', 'attempt_status', 'updated_at'])
+            update_contract_behavior_progress(session.user, exercise, component_result)
+            return snapshot, evaluation_run, review, None
+
         contract_result = evaluate_http_contract_submission(
             workspace_spec=workspace_spec,
             evaluation_plan=evaluation_plan,
