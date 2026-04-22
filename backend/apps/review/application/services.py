@@ -290,6 +290,50 @@ def review_evaluation_chat_response(evaluation_run, user_message: str, history: 
         return '\n'.join(lines).strip()
 
     if family_key == 'contract_behavior_lab':
+        template = evaluator_results.get('template') or evidence_bundle.get('workspace_spec', {}).get('template')
+        if template in {'component-behavior', 'ui-behavior'}:
+            checks = evaluator_results.get('checks') or evidence_bundle.get('checks') or []
+            divergences = evidence_bundle.get('divergences') or []
+            source_summary = evidence_bundle.get('source_summary') or {}
+            observation = evidence_bundle.get('observation') or {}
+            lines = [
+                '### Revisão de comportamento de componente',
+                (
+                    f"Checks atendidos: "
+                    f"{evaluator_results.get('passed_tests', 0)}/{evaluator_results.get('total_tests', 0)}"
+                ),
+                f"Props observadas: {', '.join(source_summary.get('props') or []) or '(nenhuma)'}",
+                f"Eventos observados: {', '.join(source_summary.get('events') or []) or '(nenhum)'}",
+            ]
+            if evaluation_run.verdict == EvaluationRun.VERDICT_PASSED:
+                lines.append('O componente respeita o contrato observável configurado para props, estado, eventos e DOM.')
+            elif evaluation_run.verdict == EvaluationRun.VERDICT_PARTIAL:
+                lines.append('Há aderência parcial ao contrato visual, mas ainda existem sinais observáveis faltando.')
+            else:
+                lines.append('O componente ainda não respeita os pontos observáveis centrais do contrato.')
+
+            failed_checks = [check for check in checks if not check.get('passed')]
+            if failed_checks:
+                lines.append(
+                    'Checks que falharam: '
+                    + ' | '.join(str(check.get('check')) for check in failed_checks if check.get('check'))
+                )
+            if divergences:
+                lines.append('Divergências detectadas: ' + ' | '.join(str(item) for item in divergences))
+            if observation:
+                lines.append('Snapshot observado: ' + str(observation.get('observed_dom') or observation.get('observed_state') or 'evidência registrada'))
+
+            if user_message.strip():
+                lines.extend(
+                    [
+                        '',
+                        f'Pergunta do aluno: {user_message.strip()}',
+                        'Compare primeiro o contrato visual esperado com o que realmente aparece em props, estado, eventos e DOM.',
+                    ]
+                )
+
+            return '\n'.join(lines).strip()
+
         checks = evaluator_results.get('checks') or evidence_bundle.get('checks') or []
         divergences = evidence_bundle.get('divergences') or []
         observed_request = evidence_bundle.get('observed_request') or {}

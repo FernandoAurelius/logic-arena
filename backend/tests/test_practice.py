@@ -155,6 +155,81 @@ def _create_http_contract_exercise(
     )
 
 
+def _create_component_behavior_exercise(
+    catalog_graph,
+    *,
+    slug: str,
+    title: str,
+    statement: str,
+):
+    starter_code = """
+<script setup>
+import { ref } from 'vue'
+
+const props = defineProps({
+  title: {
+    type: String,
+    default: 'ActivityCard',
+  },
+})
+
+const expanded = ref(true)
+const highlighted = ref(false)
+const emit = defineEmits(['toggle'])
+
+function toggleCard() {
+  expanded.value = !expanded.value
+  emit('toggle')
+}
+</script>
+
+<template>
+  <article class="activity-card" :data-highlighted="highlighted">
+    <header>{{ props.title }}</header>
+    <button type="button" @click="toggleCard">Alternar</button>
+    <p v-if="expanded">Painel expandido</p>
+  </article>
+</template>
+""".strip()
+
+    return Exercise.objects.create(
+        slug=slug,
+        title=title,
+        statement=statement,
+        difficulty='intermediário',
+        language='vue',
+        family_key=Exercise.FAMILY_CONTRACT_BEHAVIOR_LAB,
+        category=catalog_graph['category'],
+        track=catalog_graph['track'],
+        estimated_time_minutes=14,
+        review_profile='contract_behavior_default',
+        content_blocks=[],
+        workspace_spec={
+            'instructions': 'Ajuste o componente e compare props, estado, eventos e DOM observado.',
+            'template': 'component-behavior',
+            'component_name': 'ActivityCard',
+        },
+        evaluation_plan={
+            'mechanism': 'component_behavior_verifier',
+            'template': 'component-behavior',
+            'required_props': ['title'],
+            'required_state': ['expanded', 'highlighted'],
+            'required_events': ['toggle'],
+            'required_render': ['Painel expandido'],
+            'required_dom': ['activity-card'],
+        },
+        misconception_tags=['component-behavior'],
+        progression_rules={},
+        track_position=120,
+        concept_summary='Contrato observável de componente.',
+        pedagogical_brief='Valide props, estado, eventos e DOM do componente.',
+        starter_code=starter_code,
+        sample_input='',
+        sample_output='',
+        professor_note='',
+    )
+
+
 def test_practice_exercise_endpoints_return_active_catalog(client, auth_headers, catalog_graph):
     exercise = catalog_graph['exercises'][0]
 
@@ -1122,3 +1197,52 @@ def test_contract_behavior_lab_partial_contract_does_not_require_default_headers
     assert payload['evaluation']['verdict'] == 'passed'
     assert payload['evaluation']['evaluator_results']['passed_tests'] == 3
     assert payload['evaluation']['evaluator_results']['total_tests'] == 3
+
+
+def test_component_behavior_lab_session_config_and_submission(client, auth_headers, catalog_graph):
+    exercise = _create_component_behavior_exercise(
+        catalog_graph,
+        slug='component-behavior-activity-card',
+        title='Comportamento do ActivityCard',
+        statement='Valide o comportamento observável do componente ActivityCard.',
+    )
+
+    config_response = client.get(f'/api/practice/exercises/{exercise.slug}/session-config', **auth_headers)
+    assert config_response.status_code == 200
+    config_payload = config_response.json()
+    assert config_payload['family_key'] == 'contract_behavior_lab'
+    assert config_payload['surface_key'] == 'component_behavior_lab'
+    assert config_payload['workspace_spec']['workspace_kind'] == 'component_behavior'
+    assert config_payload['workspace_spec']['template_meta']['key'] == 'component-behavior'
+    assert config_payload['workspace_spec']['component_contract']['expected_props'] == ['title']
+
+    session_response = client.post(f'/api/practice/exercises/{exercise.slug}/sessions', **auth_headers)
+    assert session_response.status_code == 201
+    session_payload = session_response.json()
+    assert session_payload['answer_state']['template'] == 'component-behavior'
+    assert 'source_code' in session_payload['answer_state']
+
+    observation_payload = {
+        'observed_dom': '<article class="activity-card"><header>ActivityCard</header></article>',
+        'event_log': ['toggle acionado'],
+        'state': ['expanded', 'highlighted'],
+    }
+    submit_response = client.post(
+        f"/api/practice/sessions/{session_payload['id']}/submit",
+        data=json.dumps(
+            {
+                'source_code': exercise.starter_code,
+                'response_text': json.dumps(observation_payload),
+            }
+        ),
+        content_type='application/json',
+        **auth_headers,
+    )
+    assert submit_response.status_code == 200
+    payload = submit_response.json()
+    assert payload['evaluation']['verdict'] == 'passed'
+    assert payload['evaluation']['evaluator_results']['template'] == 'component-behavior'
+    assert payload['evaluation']['evaluator_results']['passed_tests'] == 6
+    assert payload['evaluation']['evidence_bundle']['source_summary']['events']
+    assert payload['review']['profile_key'] == 'contract_behavior_default'
+    assert 'comportamento de componente' in payload['review']['explanation'].lower()
